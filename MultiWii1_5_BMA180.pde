@@ -1,7 +1,7 @@
 /*
 MultiWiiCopter by Alexandre Dubus
 radio-commande.com
-January  2011     V1.
+December 2010     V1.5 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -14,9 +14,8 @@ January  2011     V1.
 
 /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller) */
 /* This is the minimum value that allow motors to run at a idle speed  */
-#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
-//#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
-//#define MINTHROTTLE 1200
+//#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
+#define MINTHROTTLE 1200 // for Super Simple ESCs 10A
 
 /* The type of multicopter */
 //#define GIMBAL
@@ -26,24 +25,24 @@ January  2011     V1.
 //#define QUADX
 //#define Y6
 //#define HEX6
-//#define FLYING_WING //experimental
 
-#define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
-//#define YAW_DIRECTION -1
+//#define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction (TRICOPTER only)
+#define YAW_DIRECTION -1
 
 #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
 //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
-#define PROMINI  //Arduino type
-//#define MEGA
+/* This is the speed of the serial interface. 115200 kbit/s is the best option for a USB connection.*/
+#define SERIAL_COM_SPEED 115200
 
-//****** advanced users settings   *************
-
-//enable internal I2C pull ups
-//#define INTERNAL_I2C_PULLUPS
+/* The following lines apply only for specific receiver with only one PPM sum signal, on digital PIN 2 */
+/* If your receiver is concerned, uncomment on of these line. Note this is mandatory for a Y6 setup */
+/* Select the right line depending on your radio brand. Feel free to modify the order in your PPM order is different */
+//#define SERIAL_SUM_PPM         PITCH,YAW,THROTTLE,ROLL,AUX1 //For Graupner/Spektrum
+//#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1 //For Robe/Hitec/Futaba
 
 /* The following lines apply only for a pitch/roll tilt stabilization system */
-/* It is not compatible with Y6 or HEX6 */
+/* It is compatible only with a QUAD+ or QUAX setup or a pure GIMBLE setup*/
 /* Uncomment the first line to activate it */
 //#define SERVO_TILT
 #define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
@@ -55,143 +54,27 @@ January  2011     V1.
 #define TILT_ROLL_MIDDLE  1500
 #define TILT_ROLL_PROP    10
 
-/* I2C gyroscope */
-#define ITG3200
-
-/* I2C accelerometer */
-//#define ADXL345
-//#define BMA020
-//#define BMA180
-/* I2C barometer */
-//#define BMP085
-
-/* ADC accelerometer */ // for 5DOF from sparkfun, uses analog PIN A1/A2/A3
-//#define ADCACC
-
-/* The following lines apply only for specific receiver with only one PPM sum signal, on digital PIN 2 */
-/* IF YOUR RECEIVER IS NOT CONCERNED, DON'T UNCOMMENT ANYTHING. Note this is mandatory for a Y6 setup */
-/* Select the right line depending on your radio brand. Feel free to modify the order in your PPM order is different */
-//#define SERIAL_SUM_PPM         PITCH,YAW,THROTTLE,ROLL,AUX1 //For Graupner/Spektrum
-//#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1 //For Robe/Hitec/Futaba
-
-/* interleaving delay in micro seconds between 2 readings WMP/NK in a WMP+NK config */
-/* if the ACC calibration time is very long (20 or 30s), try to increase this delay up to 4000 */
-/* it is relevent only for a conf with NK */
-#define INTERLEAVING_DELAY 3000
-
-//for V BAT monitoring
-//after the resistor divisor we should get [0V;5V]->[0;[1023] on analog V_BATPIN
-//the code is implemented but not yet adjusted to empirical V levels
-#define VBATLEVEL1_3S 1000
-#define VBATLEVEL2_3S 800
-#define VBATLEVEL3_3S 700
-
-/* when there is an error on I2C bus, we neutralize the values during a short time. expressed in microseconds */
-/* it is relevent only for a conf with at least a WMP */
-#define NEUTRALIZE_DELAY 100000
-
-/* this is the value for the ESCs when thay are not armed */
-/* in some case, this value must be lowered down to 900 for some specific ESCs */
-#define MINCOMMAND 1000
-
-/* this is the maximum value for the ESCs at full power */
-/* this value can be increased up to 2000 */
-#define MAXTHROTTLE 1850
-
-/* This is the speed of the serial interface. 115200 kbit/s is the best option for a USB connection.*/
-#define SERIAL_COM_SPEED 115200
-
 /* In order to save space, it's possibile to desactivate the LCD configuration functions */
 /* comment this line only if you don't plan to used a LCD */
-#define LCD_CONF
+//#define LCD_CONF
 
 /* motors will not spin when the throttle command is in low position */
 /* this is an alternative method to stop immediately the motors */
 //#define MOTOR_STOP
 
-/* force the autolevel activation */
-/* usefull for a 4 channels only setup */
-//#define FORCE_LEVEL
-
-/* some radios have not a neutral point centered on 1500. can be changed here */
-#define MIDRC 1500
-
-//****** end of advanced users settings *************
+/* I2C barometer */
+//#define BMP085
+/* I2C accelerometer */ //experimental, for graph visualization only
+//#define ADXL345
+/* I2C accelerometer */
+//#define BMA020
+#define BMA180
 
 /**************************************/
 /****END OF CONFIGURABLE PARAMETERS****/
 /**************************************/
 
-#include <EEPROM.h>
-
-#define LEDPIN 13     // will be changed for MEGA in a future version
-#define POWERPIN 12   // will be changed for MEGA in a future version
-#define V_BATPIN 3    // Analog PIN 3
-#define STABLEPIN     // will be define for MEGA in a future version
-
-#if defined(PROMINI)
-  #define LEDPIN_PINMODE             pinMode (13, OUTPUT);
-  #define LEDPIN_SWITCH              PINB |= 1<<5;     //switch LEDPIN state (digital PIN 13)
-  #define LEDPIN_OFF                 PORTB &= ~(1<<5);
-  #define LEDPIN_ON                  PORTB |= (1<<5);
-  #define BUZZERPIN_PINMODE          pinMode (8, OUTPUT);
-  #define BUZZERPIN_ON               PORTB |= 1;
-  #define BUZZERPIN_OFF              PORTB &= ~1;
-  #define POWERPIN_PINMODE           pinMode (12, OUTPUT);
-  #define POWERPIN_ON                PORTB |= 1<<4;
-  #define POWERPIN_OFF               PORTB &= ~(1<<4);
-  #define I2C_PULLUPS_ENABLE         PORTC |= 1<<4; PORTC |= 1<<5;   // PIN A4&A5 (SDA&SCL)
-  #define I2C_PULLUPS_DISABLE        PORTC &= ~(1<<4); PORTC &= ~(1<<5);
-  #define PINMODE_LCD                pinMode(0, OUTPUT);
-  #define LCDPIN_OFF                 PORTD &= ~1;
-  #define LCDPIN_ON                  PORTD |= 1;
-  #define DIGITAL_SERVO_TRI_PINMODE  pinMode(3,OUTPUT);
-  #define DIGITAL_SERVO_TRI_HIGH     PORTD |= 1<<3;
-  #define DIGITAL_SERVO_TRI_LOW      PORTD &= ~(1<<3);
-  #define DIGITAL_TILT_PITCH_PINMODE pinMode(A0,OUTPUT);
-  #define DIGITAL_TILT_PITCH_HIGH    PORTC |= 1<<0;
-  #define DIGITAL_TILT_PITCH_LOW     PORTC &= ~(1<<0);
-  #define DIGITAL_TILT_ROLL_PINMODE  pinMode(A1,OUTPUT);
-  #define DIGITAL_TILT_ROLL_HIGH     PORTC |= 1<<1;
-  #define DIGITAL_TILT_ROLL_LOW      PORTC &= ~(1<<1);
-  #define DIGITAL_BI_REAR_HIGH       PORTB |= 1<<3; //digital PIN 11
-  #define DIGITAL_BI_REAR_LOW        PORTB &= ~(1<<3);
-  #define PPM_PIN_INTERRUPT          attachInterrupt(0, rxInt, RISING); //PIN 0
-  #define MOTOR_ORDER                9,10,11,3,6,5  //for a quad+: rear,right,left,front
-#endif
-#if defined(MEGA)
-  #define LEDPIN_PINMODE             pinMode (13, OUTPUT);
-  #define LEDPIN_SWITCH              PINB |= (1<<7);
-  #define LEDPIN_OFF                 PORTB &= ~(1<<7);
-  #define LEDPIN_ON                  PORTB |= (1<<7);
-  #define BUZZERPIN_PINMODE          pinMode (31, OUTPUT);
-  #define BUZZERPIN_ON               PORTC |= 1<<6;
-  #define BUZZERPIN_OFF              PORTC &= ~1<<6;
-  #define POWERPIN_PINMODE           pinMode (12, OUTPUT);
-  #define POWERPIN_ON                PORTB |= 1<<6;
-  #define POWERPIN_OFF               PORTB &= ~(1<<6);
-  #define I2C_PULLUPS_ENABLE         PORTD |= 1<<0; PORTD |= 1<<1;       // PIN 20&21 (SDA&SCL)
-  #define I2C_PULLUPS_DISABLE        PORTD &= ~(1<<0); PORTD &= ~(1<<1);
-  #define PINMODE_LCD                pinMode(0, OUTPUT);
-  #define LCDPIN_OFF                 PORTE &= ~1;      //switch OFF digital PIN 0
-  #define LCDPIN_ON                  PORTE |= 1;       //switch OFF digital PIN 0
-  #define DIGITAL_SERVO_TRI_PINMODE  pinMode(2,OUTPUT); //PIN 2
-  #define DIGITAL_SERVO_TRI_HIGH     PORTE |= 1<<4;
-  #define DIGITAL_SERVO_TRI_LOW      PORTE &= ~(1<<4);
-  #define DIGITAL_TILT_PITCH_PINMODE pinMode(A0,OUTPUT);
-  #define DIGITAL_TILT_PITCH_HIGH    PORTF |= 1<<0;
-  #define DIGITAL_TILT_PITCH_LOW     PORTF &= ~(1<<0);
-  #define DIGITAL_TILT_ROLL_PINMODE  pinMode(A1,OUTPUT);
-  #define DIGITAL_TILT_ROLL_HIGH     PORTF |= 1<<1;
-  #define DIGITAL_TILT_ROLL_LOW      PORTF &= ~(1<<1);
-  #define DIGITAL_BI_REAR_HIGH       PORTB |= 1<<3;    //digital PIN 11 wrong
-  #define DIGITAL_BI_REAR_LOW        PORTB &= ~(1<<3); //wrong
-  #define PPM_PIN_INTERRUPT          attachInterrupt(4, rxInt, RISING);  //PIN 19
-  #define MOTOR_ORDER                3,5,6,2,7,8   //for a quad+: rear,right,left,front   //+ for y6: 7:under right  8:under left
-#endif
-
-
-#if defined(GIMBAL) || defined(FLYING_WING)
+#if defined(GIMBAL)
   #define NUMBER_MOTOR 0
 #elif defined(BI)
   #define NUMBER_MOTOR 2
@@ -203,6 +86,36 @@ January  2011     V1.
   #define NUMBER_MOTOR 6
 #endif
 
+#define INTERLEAVING_DELAY 3000 // interleaving delay in micro seconds between 2 readings WMP/NK in a WMP+NK config
+
+//for V BAT monitoring
+//after the resistor divisor we should get [0V;5V]->[0;[1023] on analog V_BATPIN
+//the code is implemented but not yet adjusted to empirical V levels
+#define VBATLEVEL1_3S 1000
+#define VBATLEVEL2_3S 800
+#define VBATLEVEL3_3S 700
+
+
+#include <EEPROM.h>
+
+//RX PIN assignment
+#define THROTTLEPIN 2
+#define ROLLPIN 4
+#define PITCHPIN 5
+#define YAWPIN 6
+#define AUX1PIN 7
+
+/*********** motor PIN ************/
+uint8_t PWM_PIN[6] = {9,10,11,3,6,5};
+
+#define LEDPIN 13
+#define POWERPIN 12
+#define BUZZERPIN 8              
+#define V_BATPIN 3    //Analog PIN 3
+
+#define SERVO_TILT_PITCH_PIN A0
+#define SERVO_TILT_ROLL_PIN  A1
+
 /*********** RC alias *****************/
 #define ROLL 0
 #define PITCH 1
@@ -210,6 +123,7 @@ January  2011     V1.
 #define THROTTLE 3
 #define AUX1 4
 
+#define NEUTRALIZE_DELAY 100000     //when there is an error on I2C bus, we neutralize the values during a short time. expressed in microseconds
 static uint32_t previousTime;
 static uint32_t neutralizeTime;
 static uint32_t rcTime;
@@ -224,13 +138,7 @@ static uint16_t calibratingA;
 static uint16_t calibratingG;
 static uint8_t armed = 0;
 static int16_t acc_1G = 200;       //this is the 1G measured acceleration (nunchuk)
-static int16_t acc_25deg = 85;     //this is the the ACC value measured on x or y axis for a 25deg inclination (nunchuk) = acc_1G * sin(25)
-static uint8_t accPresent = 0;     //I2C or ADC acc present
-static uint8_t gyroPresent = 0;    //I2C or ADC gyro present
-static uint8_t barometerPresent = 0;
-static int16_t accADC[3];
-static int16_t gyroADC[3];
-static int16_t altitudeSmooth = 0;
+static int16_t acc_25deg = 85;     //this is the the ACC value measured on x or y axis for a 25deg inclination (nunchuk)
 
 // *********************
 // I2C general functions
@@ -241,11 +149,8 @@ static int16_t altitudeSmooth = 0;
 #define TW_STATUS       (TWSR & TW_STATUS_MASK)
 
 void i2c_init(void) {
-  #if defined(INTERNAL_I2C_PULLUPS)
-    I2C_PULLUPS_ENABLE
-  #else
-    I2C_PULLUPS_DISABLE
-  #endif
+  PORTC |= 1<<4; // activate internal pull-ups PIN A4 for twi
+  PORTC |= 1<<5; // activate internal pull-ups PIN A5 for twi
   TWSR = 0;        // no prescaler => prescaler = 1
   TWBR = ((16000000L / I2C_SPEED) - 16) / 2; // change the I2C clock rate
   TWCR = 1<<TWEN;  // enable twi module, no interrupt
@@ -293,17 +198,14 @@ void checkStatusI2C() {
   if ( (TW_STATUS & 0xF8) == 0xF8) { //TW_NO_INFO : this I2C error status indicates a wrong I2C communication.
     // WMP does not respond anymore => we do a hard reset. I did not find another way to solve it. It takes only 13ms to reset and init to WMP or WMP+NK
     TWCR = 0;
-    POWERPIN_OFF //switch OFF WMP
+    PORTB &= ~(1<<4);//switch OFF WMP, digital PIN 12
     delay(1);  
-    POWERPIN_ON  //switch ON WMP
+    PORTB |= 1<<4; //switch ON WMP, digital PIN 12
     delay(10);
-    #if not defined(ITG3200)
-      i2c_WMP_init(0);
-    #endif
+    i2c_WMP_init(0);
     neutralizeTime = micros(); //we take a timestamp here to neutralize the WMP or WMP+NK values during a short delay (20ms) after the hard reset
   }
 }
-
 
 // **************************
 // I2C Barometer BOSCH BMP085
@@ -317,7 +219,6 @@ void checkStatusI2C() {
 //  the following code uses the maximum precision setting (oversampling setting 3)
 
 // sensor registers from the BOSCH BMP085 datasheet
-#if defined(BMP085)
 static int16_t ac1,ac2,ac3,b1,b2,mb,mc,md;
 static uint16_t  ac4,ac5,ac6;
 
@@ -325,9 +226,9 @@ static uint16_t ut; //uncompensated T
 static uint32_t up; //uncompensated P
 int32_t temperature = 0;
 int32_t pressure = 0;
-int16_t altitude = 0;
+int16_t altitude=0;
 static int16_t altitudeZero;
-static int16_t altitudeHold;
+static uint8_t BMP085Present = 0;
 
 void  i2c_BMP085_init() {
   delay(10);
@@ -342,9 +243,6 @@ void  i2c_BMP085_init() {
   mb = i2c_BMP085_readIntRegister(0xBA);
   mc = i2c_BMP085_readIntRegister(0xBC);
   md = i2c_BMP085_readIntRegister(0xBE);
-  
-  barometerPresent = 1;
-  i2c_BMP085_calibrate();
 }
 
 // read a 16 bit register
@@ -411,7 +309,6 @@ void i2c_BMP085_CompensatedSensor() {
   x2 = ((int32_t) mc << 11) / (x1 + md);
   b5 = x1 + x2;
   temperature = (b5 + 8) >> 4;
-  //calculate true pressure
   b6 = b5 - 4000;
   x1 = (b2 * (b6 * b6 >> 12)) >> 11; 
   x2 = ac2 * b6 >> 11;
@@ -456,9 +353,7 @@ void i2c_BMP085_update() {
       state2=0;
       state1--;
       i2c_BMP085_CompensatedSensor();
-      altitude = (1.0 - pow(float(pressure)/101325.0, 0.190295)) * 443300 - altitudeZero; // altitude in decimeter from starting point
-      if ( abs(altitude-altitudeSmooth) < 100 ) //avoid altitude spike
-        altitudeSmooth = (altitudeSmooth*7+altitude+4)/8;
+      altitude = (1.0 - pow(float(pressure)/101325.0, 0.190295)) * 443300 - altitudeZero; // altitude in decimeter from starting point      
     }
   }
 }
@@ -471,8 +366,6 @@ void i2c_BMP085_calibrate() {
   }
   altitudeZero = altitude;
 }
-#endif
-
 
 // **************************
 // I2C Accelerometer ADXL345 
@@ -483,49 +376,41 @@ void i2c_BMP085_calibrate() {
 //  2) SD0 PIN must be linked to VCC to select the right I2C adress
 //  3) bit  b00000100 must be set on register 0x2D to read data (only once at the initialization)
 //  4) bits b00001011 must be set on register 0x31 to select the data format (only once at the initialization)
-#if defined(ADXL345)
+
 static uint8_t rawADC_ADXL345[6];
+uint8_t ADXL345Present = 0;
 
 void i2c_ADXL345_init () {
   delay(10);
-  i2c_rep_start(0x3A+0);      // I2C write direction
-  i2c_write(0x2D);            // register 2D Power CTRL
-  i2c_write(1<<3);            // Set measure bit 3 on
   i2c_rep_start(0x3A+0);      // I2C write direction 
   i2c_write(0x31);            // DATA_FORMAT register
   i2c_write(0x0B);            // Set bits 3(full range) and 1 0 on (+/- 16g-range)
   i2c_rep_start(0x3A+0);      // I2C write direction 
   i2c_write(0x2C);            // BW_RATE
   i2c_write(8+2+1);           // 200Hz sampling (see table 5 of the spec)
-
-  acc_1G = 250;
-  acc_25deg = 106; // = acc_1G * sin(25 deg)
-  accPresent = 1;
+  i2c_rep_start(0x3A+0);      // I2C write direction
+  i2c_write(0x2D);            // register 2D
+  i2c_write(1<<3);            // Set measure bit 3 on
 }
 
-void i2c_ACC_getADC () {
+void i2c_ADXL345_getRawADC () {
   TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz, ADXL435 is ok with this speed
   i2c_rep_start(0x3A);     // I2C write direction
   i2c_write(0x32);         // Start multiple read at reg 0x32 ADX
-  i2c_rep_start(0x3A +1);  // I2C read direction => 1
+  i2c_rep_start(0x3A +1);  //I2C read direction => 1
   for(uint8_t i = 0; i < 5; i++) {
     rawADC_ADXL345[i]=i2c_readAck();}
   rawADC_ADXL345[5]= i2c_readNak();
-
-  accADC[PITCH] =   ((rawADC_ADXL345[1]<<8) | rawADC_ADXL345[0]);
-  accADC[ROLL]  = - ((rawADC_ADXL345[3]<<8) | rawADC_ADXL345[2]);
-  accADC[YAW]   = - ((rawADC_ADXL345[5]<<8) | rawADC_ADXL345[4]);
 }
-#endif
-
 
 // **************************
-// contribution from opie11 (rc-grooups)
-// I2C Accelerometer BMA180
+// I2C Accelerometer BMA180	 
 // **************************
 // I2C adress: 0x80 (8bit)    0x40 (7bit)
-#if defined(BMA180)
+// principle:
+
 static uint8_t rawADC_BMA180[6];
+uint8_t BMA180Present = 0;
 
 void i2c_BMA180_init () {
   delay(10);
@@ -533,42 +418,32 @@ void i2c_BMA180_init () {
   i2c_write(0x0D);            // ctrl_reg0
   i2c_write(1<<4);            // Set bit 4 to 1 to enable writing
   i2c_rep_start(0x80+0);       
-  i2c_write(0x30);            // tco_z reg: bits 0-1 to set filtering mode
-  i2c_write(0x01);            // Ultra low noise mode.  Restricted to 300Hz per data sheet
+  i2c_write(0x35);            // 
+  i2c_write(3<<1);            // range set to 3.  
   i2c_rep_start(0x80+0);
   i2c_write(0x20);            // bw_tcs reg: bits 4-7 to set bw
-  i2c_write(7<<4);            // bw to 1200Hz: (300Hz due to Ultra low noise) see data sheet pg. 28
+  i2c_write(0<<4);            // bw to 10Hz (low pass filter)
   
-  acc_1G = 273;
-  acc_25deg = 113; // = acc_1G * sin(25 deg)
-  accPresent = 1;
 }
-
-void i2c_ACC_getADC () {
-  //TWBR = ((16000000L / 400000L) - 16) / 2;
+void i2c_BMA180_getRawADC () {
+  TWBR = ((16000000L / 400000L) - 16) / 2;  
   i2c_rep_start(0x80);     // I2C write direction
   i2c_write(0x02);         // Start multiple read at reg 0x02 acc_x_lsb
-  i2c_rep_start(0x80 +1);  // I2C read direction => 1
+  i2c_rep_start(0x80 +1);  //I2C read direction => 1
   for(uint8_t i = 0; i < 5; i++) {
     rawADC_BMA180[i]=i2c_readAck();}
   rawADC_BMA180[5]= i2c_readNak();
-
-  accADC[ROLL]  =  (((rawADC_BMA180[1]<<8) | (rawADC_BMA180[0]))>>2)/10; 
-  accADC[PITCH] =  (((rawADC_BMA180[3]<<8) | (rawADC_BMA180[2]))>>2)/10;
-  accADC[YAW]   = -(((rawADC_BMA180[5]<<8) | (rawADC_BMA180[4]))>>2)/10;
 }
-#endif
 
 // **************
-// contribution from Point65 and mgros (rc-grooups)
 // BMA020 I2C
 // **************
-// I2C adress: 0x70 (8bit)
-#if defined(BMA020)
+
 static uint8_t rawADC_BMA020[6];
+uint8_t BMA020Present = 0;
+static byte control;
 
 void i2c_BMA020_init(){
-  byte control;
   
   i2c_rep_start(0x70);     // I2C write direction
   i2c_write(0x15);         // 
@@ -590,12 +465,9 @@ void i2c_BMA020_init(){
   i2c_write(0x14);         // Start multiple read at reg 0x32 ADX
   i2c_write(control);
 
-  acc_1G = 240;
-  acc_25deg = 101; // = acc_1G * sin(25 deg)
-  accPresent = 1;
 }
 
-void i2c_ACC_getADC(){
+void i2c_BMA020_getRawADC(){
    
   i2c_rep_start(0x70);     // I2C write direction
   i2c_write(0x02);         // Start multiple read at reg 0x32 ADX
@@ -605,52 +477,7 @@ void i2c_ACC_getADC(){
     rawADC_BMA020[i]=i2c_readAck();}
   rawADC_BMA020[5]= i2c_readNak();
 
-  accADC[ROLL]  =  (((rawADC_BMA020[1])<<8) | ((rawADC_BMA020[0]>>1)<<1))/64;
-  accADC[PITCH] =  (((rawADC_BMA020[3])<<8) | ((rawADC_BMA020[2]>>1)<<1))/64;
-  accADC[YAW]   = -(((rawADC_BMA020[5])<<8) | ((rawADC_BMA020[4]>>1)<<1))/64;
 }
-#endif
-
-
-// **************************
-// I2C Gyroscope ITG3200 
-// **************************
-// I2C adress: 0XD2 (8bit)   0x69 (7bit)
-// principle:
-// 1) VIO is connected to VDD
-// 2) I2C adress is set to 0X69 (AD0 PIN connected to VDD)
-// 3) sample rate = 1000Hz ( 1kHz/(div+1) )
-#if defined(ITG3200)
-static uint8_t rawADC_ITG3200[6];
-
-void i2c_ITG3200_init() {
-  delay(100);
-  i2c_rep_start(0XD2+0);      // I2C write direction 
-  i2c_write(0x3E);            // Power Management register
-  i2c_write(0x80);            //   reset device
-  i2c_write(0x16);            // register DLPF_CFG - low pass filter configuration & sample rate
-  i2c_write(0x1D);            //   10Hz Low Pass Filter Bandwidth - Internal Sample Rate 1kHz
-  i2c_write(0x3E);            // Power Management register
-  i2c_write(0x01);            //   PLL with X Gyro reference
-  
-  gyroPresent = 1;  
-}
-
-void i2c_Gyro_getADC () {
-  TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
-  
-  i2c_rep_start(0XD2);     // I2C write direction
-  i2c_write(0X1D);         // Start multiple read
-  i2c_rep_start(0XD2 +1);  // I2C read direction => 1
-  for(uint8_t i = 0; i < 5; i++) {
-    rawADC_ITG3200[i]=i2c_readAck();}
-  rawADC_ITG3200[5]= i2c_readNak();
-
-  gyroADC[PITCH] = - ((rawADC_ITG3200[0]<<8) | rawADC_ITG3200[1]);
-  gyroADC[ROLL]  = + ((rawADC_ITG3200[2]<<8) | rawADC_ITG3200[3]);
-  gyroADC[YAW]   = - ((rawADC_ITG3200[4]<<8) | rawADC_ITG3200[5]);
-}
-#endif
 
 // **************************
 // I2C Wii Motion Plus 
@@ -682,63 +509,59 @@ void i2c_WMP_getRawADC() {
   rawADC_WMP[5]= i2c_readNak();
 }
 
-// **************************
-// ADC ACC
-// **************************
-#if defined(ADCACC)
-void adc_ACC_init(){
-  pinMode(A1,INPUT);
-  pinMode(A2,INPUT);
-  pinMode(A3,INPUT);
-}
-
-void adc_ACC_getRawADC() {
-  accADC[ROLL]  =  -analogRead(A1);
-  accADC[PITCH] =  -analogRead(A2);
-  accADC[YAW]   =  -analogRead(A3);
-
-  acc_1G = 75;
-  acc_25deg = 32; // = acc_1G * sin(25 deg)
-  accPresent = 1;  
-}
-#endif
-
 // **************
 // gyro+acc IMU
 // **************
 static int16_t gyroData[3] = {0,0,0};
 static int16_t gyroZero[3] = {0,0,0};
 static int16_t accZero[3]  = {0,0,0};
+static int16_t gyroADC[3];
+static int16_t accADC[3];
 static int16_t angle[2]; //absolute angle inclination in Deg
 static int16_t accSmooth[3]; //projection of smoothed and normalized gravitation force vector on x/y/z axis, as measured by accelerometer       
 
 uint8_t rawIMU(uint8_t withACC) { //if the WMP or NK are oriented differently, it can be changed here
-  if (withACC) {
-    #if defined(ADXL345) || defined(BMA020) || defined(BMA180)
-      i2c_ACC_getADC();
-    #endif
-    #if defined(ADCACC)
-      adc_ACC_getRawADC();
-    #endif  
-  }
-  #if defined(ITG3200)
-    i2c_Gyro_getADC();
+  #if defined(ADXL345)
+    if (withACC) {
+      i2c_ADXL345_getRawADC();
+      accADC[PITCH] = ((rawADC_ADXL345[1]<<8) | rawADC_ADXL345[0]);
+      accADC[ROLL]  = - ((rawADC_ADXL345[3]<<8) | rawADC_ADXL345[2]);
+      accADC[YAW]   = - ((rawADC_ADXL345[5]<<8) | rawADC_ADXL345[4]);
+    }
+  #endif  
+  
+ 
+ #if defined(BMA180)
+    if (withACC) {
+      i2c_BMA180_getRawADC(); 
+        accADC[ROLL]  =  (((rawADC_BMA180[1]<<8) | (rawADC_BMA180[0]))>>2)/10; 
+        accADC[PITCH] =  (((rawADC_BMA180[3]<<8) | (rawADC_BMA180[2]))>>2)/10;
+        accADC[YAW]   = -(((rawADC_BMA180[5]<<8) | (rawADC_BMA180[4]))>>2)/10;
+    }
+  #endif 
+
+#if defined(BMA020)
+    if (withACC) {
+      i2c_BMA020_getRawADC(); 
+        accADC[ROLL]  =  (((rawADC_BMA020[1])<<8) | ((rawADC_BMA020[0]>>1)<<1))/64;
+        accADC[PITCH] =  (((rawADC_BMA020[3])<<8) | ((rawADC_BMA020[2]>>1)<<1))/64;
+        accADC[YAW]   = -(((rawADC_BMA020[5])<<8) | ((rawADC_BMA020[4]>>1)<<1))/64;
+    }
+  #endif 
+  
+  i2c_WMP_getRawADC();
+  if ( (rawADC_WMP[5]&0x02) == 0x02 && (rawADC_WMP[5]&0x01) == 0 ) {// motion plus data
+    gyroADC[PITCH]  = - ( ((rawADC_WMP[4]>>2)<<8) + rawADC_WMP[1] );
+    gyroADC[ROLL]   = - ( ((rawADC_WMP[5]>>2)<<8) + rawADC_WMP[2] );
+    gyroADC[YAW]    = - ( ((rawADC_WMP[3]>>2)<<8) + rawADC_WMP[0] );
     return 1;
-  #else
-    i2c_WMP_getRawADC();
-    if ( (rawADC_WMP[5]&0x02) == 0x02 && (rawADC_WMP[5]&0x01) == 0 ) {// motion plus data
-      gyroADC[PITCH]  = - ( ((rawADC_WMP[4]>>2)<<8) + rawADC_WMP[1] );
-      gyroADC[ROLL]   = - ( ((rawADC_WMP[5]>>2)<<8) + rawADC_WMP[2] );
-      gyroADC[YAW]    = - ( ((rawADC_WMP[3]>>2)<<8) + rawADC_WMP[0] );
-      return 1;
-    } else if ( (rawADC_WMP[5]&0x02) == 0 && (rawADC_WMP[5]&0x01) == 0) { //nunchuk data
-      accADC[PITCH] = - ( (rawADC_WMP[2]<<2)        + ((rawADC_WMP[5]>>3)&0x2) );
-      accADC[ROLL]  =   ( (rawADC_WMP[3]<<2)        + ((rawADC_WMP[5]>>4)&0x2) );
-      accADC[YAW]   = - ( ((rawADC_WMP[4]&0xFE)<<2) + ((rawADC_WMP[5]>>5)&0x6) );
-      return 0;
-    } else
-      return 2;
-  #endif
+  } else if ( (rawADC_WMP[5]&0x02) == 0 && (rawADC_WMP[5]&0x01) == 0) { //nunchuk data
+    accADC[PITCH] = - ( (rawADC_WMP[2]<<2)        + ((rawADC_WMP[5]>>3)&0x2) );
+    accADC[ROLL]  =   ( (rawADC_WMP[3]<<2)        + ((rawADC_WMP[5]>>4)&0x2) );
+    accADC[YAW]   = - ( ((rawADC_WMP[4]&0xFE)<<2) + ((rawADC_WMP[5]>>5)&0x6) );
+    return 0;
+  } else
+    return 2;
 }
 
 void initIMU(void) {
@@ -760,66 +583,56 @@ uint8_t updateIMU(uint8_t withACC) {
   uint8_t r;
   r=rawIMU(withACC);
   
+  if (r == 1) { //gyro
+    if (calibratingG>0) {
+      for (axis = 0; axis < 3; axis++) {
+        if (calibratingG>1) {
+          if (calibratingG == 400) g[axis]=0;
+          g[axis] +=gyroADC[axis];
+          gyroADC[axis]=0;
+        } else {
+          gyroZero[axis]=(g[axis]+200)/399;
+          blinkLED(10,15,1+3*nunchukPresent);
+        }
+      }
+      calibratingG--;
+    } else {
+      gyroADC[PITCH] = gyroADC[PITCH] - gyroZero[PITCH];
+      gyroADC[ROLL]  = gyroADC[ROLL]  - gyroZero[ROLL];
+      gyroADC[YAW]   = gyroADC[YAW]   - gyroZero[YAW]; 
+    }
+    gyroADC[PITCH] = (rawADC_WMP[4]&0x02)>>1  ? gyroADC[PITCH]/5 : gyroADC[PITCH] ;  //we detect here the slow of fast mode WMP gyros values (see wiibrew for more details)
+    gyroADC[ROLL]  = (rawADC_WMP[3]&0x01)     ? gyroADC[ROLL]/5  : gyroADC[ROLL] ;   //the ratio 1/5 is not exactly the IDG600 or ISZ650 specification 
+    gyroADC[YAW]   = (rawADC_WMP[3]&0x02)>>1  ? gyroADC[YAW]/5   : gyroADC[YAW] ;
+  }
+  if (r == 0 || ( ((BMA020Present == 1)||(BMA180Present == 1)||(ADXL345Present ==1)) && (withACC == 1) ) ) { //nunchuk
+    if (calibratingA>0) {
+      if (calibratingA>1) {
+        for (uint8_t axis = 0; axis < 3; axis++) {
+          if (calibratingA == 400) a[axis]=0;
+          a[axis] +=accADC[axis];
+          accADC[axis]=0;
+        }
+      } else {
+        accZero[ROLL]  = (a[ROLL]+200)/399;
+        accZero[PITCH] = (a[PITCH]+200)/399;
+        accZero[YAW]   = (a[YAW]+200)/399+acc_1G; // for nunchuk 200=1G
+        writeParams(); // write accZero in EEPROM
+        blinkLED(10,15,1);
+      }
+      calibratingA--;
+    } else {
+      accADC[PITCH] =    accADC[PITCH] - accZero[PITCH];
+      accADC[ROLL]  =    accADC[ROLL]  - accZero[ROLL] ;
+      accADC[YAW]   = - (accADC[YAW]   - accZero[YAW]) ;
+    }
+
+  }
   if (currentTime < (neutralizeTime + NEUTRALIZE_DELAY)) {//we neutralize data in case of blocking+hard reset state
     for (axis = 0; axis < 3; axis++) {gyroADC[axis]=0;accADC[axis]=0;}
     accADC[YAW] = acc_1G;
-  } else {
-    if (r == 1) { //gyro
-      if (calibratingG>0) {
-        for (axis = 0; axis < 3; axis++) {
-          if (calibratingG>1) {
-            if (calibratingG == 400) g[axis]=0;
-            g[axis] +=gyroADC[axis];
-            gyroADC[axis]=0;
-          } else {
-            gyroZero[axis]=(g[axis]+200)/399;
-            blinkLED(10,15,1+3*nunchukPresent);
-          }
-        }
-        calibratingG--;
-      }
-      #if defined(ITG3200)
-        gyroADC[PITCH] = ((int32_t)gyroADC[PITCH]  - gyroZero[PITCH])/5/4; // int32_t:  beware of the int16_t overflow !
-        gyroADC[ROLL]  = ((int32_t)gyroADC[ROLL]  - gyroZero[ROLL])/5/4;   // 2000 deg/s => /5 to nearly match the WMP slow mode => /4 to keep the upper 14bits
-        gyroADC[YAW]   = ((int32_t)gyroADC[YAW]  - gyroZero[YAW])/5/4;     // => the ITG3200 is scaled the same way as the WMP (my supposition)
-      #else
-        gyroADC[PITCH] = gyroADC[PITCH] - gyroZero[PITCH];
-        gyroADC[ROLL]  = gyroADC[ROLL]  - gyroZero[ROLL];
-        gyroADC[YAW]   = gyroADC[YAW]   - gyroZero[YAW]; 
-        gyroADC[PITCH] = (rawADC_WMP[4]&0x02)>>1  ? gyroADC[PITCH]/5 : gyroADC[PITCH] ;  //we detect here the slow of fast mode WMP gyros values (see wiibrew for more details)
-        gyroADC[ROLL]  = (rawADC_WMP[3]&0x01)     ? gyroADC[ROLL]/5  : gyroADC[ROLL] ;   //the ratio 1/5 is not exactly the IDG600 or ISZ650 specification 
-        gyroADC[YAW]   = (rawADC_WMP[3]&0x02)>>1  ? gyroADC[YAW]/5   : gyroADC[YAW] ;
-      #endif
-      //anti gyro glitch, limit the variation between two consecutive readings
-      for (axis = 0; axis < 3; axis++) {
-        gyroADC[axis] = constrain(gyroADC[axis],previousGyroADC[axis]-100,previousGyroADC[axis]+100);
-        previousGyroADC[axis] = gyroADC[axis];
-      }
-    }
-    if (r == 0 || ( (accPresent == 1) && (withACC == 1) ) ) { //nunchuk or i2c ACC
-      if (calibratingA>0) {
-        if (calibratingA>1) {
-          for (uint8_t axis = 0; axis < 3; axis++) {
-            if (calibratingA == 400) a[axis]=0;
-            a[axis] +=accADC[axis];
-            accADC[axis]=0;
-          }
-        } else {
-          accZero[ROLL]  = (a[ROLL]+200)/399;
-          accZero[PITCH] = (a[PITCH]+200)/399;
-          accZero[YAW]   = (a[YAW]+200)/399+acc_1G; // for nunchuk 200=1G
-          writeParams(); // write accZero in EEPROM
-          blinkLED(10,15,1);
-        }
-        calibratingA--;
-      } else {
-        accADC[PITCH] =    accADC[PITCH] - accZero[PITCH];
-        accADC[ROLL]  =    accADC[ROLL]  - accZero[ROLL] ;
-        accADC[YAW]   = - (accADC[YAW]   - accZero[YAW]) ;
-      }
-    }
   }  
-  return r;
+  if (r==1) return 1; else return 0;  
 }
 
 // ************************************
@@ -850,8 +663,8 @@ void getEstimatedInclination(){
 
   gyroFactor = deltaTime/200e6; //empirical, depends on WMP on IDG datasheet, tied of deg/ms sensibility
 
-  for (i=0;i<3;i++) accSmooth[i] =(accSmooth[i]*7+accADC[i]+4)/8;
-
+  for (i=0;i<3;i++) accSmooth[i] =(accSmooth[i]*5+accADC[i])/6;
+    
   if(accSmooth[YAW] > 0 ){ //we want to be sure we are not flying inverted  
     a = gyroADC[ROLL]  * gyroFactor;
     b = gyroADC[PITCH] * gyroFactor;
@@ -868,8 +681,9 @@ void getEstimatedInclination(){
     } else {
       //normalize vector (convert to a vector with same direction and with length 1)
       R = sqrt(square(accSmooth[ROLL]) + square(accSmooth[PITCH]) + square(accSmooth[YAW]));
-  
-      if (R > acc_1G*7/5 || R < acc_1G*3/5) { //if accel magnitude >1.4G or <0.6G => we neutralize the effect of accelerometers in the angle estimation
+ 
+      //if (R > 280.0 || R < 120) { //if accel magnitude >1.4G or <0.6G => we neutralize the effect of accelerometers in the angle estimation
+        if (R > acc_1G*7/5 || R < acc_1G*3/5) {
         Axz +=  a;     //and we use only gyro integration
         Ayz +=  b;
       } else if (small_angle == 0) {
@@ -880,7 +694,7 @@ void getEstimatedInclination(){
       //reverse calculation of RwGyro from Awz angles, for formulas deductions see  http://starlino.com/imu_guide.html
       RxGyro = sin(Axz) / sqrt( 1.0 + square(cos(Axz)) * square(tan(Ayz)) );
       RyGyro = sin(Ayz) / sqrt( 1.0 + square(cos(Ayz)) * square(tan(Axz)) );        
-      RzGyro = sqrt(abs(1 - square(RxGyro) - square(RyGyro)));
+      RzGyro = sqrt(1 - square(RxGyro) - square(RyGyro));
     
       //combine Accelerometer and gyro readings
       RxEst = (accSmooth[ROLL]/R + wGyro* RxGyro)  * invW;
@@ -903,18 +717,17 @@ void computeIMU () {
   static int16_t similarNumberAccData[3];
   static int16_t gyroDeviation[3];
   static uint32_t timeInterleave;
-  static int16_t gyroYawSmooth = 0;
 
   //we separate the 2 situations because reading gyro values with a gyro only setup can be acchieved at a higher rate
   //gyro+nunchuk: we must wait for a quite high delay betwwen 2 reads to get both WM+ and Nunchuk data. It works with 3ms
   //gyro only: the delay to read 2 consecutive values can be reduced to only 0.65ms
   if (nunchukPresent) {
     annexCode();
-    while((micros()-timeInterleave)<INTERLEAVING_DELAY) ; //interleaving delay between 2 consecutive reads
+    while((micros()-timeInterleave)<INTERLEAVING_DELAY) ; //it replaces delayMicroseconds(3000); //interleaving delay between 2 consecutive reads
     timeInterleave=micros();
     updateIMU(0);
-    getEstimatedInclination(); //getEstimatedInclination computation must last less than one interleaving delay
-    while((micros()-timeInterleave)<INTERLEAVING_DELAY) ; //interleaving delay between 2 consecutive reads
+    if (calibratingA == 0 && currentTime > (neutralizeTime + NEUTRALIZE_DELAY)) getEstimatedInclination(); //getEstimatedInclination computation must last less than 3ms
+    while((micros()-timeInterleave)<INTERLEAVING_DELAY) ; //it replaces delayMicroseconds(3000); //interleaving delay between 2 consecutive reads
     timeInterleave=micros();
     while(updateIMU(0) != 1) ; // For this interleaving reading, we must have a gyro update at this point (less delay)
 
@@ -924,41 +737,40 @@ void computeIMU () {
       gyroADCprevious[axis] = gyroADC[axis];
     }
   } else {
-    #if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(ADCACC)
-      getEstimatedInclination();
-      updateIMU(1); //with I2C or ADC ACC
+    #if defined(ADXL345) || defined(BMA020) || defined(BMA180)
+      if (calibratingA == 0 && currentTime > (neutralizeTime + NEUTRALIZE_DELAY)) getEstimatedInclination(); //getEstimatedInclination computation must last less than 3ms
+      updateIMU(1); //with ADXL ACC or BMA020
     #else
-      updateIMU(0); //without ACC
+      updateIMU(0); //without ADXL ACC neither BMA020
     #endif
     for (axis = 0; axis < 3; axis++)
       gyroADCp[axis] =  gyroADC[axis];
     timeInterleave=micros();
     annexCode();
     while((micros()-timeInterleave)<650) ; //empirical, interleaving delay between 2 consecutive reads
-    updateIMU(0); //without ACC
+    updateIMU(0); //without ADXL ACC
     for (axis = 0; axis < 3; axis++) {
       gyroADCinter[axis] =  gyroADC[axis]+gyroADCp[axis];
       // empirical, we take a weighted value of the current and the previous values
       gyroData[axis] = (gyroADCinter[axis]+gyroADCprevious[axis]+12)/3/8; // /3 is to average 3 values ; /8 is to reduce the sensibility of gyro
       gyroADCprevious[axis] = gyroADCinter[axis]/2;
-      #if not defined (ADXL345) && not defined (BMA020) && not defined (BMA180) && not defined (ADCACC)
+      #if not defined (ADXL345) && not defined (BMA020) && not defined (BMA180)
         accADC[axis]=0;
       #endif
     }
   }
-  gyroData[YAW] = (gyroYawSmooth*2+gyroData[YAW]+1)/3;
-  gyroYawSmooth = gyroData[YAW];
 }
 
 // *************************
 // motor and servo functions
 // *************************
-uint8_t PWM_PIN[6] = {MOTOR_ORDER};
-  
+#define MINCOMMAND 1000
+#define MAXCOMMAND 1850
+
 static int16_t axisPID[3];
 static int16_t motor[6];
-static int16_t servo[4] = {1500,1500,1500,1500};
-volatile int8_t atomicServo[4] = {250,250,250,250};
+static int16_t servo[2] = {1500,1500};
+volatile int8_t atomicServo[2] = {125,125};
 
 //for HEX Y6 and HEX6 flat
 volatile uint8_t atomicPWM_PIN5_lowState;
@@ -966,17 +778,14 @@ volatile uint8_t atomicPWM_PIN5_highState;
 volatile uint8_t atomicPWM_PIN6_lowState;
 volatile uint8_t atomicPWM_PIN6_highState;
 
+
 void writeMotors() { // [1000;2000] => [125;250]
   for(uint8_t i=0;i<min(NUMBER_MOTOR,4);i++)
     analogWrite(PWM_PIN[i], motor[i]>>3);
-  #if (NUMBER_MOTOR == 6) && defined(MEGA)
-    analogWrite(PWM_PIN[4], motor[4]>>3);
-    analogWrite(PWM_PIN[5], motor[5]>>3);
-  #endif
-  #if (NUMBER_MOTOR == 6) && defined(PROMINI)
-    atomicPWM_PIN5_highState = motor[5]/8;
+  #if NUMBER_MOTOR == 6
+    atomicPWM_PIN5_highState = (motor[4]-1000)/4+4;
     atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
-    atomicPWM_PIN6_highState = motor[4]/8;
+    atomicPWM_PIN6_highState = (motor[5]-1000)/4+4;
     atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
   #endif
 }
@@ -990,23 +799,15 @@ void writeAllMotors(int16_t mc) {   // Sends commands to all motors
 void initializeMotors() {
   for(uint8_t i=0;i<NUMBER_MOTOR;i++)
     pinMode(PWM_PIN[i],OUTPUT);
+  writeAllMotors(2000); //max motor command is maintained for 100ms at the initialization
+  delay(100); //it's a way to calibrate the ESCs
   writeAllMotors(1000);
   delay(300);
 }
 
-#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING)
+#ifdef TRI
 void initializeServo() {
-  #if defined(TRI)
-    DIGITAL_SERVO_TRI_PINMODE
-  #endif
-  #if defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING)
-    DIGITAL_TILT_ROLL_PINMODE
-    DIGITAL_TILT_PITCH_PINMODE
-  #endif
-  #if defined(BI)
-    pinMode(PWM_PIN[2],OUTPUT); //RIGHT //thses 2 PIN are used to control 2 servos
-    pinMode(PWM_PIN[3],OUTPUT); //LEFT
-  #endif
+  pinMode(3,OUTPUT);
   TCCR0A = 0; // normal counting mode
   TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
 }
@@ -1016,76 +817,78 @@ void initializeServo() {
 // Duemilanove : 16MHz / 64 => 4 us
 // 256 steps = 1 counter cycle = 1024 us
 // algorithm strategy:
-// pulse high servo 0 -> do nothing for 1000 us -> do nothing for [0 to 1000] us -> pulse down servo 0
-// pulse high servo 1 -> do nothing for 1000 us -> do nothing for [0 to 1000] us -> pulse down servo 1
-// pulse high servo 2 -> do nothing for 1000 us -> do nothing for [0 to 1000] us -> pulse down servo 2
-// pulse high servo 3 -> do nothing for 1000 us -> do nothing for [0 to 1000] us -> pulse down servo 3
-// do nothing for 14 x 1000 us
+// pulse high
+// do nothing for 1000 us
+// do nothing for [0 to 1000] us
+// pulse down
+// do nothing for 18 counter cycles
 ISR(TIMER0_COMPA_vect) {
   static uint8_t state = 0;
   static uint8_t count;
+
   if (state == 0) {
     //http://billgrundmann.wordpress.com/2009/03/03/to-use-or-not-use-writedigital/
-    #if defined(TRI) || defined (BI)
-      DIGITAL_SERVO_TRI_HIGH
-    #endif
+    PORTD |= 1<<3; // this is 25 time faster than DigitalWrite ! coded for Digital Pin 3 only
     OCR0A+= 250; // 1000 us
     state++ ;
   } else if (state == 1) {
-    OCR0A+= atomicServo[0]; // 1000 + [0-1020] us
+    OCR0A+= atomicServo[0]; // yaw // 1000 + [0-1020] us
     state++;
   } else if (state == 2) {
-    #if defined(TRI) || defined (BI)
-      DIGITAL_SERVO_TRI_LOW
-    #endif
-    #if defined(BI)
-      DIGITAL_BI_REAR_HIGH
-    #endif
-    #if defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING)
-      DIGITAL_TILT_PITCH_HIGH
-    #endif
-    OCR0A+= 250; // 1000 us
+    PORTD &= ~(1<<3);
+    count = 16; // 18 x 1020 us
     state++;
+    OCR0A+= 255; // 1020 us
   } else if (state == 3) {
-    OCR0A+= atomicServo[1]; // 1000 + [0-1020] us
-    state++;
-  } else if (state == 4) {
-    #if defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING)
-      DIGITAL_TILT_PITCH_LOW
-      DIGITAL_TILT_ROLL_HIGH
-    #endif
-    #if defined(BI)
-      DIGITAL_BI_REAR_LOW
-    #endif
-    state++;
-    OCR0A+= 250; // 1000 us
-  } else if (state == 5) {
-    OCR0A+= atomicServo[2]; // 1000 + [0-1020] us
-    state++;
-  } else if (state == 6) {
-    #if defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING)
-      DIGITAL_TILT_ROLL_LOW
-    #endif
-//servo number 4 not used for the moment
-    state++;
-    OCR0A+= 250; // 1000 us
-  } else if (state == 7) {
-    OCR0A+= atomicServo[3]; // 1000 + [0-1020] us
-    state++;
-  } else if (state == 8) {
-//servo number 4 not used for the moment
-    count = 10; // 12 x 1000 us
-    state++;
-    OCR0A+= 250; // 1000 us
-  } else if (state == 9) {
     if (count > 0) count--;
     else state = 0;
-    OCR0A+= 250;
+    OCR0A+= 255;
   }
 }
 #endif
 
-#if (NUMBER_MOTOR == 6) && defined(PROMINI)
+
+#if defined(BI)
+void initializeServo() {
+  pinMode(PWM_PIN[2],OUTPUT); //RIGHT //thses 2 PIN are used to control 2 servos
+  pinMode(PWM_PIN[3],OUTPUT); //LEFT
+  TCCR0A = 0; // normal counting mode
+  TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
+  TIMSK0 |= (1<<OCIE0B);
+}
+
+ISR(TIMER0_COMPA_vect) {
+  static uint8_t count,state = 0;
+  if (state == 0) {
+    PORTB |= 1<<3; //digital PIN 11
+    OCR0A+= 250;state++ ;
+  } else if (state == 1) {
+    OCR0A+= atomicServo[0]; state++;
+  } else if (state == 2) {
+    PORTB &= ~(1<<3);count=16;state++;OCR0A+= 255;
+  } else if (state == 3) {
+    if (count > 0) count--; else state = 0;
+    OCR0A+= 255;
+  }
+}
+
+ISR(TIMER0_COMPB_vect) {
+  static uint8_t count,state = 0;
+  if (state == 0) {
+    PORTD |= 1<<3; //digital PIN 3
+    OCR0B+= 250;state++ ;
+  } else if (state == 1) {
+    OCR0B+= atomicServo[1];state++;
+  } else if (state == 2) {
+    PORTD &= ~(1<<3);count=16;state++;OCR0B+= 255;
+  } else if (state == 3) {
+    if (count > 0) count--; else state = 0;
+    OCR0B+= 255;
+  }
+}
+#endif
+
+#if NUMBER_MOTOR == 6
 void initializeSoftPWM() {
   TCCR0A = 0; // normal counting mode
   TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
@@ -1096,7 +899,7 @@ ISR(TIMER0_COMPA_vect) {
   static uint8_t state = 0;
   if (state == 0) {
     PORTD |= 1<<5; //digital PIN 5 high
-    OCR0A+= atomicPWM_PIN5_highState; //250 x 4 microsecons = 1ms
+    OCR0A+= 250; //250 x 4 microsecons = 1ms
     state = 1;
   } else if (state == 1) {
     OCR0A+= atomicPWM_PIN5_highState;
@@ -1111,11 +914,55 @@ ISR(TIMER0_COMPA_vect) {
 ISR(TIMER0_COMPB_vect) { //the same with digital PIN 6 and OCR0B counter
   static uint8_t state = 0;
   if (state == 0) {
-    PORTD |= 1<<6;OCR0B+= atomicPWM_PIN6_highState;state = 1;
+    PORTD |= 1<<6;OCR0B+= 250;state = 1;
   } else if (state == 1) {
     OCR0B+= atomicPWM_PIN6_highState;state = 2;
   } else if (state == 2) {
     PORTD &= ~(1<<6);OCR0B+= atomicPWM_PIN6_lowState;state = 0;
+  }
+}
+#endif
+
+#if defined(SERVO_TILT) || defined(GIMBAL)
+void initializeServo() {
+  pinMode(SERVO_TILT_PITCH_PIN,OUTPUT); //thses 2 PIN are used to control 2 servos
+  pinMode(SERVO_TILT_ROLL_PIN, OUTPUT);
+  TCCR0A = 0; // normal counting mode
+  TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
+  TIMSK0 |= (1<<OCIE0B);
+}
+
+ISR(TIMER0_COMPA_vect) {
+  static uint8_t count,state = 0;
+  if (state == 0) {
+    digitalWrite(SERVO_TILT_PITCH_PIN,1);
+    OCR0A+= 250;state++ ;
+  } else if (state == 1) {
+    OCR0A+= atomicServo[0];
+    state++;
+  } else if (state == 2) {
+    digitalWrite(SERVO_TILT_PITCH_PIN,0);
+    count=16;state++;OCR0A+= 255;
+  } else if (state == 3) {
+    if (count > 0) count--; else state = 0;
+    OCR0A+= 255;
+  }
+}
+
+ISR(TIMER0_COMPB_vect) {
+  static uint8_t count,state = 0;
+  if (state == 0) {
+    digitalWrite(SERVO_TILT_ROLL_PIN,1);
+    OCR0B+= 250;state++ ;
+  } else if (state == 1) {
+    OCR0B+= atomicServo[1];
+    state++;
+  } else if (state == 2) {
+    digitalWrite(SERVO_TILT_ROLL_PIN,0);
+    count=16;state++;OCR0B+= 255;
+  } else if (state == 3) {
+    if (count > 0) count--; else state = 0;
+    OCR0B+= 255;
   }
 }
 #endif
@@ -1126,26 +973,10 @@ ISR(TIMER0_COMPB_vect) { //the same with digital PIN 6 and OCR0B counter
 #define MINCHECK 1100
 #define MAXCHECK 1900
 
-//RX PIN assignment inside the port
-#if defined(PROMINI) //for PORTD
-  #define THROTTLEPIN  2
-  #define ROLLPIN      4
-  #define PITCHPIN     5
-  #define YAWPIN       6
-  #define AUX1PIN      7
-#endif
-#if defined(MEGA) //for PORTK
-  #define THROTTLEPIN  0  //PIN 62 =  PIN A8
-  #define ROLLPIN      1  //PIN 63 =  PIN A9
-  #define PITCHPIN     2  //PIN 64 =  PIN A10
-  #define YAWPIN       3  //PIN 65 =  PIN A11
-  #define AUX1PIN      4  //PIN 66 =  PIN A12
-#endif
-
 static uint8_t pinRcChannel[5] = {ROLLPIN, PITCHPIN, YAWPIN, THROTTLEPIN, AUX1PIN};
-volatile uint16_t rcPinValue[8] = {0,0,1000,0,1500,1500,1500,1000}; // interval [1000;2000]
+volatile uint16_t rcPinValue[8] = {0,0,1000,0,1500,1500,1500,1000};; // interval [1000;2000]
 static int16_t rcData[5] ; // interval [1000;2000]
-static int16_t rcCommand[4] ; // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
+static int16_t rcCommand[4] = {0,0,0,0}; // interval [-500;+500]
 static int16_t rcHysteresis[5] ;
 static int16_t rcData4Values[5][4];
 
@@ -1163,83 +994,60 @@ volatile uint16_t rcValue[8] = {1500,1500,1500,1500,1500,1500,1500,1500}; // int
 // Configure each rc pin for PCINT
 void configureReceiver() {
   #ifndef SERIAL_SUM_PPM
-    for (uint8_t chan = 0; chan < 5; chan++)
-      for (uint8_t a = 0; a < 4; a++)
+    uint8_t chan,a;
+    for (chan=0; chan < 5; chan++) {
+      pinMode(pinRcChannel[chan], INPUT);
+      for (a = 0; a < 4; a++)
         rcData4Values[chan][a] = 1500; //we initiate the default value of each channel. If there is no RC receiver connected, we will see those values
-    #if defined(PROMINI)
-      // PCINT activated only for specific pin inside [D0-D7]  , [D2 D4 D5 D6 D7] for this multicopter
-      PORTD   = (1<<2) | (1<<4) | (1<<5) | (1<<6) | (1<<7); //enable internal pull ups on the PINs of PORTK
-      PCMSK2 |= (1<<2) | (1<<4) | (1<<5) | (1<<6) | (1<<7); 
-      PCICR   = 1<<2; // PCINT activated only for the port dealing with [D0-D7] PINs
-    #endif
-    #if defined(MEGA)
-      // PCINT activated only for specific pin inside [A8-A15]
-      DDRK = 0;  // defined PORTK as a digital port ([A8-A15] are consired as digital PINs and not analogical)
-      PORTK   = (1<<0) | (1<<1) | (1<<2) | (1<<3) | (1<<4) | (1<<5) | (1<<6) | (1<<7); //enable internal pull ups on the PINs of PORTK
-      PCMSK2 |= (1<<0) | (1<<1) | (1<<2) | (1<<3) | (1<<4) | (1<<5) | (1<<6) | (1<<7);
-      PCICR   = 1<<2; // PCINT activated only for PORTK dealing with [A8-A15] PINs
-    #endif
+    }
+    // PCINT activated only for specific pin inside [D0-D7]  , [D2 D4 D5 D6 D7] for this multicopter
+    PCMSK2 |= (1<<2) | (1<<4) | (1<<5) | (1<<6) | (1<<7); 
+    PCICR   = 1<<2; // PCINT activated only for [D0-D7] port
   #else
-    PPM_PIN_INTERRUPT
+    attachInterrupt(0, rxInt, RISING);
   #endif
 }
 
 #ifndef SERIAL_SUM_PPM
 ISR(PCINT2_vect) { //this ISR is common to every receiver channel, it is call everytime a change state occurs on a digital pin [D2-D7]
   uint8_t mask;
-  uint8_t pin;
+  uint8_t pind;
   uint16_t cTime,dTime;
-  static uint16_t edgeTime[8];
+  static uint16_t edgeTime[5];
   static uint8_t PCintLast;
 
-  #if defined(PROMINI)
-    pin = PIND;              // PIND indicates the state of each PIN for the arduino port dealing with [D0-D7] digital pins (8 bits variable)
-  #endif
-  #if defined(MEGA)
-    pin = PINK;              // PINK indicates the state of each PIN for the arduino port dealing with [A8-A15] digital pins (8 bits variable)
-  #endif
-  mask = pin ^ PCintLast;  // doing a ^ between the current interruption and the last one indicates wich pin changed
+  pind = PIND;              // PIND indicates the state of each PIN for the arduino port dealing with [D0-D7] digital pins (8 bits variable)
+  mask = pind ^ PCintLast;  // doing a ^ between the current interruption and the last one indicates wich pin changed
   sei();                    // re enable other interrupts at this point, the rest of this interrupt is not so time critical and can be interrupted safely
-  PCintLast = pin;         // we memorize the current state of all PINs [D0-D7]
-
+  PCintLast = pind;         // we memorize the current state of all PINs [D0-D7]
   cTime = micros();         // micros() return a uint32_t, but it is not usefull to keep the whole bits => we keep only 16 bits
-  
-  // mask is pins [D0-D7] that have changed // the principle is the same on the MEGA for PORTK and [A8-A15] PINs
+  // mask is pins [D0-D7] that have changed
   // chan = pin sequence of the port. chan begins at D2 and ends at D7
-  if (mask & 1<<2)           //indicates the bit 2 of the arduino port [D0-D7], that is to say digital pin 2, if 1 => this pin has just changed
-    if (!(pin & 1<<2)) {     //indicates if the bit 2 of the arduino port [D0-D7] is not at a high state (so that we match here only descending PPM pulse)
-      dTime = cTime-edgeTime[2]; if (900<dTime && dTime<2200) rcPinValue[2] = dTime; // just a verification: the value must be in the range [1000;2000] + some margin
-    } else edgeTime[2] = cTime;    // if the bit 2 of the arduino port [D0-D7] is at a high state (ascending PPM pulse), we memorize the time
-  if (mask & 1<<4)   //same principle for other channels   // avoiding a for() is more than twice faster, and it's important to minimize execution time in ISR
-    if (!(pin & 1<<4)) {
-      dTime = cTime-edgeTime[4]; if (900<dTime && dTime<2200) rcPinValue[4] = dTime;
+  if (mask & 1<<2) {          //indicates the bit 2 of the arduino port [D0-D7], that is to say digital pin 2, if 1 => this pin has just changed
+    if (!(pind & 1<<2)) {     //indicates if the bit 2 of the arduino port [D0-D7] is not at a high state (so that we match here only descending PPM pulse)
+      dTime = cTime-edgeTime[0]; if (900<dTime && dTime<2200) rcPinValue[2] = dTime; // just a verification: the value must be in the range [1000;2000] + some margin
+    } else edgeTime[0] = cTime;    // if the bit 2 of the arduino port [D0-D7] is at a high state (ascending PPM pulse), we memorize the time
+  } 
+  if (mask & 1<<4) { //same principle for other channels   // avoiding a for() is more than twice faster, and it's important to minimize execution time in ISR
+    if (!(pind & 1<<4)) {
+      dTime = cTime-edgeTime[1]; if (900<dTime && dTime<2200) rcPinValue[4] = dTime;
+    } else edgeTime[1] = cTime;
+  }
+  if (mask & 1<<5) {
+    if (!(pind & 1<<5)) {
+      dTime = cTime-edgeTime[2]; if (900<dTime && dTime<2200) rcPinValue[5] = dTime;
+    } else edgeTime[2] = cTime;
+  }
+  if (mask & 1<<6) {
+    if (!(pind & 1<<6)) {
+      dTime = cTime-edgeTime[3]; if (900<dTime && dTime<2200) rcPinValue[6] = dTime;
+    } else edgeTime[3] = cTime;
+  }
+  if (mask & 1<<7) {
+    if (!(pind & 1<<7)) {
+      dTime = cTime-edgeTime[4]; if (900<dTime && dTime<2200) rcPinValue[7] = dTime;
     } else edgeTime[4] = cTime;
-  if (mask & 1<<5)
-    if (!(pin & 1<<5)) {
-      dTime = cTime-edgeTime[5]; if (900<dTime && dTime<2200) rcPinValue[5] = dTime;
-    } else edgeTime[5] = cTime;
-  if (mask & 1<<6)
-    if (!(pin & 1<<6)) {
-      dTime = cTime-edgeTime[6]; if (900<dTime && dTime<2200) rcPinValue[6] = dTime;
-    } else edgeTime[6] = cTime;
-  if (mask & 1<<7)
-    if (!(pin & 1<<7)) {
-      dTime = cTime-edgeTime[7]; if (900<dTime && dTime<2200) rcPinValue[7] = dTime;
-    } else edgeTime[7] = cTime;
-  #if defined(MEGA)
-    if (mask & 1<<0)    
-      if (!(pin & 1<<0)) {
-        dTime = cTime-edgeTime[0]; if (900<dTime && dTime<2200) rcPinValue[0] = dTime; 
-      } else edgeTime[0] = cTime; 
-    if (mask & 1<<1)      
-      if (!(pin & 1<<1)) {
-        dTime = cTime-edgeTime[1]; if (900<dTime && dTime<2200) rcPinValue[1] = dTime; 
-      } else edgeTime[1] = cTime;
-    if (mask & 1<<3)
-      if (!(pin & 1<<3)) {
-        dTime = cTime-edgeTime[3]; if (900<dTime && dTime<2200) rcPinValue[3] = dTime;
-      } else edgeTime[3] = cTime;
-  #endif
+  }
 }
 
 #else 
@@ -1288,9 +1096,6 @@ void computeRC() {
     if ( rcData[chan] < rcHysteresis[chan] -4)  rcHysteresis[chan] = rcData[chan]+2;
     if ( rcData[chan] > rcHysteresis[chan] +4)  rcHysteresis[chan] = rcData[chan]-2;
   }
-  #if defined(FORCE_LEVEL)
-    rcData[AUX1] = 2000;
-  #endif
 }
 
 
@@ -1303,12 +1108,12 @@ static uint8_t accStrength8;
 static uint8_t rollPitchRate;
 static uint8_t yawRate;
 static uint8_t dynThrPID;
-static uint8_t checkNewConf = 130;
 
 void readEEPROM() {
   uint8_t i,p=1;
   for(i=0;i<3;i++) {P8[i] = EEPROM.read(p++);I8[i] = EEPROM.read(p++);D8[i] = EEPROM.read(p++);}
-  rcRate8 = EEPROM.read(p++);rcExpo8 = EEPROM.read(p++);
+  rcRate8 = EEPROM.read(p++);
+  rcExpo8 = EEPROM.read(p++);
   accStrength8 = EEPROM.read(p++);
   rollPitchRate = EEPROM.read(p++);
   yawRate = EEPROM.read(p++);
@@ -1316,15 +1121,16 @@ void readEEPROM() {
   for(i=0;i<3;i++) accZero[i] = (EEPROM.read(p++)&0xff) + (EEPROM.read(p++)<<8);
 
   //note on the following lines: we do this calcul here because it's a static and redundant result and we don't want to load the critical loop whith it
-  rcFactor1 = rcRate8/50.0*rcExpo8/100.0/250000.0;
-  rcFactor2 = (100-rcExpo8)*rcRate8/5000.0;
+  rcFactor1 = rcRate8/100.0*rcExpo8/100.0/250000.0;
+  rcFactor2 = (100-rcExpo8)*rcRate8/10000.0;
 }
 
 void writeParams() {
   uint8_t i,p=1;
-  EEPROM.write(0, checkNewConf);
+  EEPROM.write(0, 128);
   for(i=0;i<3;i++) {EEPROM.write(p++,P8[i]);  EEPROM.write(p++,I8[i]);  EEPROM.write(p++,D8[i]);}
-  EEPROM.write(p++,rcRate8);EEPROM.write(p++,rcExpo8);
+  EEPROM.write(p++,rcRate8);
+  EEPROM.write(p++,rcExpo8);
   EEPROM.write(p++,accStrength8);
   EEPROM.write(p++,rollPitchRate);
   EEPROM.write(p++,yawRate);
@@ -1334,11 +1140,11 @@ void writeParams() {
 }
 
 void checkFirstTime() {
-  if ( EEPROM.read(0) != checkNewConf ) {
+  if ( EEPROM.read(0) != 128 ) {
     P8[ROLL] = 40; I8[ROLL] = 30; D8[ROLL] = 13;
     P8[PITCH] = 40; I8[PITCH] = 30; D8[PITCH] = 13;
     P8[YAW]  = 80; I8[YAW]  = 0;  D8[YAW]  = 0;
-    rcRate8 = 45;
+    rcRate8 = 90;
     rcExpo8 = 65;
     accStrength8 = 100;
     rollPitchRate = 0;
@@ -1356,14 +1162,14 @@ void checkFirstTime() {
 // we set it below to take some margin with the running interrupts
 #define BITDELAY 102
 void LCDprint(uint8_t i) {
-  LCDPIN_OFF
+  PORTD &= ~1;//switch OFF digital PIN 0
   delayMicroseconds(BITDELAY);
   for (uint8_t mask = 0x01; mask; mask <<= 1) {
-    if (i & mask) LCDPIN_ON // choose bit
-    else LCDPIN_OFF  
+    if (i & mask) PORTD |= 1; // choose bit //switch ON digital PIN 0
+    else PORTD &= ~1;//switch OFF digital PIN 0    
     delayMicroseconds(BITDELAY);
   }
-  LCDPIN_ON //switch ON digital PIN 0
+    PORTD |= 1; //switch ON digital PIN 0
   delayMicroseconds(BITDELAY);
 }
 
@@ -1375,7 +1181,7 @@ void initLCD() {
   Serial.end();
   blinkLED(20,30,1);
   //init LCD
-  PINMODE_LCD //TX PIN for LCD = Arduino RX PIN (more convenient to connect a servo plug on arduino pro mini)
+  pinMode(0, OUTPUT); //TX PIN for LCD = Arduino RX PIN (more convenient to connect a servo plug on arduino pro mini)
   LCDprint(0xFE);LCDprint(0x0D); //cursor blink mode
 }
 
@@ -1407,33 +1213,33 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   vbat10bits = analogRead(V_BATPIN);
 
   if (vbat10bits>VBATLEVEL1_3S) {                                          //VBAT ok, buzzer off
-    BUZZERPIN_OFF
+    PORTB &= ~1;
   } else if ((vbat10bits>VBATLEVEL2_3S) && (vbat10bits<VBATLEVEL1_3S)) {   //First level 0.25s beep spacing 1s
     if (buzzerState && (currentTime > buzzerTime + 250000) ) {
-      buzzerState = 0;BUZZERPIN_OFF;buzzerTime = currentTime;
+      buzzerState = 0;PORTB &= ~1;buzzerTime = currentTime;
     } else if ( !buzzerState && (currentTime > buzzerTime + 1000000) ) {
-      buzzerState = 1;BUZZERPIN_ON;buzzerTime = currentTime;
+      buzzerState = 1;PORTB |= 1;buzzerTime = currentTime;
     }
   } else if ((vbat10bits>VBATLEVEL3_3S) && (vbat10bits<VBATLEVEL2_3S)) {   //First level 0.25s beep spacing 0.5s
     if (buzzerState && (currentTime > buzzerTime + 250000) ) {
-      buzzerState = 0;BUZZERPIN_OFF;buzzerTime = currentTime;
+      buzzerState = 0;PORTB &= ~1;buzzerTime = currentTime;
     } else if ( !buzzerState && (currentTime > buzzerTime + 500000) ) {
-      buzzerState = 1;BUZZERPIN_ON;buzzerTime = currentTime;
+      buzzerState = 1;PORTB |= 1;buzzerTime = currentTime;
     }
   } else {                                                                 //Last level 0.25s beep spacing 0.25s
     if (buzzerState && (currentTime > buzzerTime + 250000) ) {
-      buzzerState = 0;BUZZERPIN_OFF;buzzerTime = currentTime;
+      buzzerState = 0;PORTB &= ~1;buzzerTime = currentTime;
     } else if (!buzzerState  && (currentTime > buzzerTime + 250000) ) {
-      buzzerState = 1;BUZZERPIN_ON;buzzerTime = currentTime;
+      buzzerState = 1;PORTB |= 1;buzzerTime = currentTime;
     }
   }
 
-  if ( (currentTime > calibrateTime + 100000)  && ( (calibratingA>0 && (nunchukPresent == 1 || accPresent == 1)) || (calibratingG>0) ) ) {         // Calibration phasis
-    LEDPIN_SWITCH
+  if ( (currentTime > calibrateTime + 100000)  && ( (calibratingA>0 && (nunchukPresent == 1 || (BMA020Present == 1 || ADXL345Present ==1))) || (calibratingG>0) ) ) {         // Calibration phasis
+    PINB |= (1<<5); //switch LEDPIN state (digital PIN 13)
     calibrateTime = currentTime;
-  } else if ( (calibratingA==0) || (calibratingG==0 && !(nunchukPresent == 1 || accPresent == 1)) ) {
-    if (armed) LEDPIN_ON
-    else LEDPIN_OFF
+  } else if ( (calibratingA==0) || (calibratingG==0 && !(nunchukPresent == 1 || (BMA020Present == 1 || BMA180Present == 1 || ADXL345Present == 1))) ) {
+    if (armed) PORTB |= (1<<5);
+    else PORTB &= ~(1<<5);
   }
 
   if (currentTime > serialTime + 20000) { // 50Hz
@@ -1441,9 +1247,9 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
     serialTime = currentTime;
   }
   for( axis=0;axis<2;axis++)
-    rcCommand[axis]   = (rcHysteresis[axis]-MIDRC) * (rcFactor2 + rcFactor1*square((rcHysteresis[axis]-MIDRC)));
-  rcCommand[THROTTLE] = (MAXTHROTTLE-MINTHROTTLE)/(2000.0-MINCHECK) * (rcHysteresis[THROTTLE]-MINCHECK) + MINTHROTTLE;
-  rcCommand[YAW]      = rcHysteresis[YAW]-MIDRC;
+    rcCommand[axis]   = (rcHysteresis[axis]-1500) * (rcFactor2 + rcFactor1*square((rcHysteresis[axis]-1500)));
+  rcCommand[THROTTLE] = (MAXCOMMAND-MINTHROTTLE)/(2000.0-MINCHECK) * (rcHysteresis[THROTTLE]-MINCHECK) + MINTHROTTLE-1500;
+  rcCommand[YAW]      = rcHysteresis[YAW]-1500;
 }
 
 void configurationLoop() {
@@ -1532,60 +1338,71 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   uint8_t i,r;
   for (r=0;r<repeat;r++) {
     for(i=0;i<num;i++) {
-      LEDPIN_SWITCH //switch LEDPIN state
-      BUZZERPIN_ON
+      PINB |= 1<<5; //switch LEDPIN state (digital PIN 13)
+      PORTB |= 1; //BUZZERPIN , PIN 8
       delay(wait);
-      BUZZERPIN_OFF
+      PORTB &= ~1; //BUZZERPIN , PIN 8
     }
     delay(60);
   }
-  BUZZERPIN_OFF
+  PORTB &= ~1; //BUZZERPIN , PIN 8
 }
   
 void setup() {
   Serial.begin(SERIAL_COM_SPEED);
-  LEDPIN_PINMODE
-  POWERPIN_PINMODE
-  BUZZERPIN_PINMODE
-  POWERPIN_OFF
+  pinMode (LEDPIN, OUTPUT);
+  pinMode (POWERPIN, OUTPUT);
+  pinMode (BUZZERPIN, OUTPUT);
+  PORTB &= ~(1<<4);//switch OFF WMP, digital PIN 12
   initializeMotors();
   readEEPROM();
   checkFirstTime();
   configureReceiver();
   delay(200);
-  POWERPIN_ON
+  PORTB |= 1<<4; //switch ON WMP, digital PIN 12
   delay(100);
   i2c_init();
-  #if defined(ITG3200)
-    i2c_ITG3200_init();
-  #else
-    i2c_WMP_init(250);
-  #endif
-  
+  i2c_WMP_init(250);
   initIMU();
   
   #if defined(BMP085)
+    BMP085Present = 1;
     i2c_BMP085_init();
+    i2c_BMP085_calibrate();
   #endif
-  #if defined(BMA180) 
-    i2c_BMA180_init();
-  #endif 
-  #if defined(BMA020) 
-    i2c_BMA020_init();
-  #endif
+  
   #if defined(ADXL345)
+    ADXL345Present = 1;
     i2c_ADXL345_init();
+    acc_1G = 250;
+    acc_25deg = 106; 
   #endif
-  #if defined(ADCACC)
-    adc_ACC_init();
+/*#if defined(BMA180) 
+    BMA180Present = 1;
+    i2c_BMA180_init();
+    acc_1G = 2730;        
+    acc_25deg = 1130; 
+  #endif */
+ #if defined(BMA180) 
+    BMA180Present = 1;
+    i2c_BMA180_init();
+    acc_1G = 273;        
+    acc_25deg = 113; 
+  #endif 
+#if defined(BMA020) 
+    BMA020Present = 1;
+    i2c_BMA020_init();
+    acc_1G = 250;
+    acc_25deg = 106; 
   #endif
-  #if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING)
+
+  #if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL)
     initializeServo();
-  #elif (NUMBER_MOTOR == 6) && defined(PROMINI)
+  #elif NUMBER_MOTOR == 6
     initializeSoftPWM();
   #endif
   previousTime = micros();
-  #if defined(GIMBAL) || defined(FLYING_WING)
+  #if defined(GIMBAL)
    calibratingA = 400;
   #else
     calibratingA = 0;
@@ -1593,26 +1410,32 @@ void setup() {
   calibratingG = 400;
 }
 
+
 // ******** Main Loop *********
 void loop () {
   static uint8_t rcDelayCommand; // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
   uint8_t axis,i;
   int16_t error;
+  float timeFactor;
   int16_t delta;
   static int16_t lastGyro[3] = {0,0,0};
   static int16_t delta1[3];
   static int16_t delta2[3];
   uint16_t maxMotor;
   static int32_t errorGyroI[3] = {0,0,0};
-  static int16_t altitudeHold = 0;
-  static uint8_t altitudeLock;
-  
+  static int16_t errorAccI[3] = {0,0};
+  static int16_t gyroYawSmooth = 0;
+
+  static int16_t previousMotor[6] = {1500,1500,1500,1500,1500,1500};
+
   if (currentTime > (rcTime + 20000) ) { // 50Hz
     computeRC();
     if (rcData[THROTTLE] < MINCHECK) {
       errorGyroI[ROLL] = 0;
       errorGyroI[PITCH] = 0;
       errorGyroI[YAW] = 0;
+      errorAccI[ROLL] = 0;
+      errorAccI[PITCH] = 0;
       rcDelayCommand++;
       if (rcData[YAW] < MINCHECK && armed == 1) {
         if (rcDelayCommand == 20) { // rcDelayCommand = 20 => 20x20ms = 0.4s = time to wait for a specific RC command to be acknowledged
@@ -1641,17 +1464,14 @@ void loop () {
         rcDelayCommand = 0;
       }
     }
-    if (rcData[AUX1] > 1700 && (nunchukPresent == 1 || accPresent == 1)) {
+    if (rcData[AUX1] > 1700 && (nunchukPresent == 1 || (BMA020Present == 1 || BMA180Present == 1 || ADXL345Present == 1))) {
       levelModeParam = 1;
-      #if defined(BMP085)
-        if (altitudeLock == 0) {
-          altitudeLock = 1;
-          altitudeHold = altitudeSmooth;
-        }
-      #endif
+      pinMode(8, OUTPUT);
+      digitalWrite(8, HIGH);
     } else {
       levelModeParam = 0;
-      altitudeLock = 0;
+      pinMode(8, OUTPUT);
+      digitalWrite(8, LOW);
     }
     rcTime = currentTime; 
   }
@@ -1660,15 +1480,15 @@ void loop () {
     i2c_BMP085_update();
   #endif
   computeIMU();
-  
-  #if defined(BMP085)
-    if (levelModeParam)
-      rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE]-5*(altitudeSmooth-altitudeHold),MINTHROTTLE,min(rcCommand[THROTTLE]+200,MAXTHROTTLE));
-  #endif
 
   // Measure loop rate just afer reading the sensors
+  // meanTime and cycleTime are used to scale the PID term I and D
+  // variation are caused by irregular calls to RC loop functions and interruptions
   currentTime = micros();
-  cycleTime = currentTime - previousTime;
+
+  if (currentTime > (neutralizeTime + NEUTRALIZE_DELAY)) // we calculate cycle time only is data are valid
+    cycleTime = currentTime - previousTime;
+
   previousTime = currentTime;
 
   #ifdef BI
@@ -1676,6 +1496,9 @@ void loop () {
     gyroData[ROLL] = ((int32_t)gyroRollSmooth*10+gyroData[ROLL]+5)/11;
     gyroRollSmooth = gyroData[ROLL];
   #endif
+
+  gyroData[YAW] = (gyroYawSmooth*2+gyroData[YAW]+1)/3;
+  gyroYawSmooth = gyroData[YAW];
 
   //**** PITCH & ROLL & YAW PID ****    
   for(axis=0;axis<3;axis++) {
@@ -1698,75 +1521,53 @@ void loop () {
     lastGyro[axis] = gyroData[axis];
   }
 
-  #if NUMBER_MOTOR > 3
-    //prevent "yaw jump" during yaw correction: the yaw correction should allow the same ammount of motor speed variation in both ways
-    if      (rcCommand[THROTTLE]-axisPID[YAW] < MINTHROTTLE) axisPID[YAW] = rcCommand[THROTTLE]-MINTHROTTLE;
-    else if (rcCommand[THROTTLE]+axisPID[YAW] < MINTHROTTLE) axisPID[YAW] = -rcCommand[THROTTLE]+MINTHROTTLE;
-    else if (rcCommand[THROTTLE]+axisPID[YAW] > MAXTHROTTLE) axisPID[YAW] = MAXTHROTTLE-rcCommand[THROTTLE];
-    else if (rcCommand[THROTTLE]-axisPID[YAW] > MAXTHROTTLE) axisPID[YAW] = -MAXTHROTTLE+rcCommand[THROTTLE];
-    axisPID[YAW] = constrain(axisPID[YAW],-50-abs(rcCommand[YAW]),+50+abs(rcCommand[YAW]));
-  #endif
-
-  #ifdef BI
-    motor[0] = rcCommand[THROTTLE] + axisPID[PITCH]; //REAR
-    motor[1] = rcCommand[THROTTLE] - axisPID[PITCH]; //FRONT
-    servo[0]  = constrain(1500 + YAW_DIRECTION * axisPID[YAW] - axisPID[ROLL], 1020, 2000); //REAR
-    servo[1]  = constrain(1500 + YAW_DIRECTION * axisPID[YAW] + axisPID[ROLL], 1020, 2000); //FRONT
-  #endif
-  #ifdef TRI
-    motor[0] = rcCommand[THROTTLE] + axisPID[PITCH]*4/3 ; //REAR
-    motor[1] = rcCommand[THROTTLE] - axisPID[ROLL] - axisPID[PITCH]*2/3 ; //RIGHT
-    motor[2] = rcCommand[THROTTLE] + axisPID[ROLL] - axisPID[PITCH]*2/3 ; //LEFT
-    servo[0] = constrain(1500 + YAW_DIRECTION * axisPID[YAW], 1020, 2000); //REAR
-  #endif
-  #ifdef QUADP
-    motor[0] = rcCommand[THROTTLE] + axisPID[PITCH] - YAW_DIRECTION * axisPID[YAW]; //REAR
-    motor[1] = rcCommand[THROTTLE] - axisPID[ROLL]  + YAW_DIRECTION * axisPID[YAW]; //RIGHT
-    motor[2] = rcCommand[THROTTLE] + axisPID[ROLL]  + YAW_DIRECTION * axisPID[YAW]; //LEFT
-    motor[3] = rcCommand[THROTTLE] - axisPID[PITCH] - YAW_DIRECTION * axisPID[YAW]; //FRONT
-  #endif
-  #ifdef QUADX
-    motor[0] = rcCommand[THROTTLE] - axisPID[ROLL] + axisPID[PITCH] - YAW_DIRECTION * axisPID[YAW]; //REAR_R
-    motor[1] = rcCommand[THROTTLE] - axisPID[ROLL] - axisPID[PITCH] + YAW_DIRECTION * axisPID[YAW]; //FRONT_R
-    motor[2] = rcCommand[THROTTLE] + axisPID[ROLL] + axisPID[PITCH] + YAW_DIRECTION * axisPID[YAW]; //REAR_L
-    motor[3] = rcCommand[THROTTLE] + axisPID[ROLL] - axisPID[PITCH] - YAW_DIRECTION * axisPID[YAW]; //FRONT_L
-  #endif
-  #ifdef Y6
-    motor[0] = rcCommand[THROTTLE]                 + axisPID[PITCH]*4/3 + YAW_DIRECTION * axisPID[YAW]; //REAR
-    motor[1] = rcCommand[THROTTLE] - axisPID[ROLL] - axisPID[PITCH]*2/3 - YAW_DIRECTION * axisPID[YAW]; //RIGHT
-    motor[2] = rcCommand[THROTTLE] + axisPID[ROLL] - axisPID[PITCH]*2/3 - YAW_DIRECTION * axisPID[YAW]; //LEFT
-    motor[3] = rcCommand[THROTTLE]                 + axisPID[PITCH]*4/3 - YAW_DIRECTION * axisPID[YAW]; //UNDER_REAR
-    motor[4] = rcCommand[THROTTLE] - axisPID[ROLL] - axisPID[PITCH]*2/3 + YAW_DIRECTION * axisPID[YAW]; //UNDER_RIGHT
-    motor[5] = rcCommand[THROTTLE] + axisPID[ROLL] - axisPID[PITCH]*2/3 + YAW_DIRECTION * axisPID[YAW]; //UNDER_LEFT
-  #endif
-  #ifdef HEX6
-    motor[0] = rcCommand[THROTTLE] - axisPID[ROLL]/2 + axisPID[PITCH]/2 + YAW_DIRECTION * axisPID[YAW]; //REAR_R
-    motor[1] = rcCommand[THROTTLE] - axisPID[ROLL]/2 - axisPID[PITCH]/2 - YAW_DIRECTION * axisPID[YAW]; //FRONT_R
-    motor[2] = rcCommand[THROTTLE] + axisPID[ROLL]/2 + axisPID[PITCH]/2 + YAW_DIRECTION * axisPID[YAW]; //REAR_L
-    motor[3] = rcCommand[THROTTLE] + axisPID[ROLL]/2 - axisPID[PITCH]/2 - YAW_DIRECTION * axisPID[YAW]; //FRONT_L
-    motor[4] = rcCommand[THROTTLE]                   - axisPID[PITCH]   + YAW_DIRECTION * axisPID[YAW]; //FRONT
-    motor[5] = rcCommand[THROTTLE]                   + axisPID[PITCH]   - YAW_DIRECTION * axisPID[YAW]; //REAR
-  #endif
-  #ifdef SERVO_TILT
-    servo[1] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] *6 /10 , TILT_PITCH_MIN, TILT_PITCH_MAX);
-    servo[2] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP * angle[ROLL] *6 /10  , TILT_ROLL_MIN, TILT_ROLL_MAX);
-  #endif
-  #ifdef GIMBAL
-    servo[1] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] *6 /10 + rcCommand[PITCH], TILT_PITCH_MIN, TILT_PITCH_MAX);
-    servo[2] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP * angle[ROLL] *6 /10  + rcCommand[ROLL], TILT_ROLL_MIN, TILT_ROLL_MAX);
-  #endif
-  #ifdef FLYING_WING
-    servo[1]  = constrain(1500 + axisPID[PITCH] - axisPID[ROLL], 1020, 2000); //LEFT the sens of the 2 servo can be changed here: invert the sign before axisPID
-    servo[2]  = constrain(1500 + axisPID[PITCH] + axisPID[ROLL], 1020, 2000); //RIGHT
-  #endif
-
+  if (armed ) {
+    #ifdef BI
+      motor[0] = 1500 + rcCommand[THROTTLE] + axisPID[PITCH]; //REAR
+      motor[1] = 1500 + rcCommand[THROTTLE] - axisPID[PITCH]; //FRONT
+    #endif
+    #ifdef TRI
+      motor[0] = 1500 + rcCommand[THROTTLE] + axisPID[PITCH]*4/3 ; //REAR
+      motor[1] = 1500 + rcCommand[THROTTLE] - axisPID[ROLL] - axisPID[PITCH]*2/3 ; //RIGHT
+      motor[2] = 1500 + rcCommand[THROTTLE] + axisPID[ROLL] - axisPID[PITCH]*2/3 ; //LEFT
+    #endif
+    #ifdef QUADP
+      motor[0] = 1500 + rcCommand[THROTTLE] + axisPID[PITCH] - axisPID[YAW]; //REAR
+      motor[1] = 1500 + rcCommand[THROTTLE] - axisPID[ROLL]  + axisPID[YAW]; //RIGHT
+      motor[2] = 1500 + rcCommand[THROTTLE] + axisPID[ROLL]  + axisPID[YAW]; //LEFT
+      motor[3] = 1500 + rcCommand[THROTTLE] - axisPID[PITCH] - axisPID[YAW]; //FRONT
+    #endif
+    #ifdef QUADX
+      motor[0] = 1500 + rcCommand[THROTTLE] - axisPID[ROLL] + axisPID[PITCH] - axisPID[YAW]; //REAR_R
+      motor[1] = 1500 + rcCommand[THROTTLE] - axisPID[ROLL] - axisPID[PITCH] + axisPID[YAW]; //FRONT_R
+      motor[2] = 1500 + rcCommand[THROTTLE] + axisPID[ROLL] + axisPID[PITCH] + axisPID[YAW]; //REAR_L
+      motor[3] = 1500 + rcCommand[THROTTLE] + axisPID[ROLL] - axisPID[PITCH] - axisPID[YAW]; //FRONT_L
+    #endif
+    #ifdef Y6
+      motor[0] = 1500 + rcCommand[THROTTLE]                 + axisPID[PITCH]*4/3 + axisPID[YAW]; //REAR
+      motor[1] = 1500 + rcCommand[THROTTLE] - axisPID[ROLL] - axisPID[PITCH]*2/3 - axisPID[YAW]; //RIGHT
+      motor[2] = 1500 + rcCommand[THROTTLE] + axisPID[ROLL] - axisPID[PITCH]*2/3 - axisPID[YAW]; //LEFT
+      motor[3] = 1500 + rcCommand[THROTTLE]                 + axisPID[PITCH]*4/3 - axisPID[YAW]; //UNDER_REAR
+      motor[4] = 1500 + rcCommand[THROTTLE] - axisPID[ROLL] - axisPID[PITCH]*2/3 + axisPID[YAW]; //UNDER_RIGHT
+      motor[5] = 1500 + rcCommand[THROTTLE] + axisPID[ROLL] - axisPID[PITCH]*2/3 + axisPID[YAW]; //UNDER_LEFT
+    #endif
+    #ifdef HEX6
+      motor[0] = 1500 + rcCommand[THROTTLE] - axisPID[ROLL]/2 + axisPID[PITCH]/2 + axisPID[YAW]; //REAR_R
+      motor[1] = 1500 + rcCommand[THROTTLE] - axisPID[ROLL]/2 - axisPID[PITCH]/2 - axisPID[YAW]; //FRONT_R
+      motor[2] = 1500 + rcCommand[THROTTLE] + axisPID[ROLL]/2 + axisPID[PITCH]/2 + axisPID[YAW]; //REAR_L
+      motor[3] = 1500 + rcCommand[THROTTLE] + axisPID[ROLL]/2 - axisPID[PITCH]/2 - axisPID[YAW]; //FRONT_L
+      motor[4] = 1500 + rcCommand[THROTTLE]                   - axisPID[PITCH]   + axisPID[YAW]; //FRONT
+      motor[5] = 1500 + rcCommand[THROTTLE]                   + axisPID[PITCH]   - axisPID[YAW]; //REAR
+    #endif
+  }
+  
   maxMotor=motor[0];
   for(i=1;i< NUMBER_MOTOR;i++)
     if (motor[i]>maxMotor) maxMotor=motor[i];
   for (i = 0; i < NUMBER_MOTOR; i++) {
-    if (maxMotor > MAXTHROTTLE) // this is a way to still have good gyro corrections if at least one motor reaches its max.
-      motor[i] -= maxMotor - MAXTHROTTLE;
-    motor[i] = constrain(motor[i], MINTHROTTLE, MAXTHROTTLE);
+    if (maxMotor > MAXCOMMAND) // this is a way to still have good gyro corrections if at least one motor reaches its max.
+      motor[i] -= maxMotor - MAXCOMMAND;
+    motor[i] = constrain(motor[i], MINTHROTTLE, MAXCOMMAND);
     if ((rcData[THROTTLE]) < MINCHECK)
       #ifndef MOTOR_STOP
         motor[i] = MINTHROTTLE;
@@ -1777,18 +1578,30 @@ void loop () {
       motor[i] = MINCOMMAND;
   }
 
-  #if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING)
+  #if defined(BI)
+    servo[0]  = constrain(1500 + YAW_DIRECTION * axisPID[YAW] - axisPID[ROLL], 1020, 2000); //Yaw
+    servo[1]  = constrain(1500 + YAW_DIRECTION * axisPID[YAW] + axisPID[ROLL], 1020, 2000); //Front
+  #elif defined(TRI)
+    servo[0] = constrain(1500 + YAW_DIRECTION * axisPID[YAW], 1020, 2000);
+  #elif defined(SERVO_TILT)
+    servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] *6 /10 , TILT_PITCH_MIN, TILT_PITCH_MAX);
+    servo[1] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP * angle[ROLL] *6 /10  , TILT_ROLL_MIN, TILT_ROLL_MAX);
+  #endif
+  #if defined(GIMBAL)
+    servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] *6 /10 + rcCommand[PITCH], TILT_PITCH_MIN, TILT_PITCH_MAX);
+    servo[1] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP * angle[ROLL] *6 /10  + rcCommand[ROLL], TILT_ROLL_MIN, TILT_ROLL_MAX);
+  #endif
+  
+  #if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL)
     atomicServo[0] = (servo[0]-1000)/4;
     atomicServo[1] = (servo[1]-1000)/4;
-    atomicServo[2] = (servo[2]-1000)/4;
-    atomicServo[3] = (servo[3]-1000)/4;
   #endif
   
   writeMotors();
 }
 
 static uint8_t point;
-static uint8_t s[128];
+static uint8_t s[65];
 void serialize16(int16_t a) {s[point++]  = a; s[point++]  = a>>8&0xff;}
 void serialize8(int8_t a) {s[point++]  = a;}
 
@@ -1802,16 +1615,11 @@ void serialCom() {
       serialize8('A');
       for(i=0;i<3;i++) serialize16(accSmooth[i]);
       for(i=0;i<3;i++) serialize16(gyroData[i]);
-      serialize16(altitudeSmooth);
-      serialize16(0); // compas
-      for(i=0;i<4;i++) serialize16(servo[i]);
+      serialize16(altitude);
+      for(i=0;i<2;i++) serialize16(servo[i]);
       for(i=0;i<6;i++) serialize16(motor[i]);
       for(i=0;i<5;i++) serialize16(rcHysteresis[i]);      
-      serialize8(nunchukPresent);
-      serialize8(accPresent);
-      serialize8(barometerPresent);
-      serialize8(0); //i2C_MagnetoPresent
-      serialize8(levelModeParam);
+      serialize8(nunchukPresent); serialize8(levelModeParam);
       serialize16(cycleTime);
       for(i=0;i<2;i++) serialize16(angle[i]);
     #if defined(TRI)
@@ -1828,8 +1636,6 @@ void serialCom() {
       serialize8(6);
     #elif defined(HEX6)
       serialize8(7);
-    #elif defined(FLYING_WING)
-      serialize8(8);
     #endif
       for(i=0;i<3;i++) {serialize8(P8[i]);serialize8(I8[i]);serialize8(D8[i]);}
       serialize8(rcRate8); serialize8(rcExpo8);
@@ -1842,9 +1648,10 @@ void serialCom() {
     case 'C': //GUI to arduino param
       while (Serial.available()<18) {}
       for(i=0;i<3;i++) {P8[i]= Serial.read(); I8[i]= Serial.read(); D8[i]= Serial.read();}
-      rcRate8 = Serial.read(); rcExpo8 = Serial.read();
+      rcRate8 = Serial.read();
+      rcExpo8 = Serial.read();
       accStrength8 = Serial.read();
-      rollPitchRate = Serial.read(); yawRate = Serial.read();
+      rollPitchRate = Serial.read();yawRate = Serial.read();
       dynThrPID = Serial.read();
       writeParams();
       break;
