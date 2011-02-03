@@ -508,7 +508,7 @@ void i2c_ACC_getADC () {
 // contribution from opie11 (rc-grooups)
 // I2C Accelerometer BMA180
 // **************************
-// I2C adress: 0x80 (8bit)    0x40 (7bit)
+// I2C adress: 0x80 (8bit) w/SDO to GND or 0x82 w/SDO to 3.3v
 #if defined(BMA180)
 static uint8_t rawADC_BMA180[6];
 
