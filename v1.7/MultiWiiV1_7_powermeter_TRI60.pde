@@ -167,7 +167,7 @@ April  2011     V1.7
 // the alarm level from eeprom is out of [0:255], so we multipy alarm level with PLEVELSCALE and with 1e4 before comparing
 // the default value should be fine; for a 1000mAh battery on my TRI it gives an step size of ~10mAh to define alarm level
 // how to find your plevelscale for your particular copter and particular battery range in 3 easy steps
-// only neccesssary if you get overrun or feel adventorous:
+// only neccesssary if you get overrun or feel adventurous:
   // 1 fly copter, at end of flight use LCD and read the sum value (example 8040 for 1000mAh battery)
   // 2 optional: charge battery and memorize mAh (example: 930mAh)
   // 3 divide sum value by 255, add 30% margin (example: 8040/255 = 31; add 30% margin => 40)
@@ -184,6 +184,10 @@ April  2011     V1.7
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
 /* Example: 12.6V - VBATLEVEL1_3S  (for me = 126 - 102 = 24) */
 #define VBATREF 24 
+
+/* to log values like max loop time and others to come, we need extra variables */
+/* if you do not want the additional computing time or are short on memory, then comment the following */
+#define LOG_VALUES
 
 //****** end of advanced users settings *************
 
@@ -324,6 +328,9 @@ static uint32_t neutralizeTime;
 static uint32_t rcTime;
 static uint32_t currentTime;
 static uint16_t cycleTime;          // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+#ifdef LOG_VALUES
+static uint16_t cycleTimeMax = 0;          // highest ever cycle timen 
+#endif
 static uint16_t meanTime = 2000;    // this is the average time of the loop: around 2ms for a WMP config and 6ms for a NK+WMP config
 static uint16_t calibratingA;       // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 static uint16_t calibratingG;
@@ -1982,7 +1989,7 @@ void loop () {
   /* const uint32_t amperes[16] = {3, 15, 34, 62, 97, 140, 191, 250, 315, 389, 472, 562, 659, 765, 879, 1000 };*/
   /* experimentall curve (above square curve for values > 50%) */
   /* const uint32_t amperes[16] =   {3, 16, 34, 53, 92, 145, 224, 309, 382, 461, 566, 671, 789, 882, 941, 1000 }; */
-  /* true cubic function; when divided by vbat_max=126 for 3 cell battery this gives maximum value of ~ 1000 */
+  /* true cubic function; when divided by vbat_max=126 (12.6V) for 3 cell battery this gives maximum value of ~ 1000 */
   const uint32_t amperes[16] =   {31, 246, 831, 1969, 3845, 6645, 10551, 15750, 22425, 30762, 40944, 53156, 67583, 84410, 103821, 126000 };
   #endif
 
@@ -2051,6 +2058,10 @@ void loop () {
         rcDelayCommand = 0;
       }
     }
+    #ifdef LOG_VALUES
+      else // update max value here, so do not get cycle time of the motor arming (which is way higher than normal)
+        if ( (cycleTime > cycleTimeMax) && armed ) cycleTimeMax = cycleTime; // remember highscore
+    #endif
     rcOptions = (rcData[AUX1]<1300) + (1300<rcData[AUX1] && rcData[AUX1]<1700)*2 + (rcData[AUX1]>1700)*4
                +(rcData[AUX2]<1300)*8 + (1300<rcData[AUX2] && rcData[AUX2]<1700)*16 + (rcData[AUX2]>1700)*32;
     //note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAVE_DELAY is always false
@@ -2263,11 +2274,14 @@ void loop () {
   writeMotors();
   
   #if defined(POWERMETER)
-  for (uint8_t i =0;i<NUMBER_MOTOR;i++) {
-    amp = amperes[(motor[i] - 1000)>>6] / vbat; // range mapped from [1000:2000] => [0:1000]; then break that up into 16 ranges; lookup amp
-    pMeter[i]+= amp; // sum up over time the mapped ESC input 
-                             // this is poor man's integral
-    pMeter[6]+= amp; // total sum over all motors
+  if (vbat) { // by all means - must avoid division by zero 
+    for (uint8_t i =0;i<NUMBER_MOTOR;i++) {
+
+      amp = amperes[(motor[i] - 1000)>>6] / vbat; // range mapped from [1000:2000] => [0:1000]; then break that up into 16 ranges; lookup amp
+      pMeter[i]+= amp; // sum up over time the mapped ESC input 
+                               // this is poor man's integral
+      pMeter[6]+= amp; // total sum over all motors
+    }
   }
   #endif
 }
@@ -2298,72 +2312,110 @@ void UartSendData() {      // start of the data block transmission
 void serialCom() {
   int16_t a;
   uint8_t i;
-  uint16_t intPowerMeterSum, intPowerTrigger1;
-  static char line1[17],line2[17];
+  uint16_t intPowerMeterSum, intPowerTrigger1;    
+#ifdef LCD_TELEMETRY
+  char line1[17],line2[17];
+  static uint8_t telemetry = 0;
+
+  switch (telemetry) { // output telemetry data, if one of four modes is set
+  case 'A': // button A on Textstar LCD -> cycle time
+    strcpy(line1,"Cycle    _____us"); //uin16_t cycleTime
+    /*            0123456789.12345*/
+    strcpy(line2,"CycleMax _____us"); //uin16_t cycleTimeMax
+    line1[9] = '0' + cycleTime / 10000;
+    line1[10] = '0' + cycleTime / 1000 - (cycleTime/10000) * 10;
+    line1[11] = '0' + cycleTime / 100  - (cycleTime/1000)  * 10;
+    line1[12] = '0' + cycleTime / 10   - (cycleTime/100)   * 10;
+    line1[13] = '0' + cycleTime        - (cycleTime/10)    * 10;
+  #ifdef LOG_VALUES
+    line2[9] = '0' + cycleTimeMax / 10000;
+    line2[10] = '0' + cycleTimeMax / 1000 - (cycleTimeMax/10000) * 10;
+    line2[11] = '0' + cycleTimeMax / 100  - (cycleTimeMax/1000)  * 10;
+    line2[12] = '0' + cycleTimeMax / 10   - (cycleTimeMax/100)   * 10;
+    line2[13] = '0' + cycleTimeMax        - (cycleTimeMax/10)    * 10;
+    LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
+  #endif
+    LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+    break;
+  case 'B': // button B on Textstar LCD -> Voltage, PowerSum and power alarm trigger value
+    strcpy(line1,"__._V "); //uint8_t vbat, uint32_t vbatRaw
+    /*            0123456789.12345*/
+    strcpy(line2,"Psum _____   ___"); // intPowerMeterSum, intPowerTrigger1
+  #ifdef VBAT
+    line1[0] = '0'+vbat/100; line1[1] = '0'+vbat/10-(vbat/100)*10; line1[3] = '0'+vbat-(vbat/10)*10;
+  #endif
+  #ifdef POWERMETER
+    intPowerMeterSum = (pMeter[6]/PLEVELDIV);
+    line2[5] = '0' + intPowerMeterSum / 10000;
+    line2[6] = '0' + intPowerMeterSum / 1000 - (intPowerMeterSum/10000) * 10;
+    line2[7] = '0' + intPowerMeterSum / 100  - (intPowerMeterSum/1000)  * 10;
+    line2[8] = '0' + intPowerMeterSum / 10   - (intPowerMeterSum/100)   * 10;
+    line2[9] = '0' + intPowerMeterSum        - (intPowerMeterSum/10)    * 10;
+    line2[13] = '0'+powerTrigger1/100; line2[14] = '0'+powerTrigger1/10-(powerTrigger1/100)*10; line2[15] = '0'+powerTrigger1-(powerTrigger1/10)*10;
+  #endif
+    LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+    LCDprint(0xFE);LCDprint('b');LCDprint(10);LCDprint(((vbat-VBATLEVEL1_3S)*100)/VBATREF); // bar graph
+    LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
+    break;
+  case 'C': // button C on Textstar LCD -> angles 
+    uint16_t unit;
+    strcpy(line1,"AngX  ___._ deg ");
+    /*            0123456789.12345*/
+    strcpy(line2,"AngY  ___._ deg ");
+    if (angle[0] < 0 ) {
+      unit = -angle[0];
+      line1[5] = '-';
+    } else 
+      unit = angle[0];
+    //line1[5] = '0' + unit / 10000;
+    line1[6] = '0' + unit / 1000; //- (unit/10000) * 10;
+    line1[7] = '0' + unit / 100  - (unit/1000)  * 10;
+    line1[8] = '0' + unit / 10   - (unit/100)   * 10;
+    line1[10] = '0' + unit       - (unit/10)    * 10;
+    if (angle[1] < 0 ) {
+      unit = -angle[1];
+      line2[5] = '-';
+    } else 
+      unit = angle[1];
+    //line2[5] = '0' + unit / 10000;
+    line2[6] = '0' + unit / 1000; //- (unit/10000) * 10;
+    line2[7] = '0' + unit / 100  - (unit/1000)  * 10;
+    line2[8] = '0' + unit / 10   - (unit/100)   * 10;
+    line2[10] = '0' + unit       - (unit/10)    * 10;
+    LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+    LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
+    break;      
+  case 'D': // button C on Textstar LCD 
+    strcpy(line1,"Button D        ");
+    /*            0123456789.12345*/
+    strcpy(line2,"         pressed");
+    LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+    LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
+    break; 
+  }
+#endif
   if (Serial.available()) {
     switch (Serial.read()) {
     #ifdef LCD_TELEMETRY
-    case 'A': // button A on Textstar LCD -> cycle time
-      strcpy(line1,"Cycle _____ us  "); //uin16_t cycleTime
-      /*            0123456789.12345*/
-      line1[6] = '0' + cycleTime / 10000;
-      line1[7] = '0' + cycleTime / 1000 - (cycleTime/10000) * 10;
-      line1[8] = '0' + cycleTime / 100  - (cycleTime/1000)  * 10;
-      line1[9] = '0' + cycleTime / 10   - (cycleTime/100)   * 10;
-      line1[10] = '0' + cycleTime        - (cycleTime/10)    * 10;
-      LCDprint(12); // clear screen
-      LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
-      break;
-    case 'B': // button B on Textstar LCD -> Voltage, PowerSum and power alarm trigger value
-      strcpy(line1,"__._V "); //uint8_t vbat, uint32_t vbatRaw
-      /*            0123456789.12345*/
-      strcpy(line2,"Psum _____   ___"); // intPowerMeterSum, intPowerTrigger1
-      line1[0] = '0'+vbat/100; line1[1] = '0'+vbat/10-(vbat/100)*10; line1[3] = '0'+vbat-(vbat/10)*10;
-      intPowerMeterSum = (pMeter[6]/PLEVELDIV);
-      line2[5] = '0' + intPowerMeterSum / 10000;
-      line2[6] = '0' + intPowerMeterSum / 1000 - (intPowerMeterSum/10000) * 10;
-      line2[7] = '0' + intPowerMeterSum / 100  - (intPowerMeterSum/1000)  * 10;
-      line2[8] = '0' + intPowerMeterSum / 10   - (intPowerMeterSum/100)   * 10;
-      line2[9] = '0' + intPowerMeterSum        - (intPowerMeterSum/10)    * 10;
-      line2[13] = '0'+powerTrigger1/100; line2[14] = '0'+powerTrigger1/10-(powerTrigger1/100)*10; line2[15] = '0'+powerTrigger1-(powerTrigger1/10)*10;
-      LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
-      LCDprint(0xFE);LCDprint('b');LCDprint(10);LCDprint(((vbat-VBATLEVEL1_3S)*100)/VBATREF); // bar graph
-      LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
-      break;
-    case 'C': // button C on Textstar LCD -> angles 
-      uint16_t unit;
-      strcpy(line1,"AngX  ___._ deg ");
-      /*            0123456789.12345*/
-      strcpy(line2,"AngY  ___._ deg ");
-      unit = angle[0] + 3600;
-      //line1[5] = '0' + unit / 10000;
-      line1[6] = '0' + unit / 1000; //- (unit/10000) * 10;
-      line1[7] = '0' + unit / 100  - (unit/1000)  * 10;
-      line1[8] = '0' + unit / 10   - (unit/100)   * 10;
-      line1[10] = '0' + unit       - (unit/10)    * 10;
-      unit = angle[1] + 3600;
-      //line2[5] = '0' + unit / 10000;
-      line2[6] = '0' + unit / 1000; //- (unit/10000) * 10;
-      line2[7] = '0' + unit / 100  - (unit/1000)  * 10;
-      line2[8] = '0' + unit / 10   - (unit/100)   * 10;
-      line2[10] = '0' + unit       - (unit/10)    * 10;
-      LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
-      LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
-      break;      
-    case 'D': // button C on Textstar LCD 
-      strcpy(line1,"Button D        ");
-      /*            0123456789.12345*/
-      strcpy(line2,"         pressed");
-      LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
-      LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
-      break; 
-    case 'a':
-    case 'b':
-    case 'c':
-    case 'd':
+      case 'A': // button A press
+      if (telemetry=='A') telemetry = 0; else { telemetry = 'A'; LCDprint(12); /* clear screen */ }
       break;    
+      case 'B': // button B press
+      if (telemetry=='B') telemetry = 0; else { telemetry = 'B'; LCDprint(12); /* clear screen */ }
+      break;    
+      case 'C': // button C press
+      if (telemetry=='C') telemetry = 0; else { telemetry = 'C'; LCDprint(12); /* clear screen */ }
+      break;    
+      case 'D': // button D press
+      if (telemetry=='D') telemetry = 0; else { telemetry = 'D'; LCDprint(12); /* clear screen */ }
+      break;
+      case 'a': // button A release
+      case 'b': // button B release
+      case 'c': // button C release
+      case 'd': // button D release
+      break;      
     #endif
-    case 'M': // Multiwii @ arduino to GUI all data
+      case 'M': // Multiwii @ arduino to GUI all data
       point=0;
       serialize8('M');
       for(i=0;i<3;i++) serialize16(accSmooth[i]);
