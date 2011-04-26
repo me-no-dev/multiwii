@@ -1636,7 +1636,9 @@ void checkFirstTime() {
     dynThrPID = 0;
     activateAcc8 = 0;activateBaro8 = 0;activateMag8 = 0;
     activateCamStab8 = 0;activateCamTrig8 = 0;
+  #if defined(POWERMETER)
     powerTrigger1 = 0;
+  #endif
     writeParams();
   }
 }
@@ -2497,10 +2499,15 @@ void serialCom() {
       dynThrPID = Serial.read();
       activateAcc8 = Serial.read();activateBaro8 = Serial.read();activateMag8 = Serial.read();
       activateCamStab8 = Serial.read();activateCamTrig8 = Serial.read();
+     #if defined(POWERMETER)
       powerTrigger1 = (Serial.read() + 256* Serial.read() ) / PLEVELSCALE; // we rely on writeParams() to compute corresponding pAlarm value
+     #else
+      Serial.read();
+      Serial.read(); // so we unload the two bytes
+     #endif
       writeParams();
       break;
-    case 'S': //GUI to arduino Sensor calibration reques
+    case 'S': //GUI to arduino Sensor calibration request
       calibratingA=400;
       break;
     }
