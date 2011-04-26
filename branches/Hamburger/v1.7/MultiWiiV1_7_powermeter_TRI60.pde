@@ -177,10 +177,10 @@ April  2011     V1.7
 
 /* to monitor system values (battery level, loop time etc. with LCD enable this */
 /* note: for now you must send single characters 'A', 'B', 'C', 'D' to request 4 different screens */
-/* the info screen on the LCD does _not_ get updated automatically - for update send command character again */
+/* New: the info screen on the LCD does get updated automatically - for stop press same button again */
 /* easy to use with Textstar LCD - the 4 buttons are preconfigured to send 'A', 'B', 'C', 'D' */
 //#define LCD_TELEMETRY
-/* this gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
+/* on page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
 /* Example: 12.6V - VBATLEVEL1_3S  (for me = 126 - 102 = 24) */
 #define VBATREF 24 
