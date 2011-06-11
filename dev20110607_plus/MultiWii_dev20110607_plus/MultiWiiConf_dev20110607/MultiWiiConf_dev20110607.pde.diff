@@ -1,0 +1,165 @@
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110607/MultiWiiConf_dev20110607/MultiWiiConf_dev20110607.pde	2011-06-07 23:53:48.000000000 +0200
++++ /Volumes/Vault/Users/js/Documents/Processing/MultiWiiConf_dev20110607-plus/MultiWiiConf_dev20110607/MultiWiiConf_dev20110607.pde	2011-06-09 20:04:16.000000000 +0200
+@@ -1,3 +1,10 @@
++/*
++ GUI understands following command strings:
++ M  Multiwii @ arduino send all data to GUI (former A)
++ W  write to Eeprom @ arduino (former C)
++ S  acc Sensor calibration request(former D)
++ E  mag Sensor calibration request
++*/
+ import processing.serial.*; // serial library
+ import controlP5.*; // controlP5 library
+ import processing.opengl.*;
+@@ -75,6 +82,9 @@
+ float r;
+ int init_com = 0, graph_on = 0;
+ 
++int pMeterSum = 0, intPowerTrigger = 0, bytevbat = 0;
++Numberbox confPowerTrigger;
++
+ float mot[] = new float[8];
+ 
+ float servo0=1500,servo1=1500,servo2=1500,servo3=1500;
+@@ -104,10 +114,15 @@
+   String shortName = portName;
+   if(shortName.startsWith("/dev/"))
+     shortName = shortName.substring(5);  
++
++  if(shortName.startsWith("tty.")) // get rid off leading tty. part of device name
++    shortName = shortName.substring(4); 
+     
+   if(portName.length()>maxlen) {
+     shortName = shortName.substring(0,(maxlen-1)/2) + "~" +shortName.substring(shortName.length()-(maxlen-(maxlen-1)/2));
+   }
++  if(shortName.startsWith("cu.")) // only collect the corresponding tty. devices
++    shortName = "";
+   return shortName;
+ }
+ 
+@@ -128,11 +143,14 @@
+ 
+   g_graph  = new cGraph(120,510, 480, 210);
+   // make a listbox and populate it with the available comm ports
+-  commListbox = controlP5.addListBox("portComList",5,65,110,180); //addListBox(name,x,y,width,height)
++  commListbox = controlP5.addListBox("portComList",5,65,110,240); //addListBox(name,x,y,width,height)
+   commListbox.captionLabel().set("PORT COM");
+   commListbox.setColorBackground(red_);
+-  for(int i=0;i<Serial.list().length;i++)
+-    commListbox.addItem(shortifyPortName(Serial.list()[i], 13),i); // addItem(name,value)
++  for(int i=0;i<Serial.list().length;i++) {
++    String pn = shortifyPortName(Serial.list()[i], 13);
++    if (pn.length() >0 ) commListbox.addItem(pn,i); // addItem(name,value)
++  }
++
+ 
+   // text label for which comm port selected
+   txtlblWhichcom = controlP5.addTextlabel("txtlblWhichcom","No Port Selected",5,42); // textlabel(name,text,x,y)
+@@ -259,6 +277,9 @@
+   servoSliderV2 = controlP5.addSlider("Servov2",1000,2000,1500,xMot,yMot-15,10,100);servoSliderV2.setDecimalPrecision(0);servoSliderV2.hide();
+ 
+   scaleSlider = controlP5.addSlider("SCALE",0,10,1,xGraph+400,yGraph-30,150,20);
++
++  confPowerTrigger = controlP5.addNumberbox("",0,xGraph+50,yGraph-29,40,14);confPowerTrigger.setDecimalPrecision(0);confPowerTrigger.setMultiplier(10);
++  confPowerTrigger.setDirection(Controller.HORIZONTAL);confPowerTrigger.setMin(0);confPowerTrigger.setMax(65535);confPowerTrigger.setColorBackground(red_);
+ }
+ 
+ void draw() {
+@@ -270,12 +291,17 @@
+   text("MultiWii conf",0,16);text("v1.dev", 0, 32);
+   text("Cycle Time:",230,285);text(cycleTime, 330, 285);
+ 
++  textFont(font12);
++  text("Power:",xGraph-5,yGraph-30); text(pMeterSum,xGraph+50,yGraph-30);
++  text("pAlarm:",xGraph-5,yGraph-15);  //text(intPowerTrigger,xGraph+50,yGraph-15);
++  text("Volt:",xGraph-5,yGraph-2);  text(bytevbat/10.0,xGraph+50,yGraph-2);
++
+   time1=millis();
+   if (init_com==1) {
+-    if  (g_serial.available() >100) g_serial.clear();
+-    while (g_serial.available() >73) processSerialData();
+-    if ((time1-time2)>100 && graph_on==1 && g_serial.available()<60) {
+-      g_serial.write('A');
++    if  (g_serial.available() >120) g_serial.clear(); // was 100, why?
++    while (g_serial.available() >95) processSerialData(); // why 73?
++    if ((time1-time2)>100 && graph_on==1 && g_serial.available()<90) { // why 60? - new values as suggessted by ziss_dm
++      g_serial.write('M');
+       time2=time1;
+     }
+   }
+@@ -682,6 +708,8 @@
+     if ((byte(activation[i])&8) >0) checkbox[i].activate(3); else checkbox[i].deactivate(3);if ((byte(activation[i])&4) >0) checkbox[i].activate(2); else checkbox[i].deactivate(2);
+     if ((byte(activation[i])&2) >0) checkbox[i].activate(1); else checkbox[i].deactivate(1);if ((byte(activation[i])&1) >0) checkbox[i].activate(0); else checkbox[i].deactivate(0);
+   }
++  
++  confPowerTrigger.setValue(intPowerTrigger);
+   writeEnable = true;
+   
+ }
+@@ -704,10 +732,11 @@
+                               +checkbox[i].arrayValue()[3]*8+checkbox[i].arrayValue()[4]*16+checkbox[i].arrayValue()[5]*32);
+   }
+ 
++  intPowerTrigger = (round(confPowerTrigger.value()));
+ 
+   int[] s = new int[32];
+   int p = 0;
+-   s[p++] = 'C'; //0
++   s[p++] = 'W'; //0 write to Eeprom @ arduino
+    for(int i=0;i<4;i++) {s[p++] = byteP[i];  s[p++] = byteI[i];  s[p++] =  byteD[i];}
+    s[p++] = byteP[LEVEL]; s[p++] = byteI[LEVEL]; //14
+    s[p++] = byteP[MAG]; //15
+@@ -716,16 +745,18 @@
+    s[p++] = byteYawRate;
+    s[p++] = byteDynThrPID;
+    for(int i=0;i<6;i++) s[p++] = activation[i]; //26
+-   for(int i =0;i<27;i++)    g_serial.write(char(s[i]));
++   s[p++] = intPowerTrigger ;
++   s[p++] = intPowerTrigger >>8 &0xff;
++   for(int i =0;i<29;i++)    g_serial.write(char(s[i]));
+ }
+ 
+ public void CALIB_ACC() {
+   if(calibrateEnable == false) {return;}
+-  g_serial.write('D');
++  g_serial.write('S'); // acc Sensor calibration request
+ }
+ public void CALIB_MAG() {
+   if(calibrateEnable == false) {return;}
+-  g_serial.write('E');
++  g_serial.write('E'); // mag Sensor calibration request
+ }
+ 
+ // initialize the serial port selected in the listBox
+@@ -745,12 +776,12 @@
+ int read8()  {return inBuf[p++]&0xff;}
+ 
+ void processSerialData() {
+-  int frame_size = 95;
++  int frame_size = 100;
+   int present=0,mode=0;
+   
+-  if (g_serial.read() == 'A') {
++  if (g_serial.read() == 'M') {
+     g_serial.readBytes(inBuf);
+-    if (inBuf[frame_size-1] == 'A') {
++    if (inBuf[frame_size-1] == 'M') {  // Multiwii @ arduino send all data to GUI
+       p=0;
+       read8(); //version
+       ax = read16();ay = read16();az = read16();
+@@ -778,6 +809,9 @@
+       byteDynThrPID = read8();
+       for(int i=0;i<6;i++) activation[i] = read8();
+ 
++      pMeterSum = read16();
++      intPowerTrigger = read16();
++      bytevbat = read8();
+       
+       if ((present&1) >0) nunchukPresent = 1; else  nunchukPresent = 0;
+       if ((present&2) >0) i2cAccPresent = 1; else  i2cAccPresent = 0;
+@@ -874,4 +908,4 @@
+ } 
+ 
+ 
+-
++
