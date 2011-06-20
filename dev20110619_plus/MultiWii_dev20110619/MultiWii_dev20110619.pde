@@ -14,8 +14,6 @@ June  2011     V1.dev
 
 #include "config.h"
 
-#include "TRI60.h"
-
 #include "def.h"
 #include <EEPROM.h>
 #define   VERSION  18
