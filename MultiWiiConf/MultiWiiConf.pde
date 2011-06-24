@@ -15,7 +15,7 @@ ControlP5 controlP5;
 Textlabel txtlblWhichcom,version; 
 ListBox commListbox;
 
-int frame_size = 103;
+int frame_size = 105;
 
 cGraph g_graph;
 int windowsX    = 800; int windowsY    = 540;
@@ -37,6 +37,7 @@ cDataArray gyroPITCH  = new cDataArray(100), gyroROLL   = new cDataArray(100), g
 cDataArray magxData   = new cDataArray(100), magyData   = new cDataArray(100), magzData   = new cDataArray(100);
 cDataArray baroData   = new cDataArray(100);
 cDataArray magData    = new cDataArray(100);
+cDataArray EstAltData   = new cDataArray(100);
 
 private static final int ROLL = 0;
 private static final int PITCH = 1;
@@ -67,6 +68,7 @@ Slider servoSliderV0,servoSliderV1,servoSliderV2;
 Slider axSlider,aySlider,azSlider,gxSlider,gySlider,gzSlider;
 Slider magxSlider,magySlider,magzSlider;
 Slider baroSlider;
+Slider estaltSlider;
 Slider magSlider;
 
 Slider scaleSlider;
@@ -81,6 +83,7 @@ boolean graphEnable = false;boolean readEnable = false;boolean writeEnable = fal
 
 float gx,gy,gz,ax,ay,az,magx,magy,magz;
 float baro = 0;
+float EstAlt = 0;
 float mag = 0;
 float angx,angy = 0;
 float r;
@@ -141,6 +144,8 @@ void setup() {
   frameRate(20); 
 
   font8 = createFont("Arial bold",8,false);font12 = createFont("Arial bold",12,false);font15 = createFont("Arial bold",15,false);
+  //font8 = createFont("Tahoma",8,false);font12 = createFont("Tahoma",10,false);font15 = createFont("Tahoma",15,false);
+  //font8 = loadFont("Tahoma-8.vlw");font12 = loadFont("Tahoma-10.vlw");font15 = loadFont("Tahoma-15.vlw");
   
   controlP5 = new ControlP5(this); // initialize the GUI controls
   controlP5.setControlFont(font12);
@@ -192,7 +197,8 @@ void setup() {
   gxSlider   = controlP5.addSlider("gxSlider",-500,+500,0,xGraph+60,yGraph+100,50,10);gxSlider.setDecimalPrecision(0);gxSlider.setLabel("");
   gySlider   = controlP5.addSlider("gySlider",-500,+500,0,xGraph+60,yGraph+130,50,10);gySlider.setDecimalPrecision(0);gySlider.setLabel("");
   gzSlider   = controlP5.addSlider("gzSlider",-500,+500,0,xGraph+60,yGraph+160,50,10);gzSlider.setDecimalPrecision(0);gzSlider.setLabel("");
-  baroSlider = controlP5.addSlider("baroSlider",-30000,+30000,0,xGraph+60,yGraph+190,50,10);baroSlider.setDecimalPrecision(0);baroSlider.setLabel("");
+  baroSlider = controlP5.addSlider("baroSlider",-30000,+30000,0,xGraph+60,yGraph+190,50,10);baroSlider.setDecimalPrecision(2);baroSlider.setLabel("");
+  estaltSlider = controlP5.addSlider("estaltSlider",-30000,+30000,0,xGraph+60,yGraph+200,50,10);estaltSlider.setDecimalPrecision(2);estaltSlider.setLabel("");
   magSlider  = controlP5.addSlider("magSlider",-200,+200,0,xGraph+60,yGraph+220,50,10);magSlider.setDecimalPrecision(0);magSlider.setLabel("");
   magxSlider  = controlP5.addSlider("magxSlider",-5000,+5000,0,xGraph+190,yGraph+220,50,10);magxSlider.setDecimalPrecision(0);magxSlider.setLabel("");
   magySlider  = controlP5.addSlider("magySlider",-5000,+5000,0,xGraph+320,yGraph+220,50,10);magySlider.setDecimalPrecision(0);magySlider.setLabel("");
@@ -307,9 +313,8 @@ void draw() {
 
   time1=millis();
   if (init_com==1) {
-    if  (g_serial.available() >frame_size+5) g_serial.clear();
-    while (g_serial.available() >frame_size-5) processSerialData();
-    if ((time1-time2)>50 && graph_on==1 && g_serial.available()<frame_size-5) {
+    //if  (g_serial.available() >frame_size+5) g_serial.clear();
+    if ((time1-time2)>50 && graph_on==1) {
       g_serial.write('M');
       time2=time1;
     }
@@ -317,7 +322,8 @@ void draw() {
   
   axSlider.setValue(ax);aySlider.setValue(ay);azSlider.setValue(az);
   gxSlider.setValue(gx);gySlider.setValue(gy);gzSlider.setValue(gz);
-  baroSlider.setValue(baro);
+  baroSlider.setValue(baro/100);
+  estaltSlider.setValue(EstAlt/100);
   magSlider.setValue(mag);
   magxSlider.setValue(magx);magySlider.setValue(magy);magzSlider.setValue(magz);
 
@@ -583,10 +589,15 @@ void draw() {
    if (scaleSlider.value()<2) g_graph.drawLine(accYAW, -1000, +1000);
    else g_graph.drawLine(accYAW, 200*scaleSlider.value()-1000,200*scaleSlider.value()+500);
   }
+  
+  float BaroMin = (baroData.getMinVal() + baroData.getRange() / 2) - 100;
+  float BaroMax = (baroData.getMinVal() + baroData.getRange() / 2) + 100;
+  
   stroke(200, 200, 0);  if (gxGraph)   g_graph.drawLine(gyroROLL, -300, +300);
   stroke(0, 255, 255);  if (gyGraph)   g_graph.drawLine(gyroPITCH, -300, +300);
   stroke(255, 0, 255);  if (gzGraph)   g_graph.drawLine(gyroYAW, -300, +300);
-  stroke(125, 125, 125);if (baroGraph) g_graph.drawLine(baroData, -300, +300);
+  stroke(125, 125, 125);if (baroGraph) g_graph.drawLine(baroData, BaroMin, BaroMax);
+  stroke(60,   60,  60);if (baroGraph) g_graph.drawLine(EstAltData, BaroMin, BaroMax);
   stroke(225, 225, 125);if (magGraph)  g_graph.drawLine(magData, -370, +370);
   stroke(50, 100, 150); if (magxGraph)  g_graph.drawLine(magxData, -500, +500);
   stroke(100, 50, 150); if (magyGraph)  g_graph.drawLine(magyData, -500, +500);
@@ -781,13 +792,18 @@ void InitSerial(float portValue) {
   init_com=1;
   buttonSTART.setColorBackground(green_);buttonSTOP.setColorBackground(green_);commListbox.setColorBackground(green_);
   graphEnable = true;
+  g_serial.buffer(frame_size+1);
 }
 
 int p;
-byte[] inBuf = new byte[128];
+byte[] inBuf = new byte[frame_size];
 
 int read16() {return (inBuf[p++]&0xff) + (inBuf[p++]<<8);}
 int read8()  {return inBuf[p++]&0xff;}
+
+void serialEvent(Serial p) { 
+  processSerialData(); 
+}
 
 void processSerialData() {
   int present=0,mode=0;
@@ -824,6 +840,7 @@ void processSerialData() {
       pMeterSum = read16();
       intPowerTrigger = read16();
       bytevbat = read8();
+      EstAlt = read16();
       
       if ((present&1) >0) nunchukPresent = 1; else  nunchukPresent = 0;
       if ((present&2) >0) i2cAccPresent = 1; else  i2cAccPresent = 0;
@@ -847,12 +864,13 @@ void processSerialData() {
       accROLL.addVal(ax);accPITCH.addVal(ay);accYAW.addVal(az);
       gyroROLL.addVal(gx);gyroPITCH.addVal(gy);gyroYAW.addVal(gz);
       baroData.addVal(baro);
+      EstAltData.addVal(EstAlt);
       magData.addVal(mag);
       magxData.addVal(magx);
       magyData.addVal(magy);
       magzData.addVal(magz);
     }
-  }
+  } else g_serial.readStringUntil('A');
 }
 
 
@@ -883,6 +901,19 @@ class cDataArray {
   float getVal(int index) {return m_data[(m_startIndex+index)%m_maxSize];}
   int getCurSize(){return m_curSize;}
   int getMaxSize() {return m_maxSize;}
+  float getMaxVal() {
+    float res = 0.0;
+    for(int i=0; i<m_curSize-1; i++) 
+      if ((m_data[i] > res) || (i==0)) res = m_data[i];
+    return res;
+  }
+  float getMinVal() {
+    float res = 0.0;
+    for(int i=0; i<m_curSize-1; i++) 
+      if ((m_data[i] < res) || (i==0)) res = m_data[i];
+    return res;
+  }
+  float getRange() {return getMaxVal() - getMinVal();}
 }
 
 // This class takes the data and helps graph it
