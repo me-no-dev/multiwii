@@ -338,9 +338,12 @@ void draw() {
 
   stroke(255); 
   a=radians(angx);
-  //if (angy<-90) angy = -180 -angy;
-  //if (angy>90) angy = 180 - angy;
-  b=radians(angy);
+  if (angy<-90) {
+    b=radians(-180 - angy);
+  } else if (angy>90) {
+    b=radians(+180 - angy);
+  } else
+    b=radians(angy);
   h=radians(mag);
 
   float size = 30.0;
