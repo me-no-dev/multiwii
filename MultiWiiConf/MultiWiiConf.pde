@@ -216,12 +216,12 @@ void setup() {
   gxSlider   =           controlP5.addSlider("gxSlider",-500,+500,0,x+20,y2+10,50,10);gxSlider.setDecimalPrecision(0);gxSlider.setLabel("");
   gySlider   =           controlP5.addSlider("gySlider",-500,+500,0,x+20,y2+20,50,10);gySlider.setDecimalPrecision(0);gySlider.setLabel("");
   gzSlider   =           controlP5.addSlider("gzSlider",-500,+500,0,x+20,y2+30,50,10);gzSlider.setDecimalPrecision(0);gzSlider.setLabel("");
-  baroSlider =           controlP5.addSlider("baroSlider",-500,+500,0,x+20,y3 ,50,10);baroSlider.setDecimalPrecision(0);baroSlider.setLabel("");
+  baroSlider =        controlP5.addSlider("baroSlider",-30000,+30000,0,x+20,y3 ,50,10);baroSlider.setDecimalPrecision(2);baroSlider.setLabel("");
   magSlider  =           controlP5.addSlider("magSlider",-200,+200,0,x+20,y4  ,50,10);magSlider.setDecimalPrecision(0);magSlider.setLabel("");
   magxSlider  =      controlP5.addSlider("magxSlider",-5000,+5000,0,x+20,y5+10,50,10);magxSlider.setDecimalPrecision(0);magxSlider.setLabel("");
   magySlider  =      controlP5.addSlider("magySlider",-5000,+5000,0,x+20,y5+20,50,10);magySlider.setDecimalPrecision(0);magySlider.setLabel("");
   magzSlider  =      controlP5.addSlider("magzSlider",-5000,+5000,0,x+20,y5+30,50,10);magzSlider.setDecimalPrecision(0);magzSlider.setLabel("");
-  debug1Slider  =    controlP5.addSlider("debug1Slider",-5000,+5000,0,x+130,y6,50,10);debug1Slider.setDecimalPrecision(0);debug1Slider.setLabel("");
+  debug1Slider  =  controlP5.addSlider("debug1Slider",-30000,+30000,0,x+130,y6,50,10);debug1Slider.setDecimalPrecision(2);debug1Slider.setLabel("");
   debug2Slider  =    controlP5.addSlider("debug2Slider",-5000,+5000,0,x+250,y6,50,10);debug2Slider.setDecimalPrecision(0);debug2Slider.setLabel("");
   debug3Slider  =    controlP5.addSlider("debug3Slider",-5000,+5000,0,x+370,y6,50,10);debug3Slider.setDecimalPrecision(0);debug3Slider.setLabel("");
   debug4Slider  =    controlP5.addSlider("debug4Slider",-5000,+5000,0,x+490,y6,50,10);debug4Slider.setDecimalPrecision(0);debug4Slider.setLabel("");
@@ -336,7 +336,6 @@ void draw() {
 
   time1=millis();
   if (init_com==1) {
-    //if  (g_serial.available() >frame_size+5) g_serial.clear();
     if ((time1-time2)>50 && graph_on==1) {
       g_serial.write('M');
       time2=time1;
@@ -345,10 +344,10 @@ void draw() {
   
   axSlider.setValue(ax);aySlider.setValue(ay);azSlider.setValue(az);
   gxSlider.setValue(gx);gySlider.setValue(gy);gzSlider.setValue(gz);
-  baroSlider.setValue(baro);
+  baroSlider.setValue(baro/100);
   magSlider.setValue(mag);
   magxSlider.setValue(magx);magySlider.setValue(magy);magzSlider.setValue(magz);
-  debug1Slider.setValue(debug1);debug2Slider.setValue(debug2);debug3Slider.setValue(debug3);debug4Slider.setValue(debug4);
+  debug1Slider.setValue(debug1/100);debug2Slider.setValue(debug2);debug3Slider.setValue(debug3);debug4Slider.setValue(debug4);
 
   motSliderV0.setValue(mot[0]);motSliderV1.setValue(mot[1]);motSliderV2.setValue(mot[2]);
   motSliderV3.setValue(mot[3]);motSliderV4.setValue(mot[4]);motSliderV5.setValue(mot[5]);
@@ -624,16 +623,15 @@ void draw() {
   stroke(200, 200, 0);  if (gxGraph)   g_graph.drawLine(gyroROLL, -300, +300);
   stroke(0, 255, 255);  if (gyGraph)   g_graph.drawLine(gyroPITCH, -300, +300);
   stroke(255, 0, 255);  if (gzGraph)   g_graph.drawLine(gyroYAW, -300, +300);
-//  stroke(125, 125, 125);if (baroGraph) g_graph.drawLine(baroData, BaroMin, BaroMax);
-  stroke(125, 125, 125);if (baroGraph) g_graph.drawLine(baroData, -200, +200); //+/- 2m
-  
+  stroke(125, 125, 125);if (baroGraph) g_graph.drawLine(baroData, BaroMin, BaroMax);
+
   stroke(225, 225, 125);if (magGraph)  g_graph.drawLine(magData, -370, +370);
   stroke(50, 100, 150); if (magxGraph)  g_graph.drawLine(magxData, -500, +500);
   stroke(100, 50, 150); if (magyGraph)  g_graph.drawLine(magyData, -500, +500);
   stroke(150, 100, 50); if (magzGraph)  g_graph.drawLine(magzData, -500, +500);
 
   stroke(0, 0, 0);
-  if (debug1Graph)  g_graph.drawLine(debug1Data, -200, +200);
+  if (debug1Graph)  g_graph.drawLine(debug1Data, BaroMin, BaroMax);
   if (debug2Graph)  g_graph.drawLine(debug2Data, -5000, +5000);
   if (debug3Graph)  g_graph.drawLine(debug3Data, -5000, +5000);
   if (debug4Graph)  g_graph.drawLine(debug4Data, -5000, +5000);
@@ -969,9 +967,9 @@ class cGraph {
     
     for(int i=0; i<data.getCurSize()-1; ++i) {
       float x0 = i*graphMultX+m_gLeft;
-      float y0 = m_gTop-((data.getVal(i)*scaleSlider.value()-minRange)*graphMultY);
+      float y0 = m_gTop-(((data.getVal(i)-(maxRange+minRange)/2)*scaleSlider.value()+(maxRange-minRange)/2)*graphMultY);
       float x1 = (i+1)*graphMultX+m_gLeft;
-      float y1 = m_gTop-((data.getVal(i+1)*scaleSlider.value()-minRange)*graphMultY);
+      float y1 = m_gTop-(((data.getVal(i+1)-(maxRange+minRange)/2 )*scaleSlider.value()+(maxRange-minRange)/2)*graphMultY);
       line(x0, y0, x1, y1);
     }
   }
