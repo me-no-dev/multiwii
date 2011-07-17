@@ -1,7 +1,7 @@
 /*
 MultiWiiCopter by Alexandre Dubus
 www.multiwii.com
-Jully  2011     V1.dev
+July  2011     V1.dev
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -259,7 +259,16 @@ void setup() {
   POWERPIN_PINMODE
   BUZZERPIN_PINMODE
   STABLEPIN_PINMODE
-  POWERPIN_OFF  
+  POWERPIN_OFF
+
+#ifdef DAEDALUSFC
+	////
+	// TODO
+	// Init A0, A1, A2, A3 as input, pull-up enabled
+	// Read switch value and store in in a global, once the powered-up
+	// No swicth change allowed
+#endif //DAEDALUSFC
+  
   initOutput();
   readEEPROM();
   checkFirstTime();

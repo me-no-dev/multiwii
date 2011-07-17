@@ -86,6 +86,7 @@
 //#define ALLINONE        // full FC board or standalone 9DOF+baro board from CSG_EU
 //#define AEROQUADSHIELDv2
 //#define ATAVRSBIN1      // Atmel 9DOF (Contribution by EOSBandi). The board requires 3.3V power.
+#define DAEDALUSFC		// 9DOF, Baro and config switch
 
 //if you use independent sensors
 //leave it commented it you already checked a specific board above
@@ -132,6 +133,7 @@
    it is relevent only for a conf with NK */
 #define INTERLEAVING_DELAY 3000
 
+#ifndef DAEDALUSFC
 /* for V BAT monitoring
    after the resistor divisor we should get [0V;5V]->[0;1023] on analog V_BATPIN
    with R1=33k and R2=51k
@@ -141,6 +143,7 @@
 #define VBATLEVEL1_3S 107 // 10,7V
 #define VBATLEVEL2_3S 103 // 10,3V
 #define VBATLEVEL3_3S 99  // 9.9V
+#endif //DAEDALUSFC
 
 /* when there is an error on I2C bus, we neutralize the values during a short time. expressed in microseconds
    it is relevent only for a conf with at least a WMP */
