@@ -101,7 +101,17 @@
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = X; magADC[PITCH]  = Y; magADC[YAW]  = Z;}
 #endif
 
-
+#if defined(DAEDALUSFC)
+  #define ITG3200
+  #define ADXL345
+  #define BMP085
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = Y; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = -Y; magADC[PITCH]  = X; magADC[YAW]  = Z;}
+  #define ITG3200_ADDRESS 		0xD0
+  #define HAS_CONFIG_SWITCH
+#endif
 
 #if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(ADCACC)
   #define ACC 1
@@ -127,7 +137,55 @@
   #define BARO 0
 #endif
 
-#if defined(PROMINI)
+#if defined(PROMINI) && defined(DAEDALUSFC)
+  #define LEDPIN_PINMODE             pinMode (13, OUTPUT);
+  #define LEDPIN_SWITCH              PINB |= 1<<5;     //switch LEDPIN state (digital PIN 13)
+  #define LEDPIN_OFF                 PORTB &= ~(1<<5);
+  #define LEDPIN_ON                  PORTB |= (1<<5);
+  #define BUZZERPIN_PINMODE          ;
+  #define BUZZERPIN_ON               ;
+  #define BUZZERPIN_OFF              ;
+  #define POWERPIN_PINMODE           ;
+  #define POWERPIN_ON                ;
+  #define POWERPIN_OFF               ;
+  #define I2C_PULLUPS_ENABLE         PORTC |= 1<<4; PORTC |= 1<<5;   // PIN A4&A5 (SDA&SCL)
+  #define I2C_PULLUPS_DISABLE        PORTC &= ~(1<<4); PORTC &= ~(1<<5);
+  #define PINMODE_LCD                ;
+  #define LCDPIN_OFF                 ;
+  #define LCDPIN_ON                  ;
+  #define STABLEPIN_PINMODE          ;
+  #define STABLEPIN_ON               ;
+  #define STABLEPIN_OFF              ;
+  #define DIGITAL_SERVO_TRI_PINMODE  ;
+  #define DIGITAL_SERVO_TRI_HIGH     ;
+  #define DIGITAL_SERVO_TRI_LOW      ;
+  #define DIGITAL_TILT_PITCH_PINMODE ;
+  #define DIGITAL_TILT_PITCH_HIGH    ;
+  #define DIGITAL_TILT_PITCH_LOW     ;
+  #define DIGITAL_TILT_ROLL_PINMODE  ;
+  #define DIGITAL_TILT_ROLL_HIGH     ;
+  #define DIGITAL_TILT_ROLL_LOW      ;
+  #define DIGITAL_BI_LEFT_PINMODE    ; 
+  #define DIGITAL_BI_LEFT_HIGH       ;
+  #define DIGITAL_BI_LEFT_LOW        ;
+  #define PPM_PIN_INTERRUPT          attachInterrupt(0, rxInt, RISING); //PIN 0
+  #define MOTOR_ORDER                9,10,11,3,6,5  //for a quad+: rear,right,left,front
+  #define DIGITAL_CAM_PINMODE        ;
+  #define DIGITAL_CAM_HIGH           ;
+  #define DIGITAL_CAM_LOW            ;
+  //RX PIN assignment inside the port //for PORTD
+  #define THROTTLEPIN                2
+  #define ROLLPIN                    4
+  #define PITCHPIN                   5
+  #define YAWPIN                     6
+  #define AUX1PIN                    7
+  #define AUX2PIN                    7   //unused just for compatibility with MEGA
+  #define CAM1PIN                    7   //unused just for compatibility with MEGA
+  #define CAM2PIN                    7   //unused just for compatibility with MEGA
+  #define ISR_UART                   ISR(USART_UDRE_vect)
+  // #define V_BATPIN                   A3    // Analog PIN 3
+  // #define PSENSORPIN                 A2    // Analog PIN 2
+#else //defined(PROMINI) && defined(DAEDALUSFC)
   #define LEDPIN_PINMODE             pinMode (13, OUTPUT);
   #define LEDPIN_SWITCH              PINB |= 1<<5;     //switch LEDPIN state (digital PIN 13)
   #define LEDPIN_OFF                 PORTB &= ~(1<<5);
@@ -175,8 +233,9 @@
   #define ISR_UART                   ISR(USART_UDRE_vect)
   #define V_BATPIN                   A3    // Analog PIN 3
   #define PSENSORPIN                 A2    // Analog PIN 2
-#endif
-#if defined(MEGA)
+ #endif //defined(PROMINI) && defined(DAEDALUSFC)
+
+ #if defined(MEGA)
   #define LEDPIN_PINMODE             pinMode (13, OUTPUT);
   #define LEDPIN_SWITCH              PINB |= (1<<7);
   #define LEDPIN_ON                  PORTB |= (1<<7);
