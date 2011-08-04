@@ -319,7 +319,7 @@ void i2c_BMP085_Calculate() {
 void Baro_update() {
   if (currentTime < bmp085_ctx.deadline) return; 
   bmp085_ctx.deadline = currentTime;
-  TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz, BMP085 is ok with this speed
+  //TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz, BMP085 is ok with this speed
   switch (bmp085_ctx.state) {
     case 0: 
       i2c_BMP085_UT_Start(); 
@@ -458,7 +458,7 @@ void i2c_MS561101BA_Calculate() {
 void Baro_update() {
   if (currentTime < ms561101ba_ctx.deadline) return; 
   ms561101ba_ctx.deadline = currentTime;
-  TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz, MS5611 is ok with this speed
+  //TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz, MS5611 is ok with this speed
   switch (ms561101ba_ctx.state) {
     case 0: 
       i2c_MS561101BA_UT_Start(); 
@@ -508,7 +508,7 @@ void ACC_init () {
 }
 
 void ACC_getADC () {
-  TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz, ADXL435 is ok with this speed
+  //TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz, ADXL435 is ok with this speed
   i2c_getSixRawADC(ADXL345_ADDRESS,0x32);
 
   ACC_ORIENTATION( - ((rawADC[3]<<8) | rawADC[2]) ,
@@ -559,7 +559,7 @@ void ACC_init () {
 }
 
 void ACC_getADC () {
-  TWBR = ((16000000L / 400000L) - 16) / 2;  // Optional line.  Sensor is good for it in the spec.
+  //TWBR = ((16000000L / 400000L) - 16) / 2;  // Optional line.  Sensor is good for it in the spec.
   i2c_getSixRawADC(BMA180_ADDRESS,0x02);
   //usefull info is on the 14 bits  [2-15] bits  /4 => [0-13] bits  /8 => 11 bit resolution
   ACC_ORIENTATION(  - ((rawADC[1]<<8) | rawADC[0])/32 ,
@@ -601,7 +601,7 @@ void ACC_init(){
 }
 
 void ACC_getADC(){
-  TWBR = ((16000000L / 400000L) - 16) / 2;
+  //TWBR = ((16000000L / 400000L) - 16) / 2;
   i2c_getSixRawADC(0x70,0x02);
   ACC_ORIENTATION(    ((rawADC[1]<<8) | rawADC[0])/64 ,
                       ((rawADC[3]<<8) | rawADC[2])/64 ,
@@ -622,7 +622,7 @@ void ACC_init() {
 }
 
 void ACC_getADC() {
-  TWBR = ((16000000L / I2C_SPEED) - 16) / 2; // change the I2C clock rate. !! you must check if the nunchuk is ok with this freq
+  //TWBR = ((16000000L / I2C_SPEED) - 16) / 2; // change the I2C clock rate. !! you must check if the nunchuk is ok with this freq
   i2c_getSixRawADC(0xA4,0x00);
 
   ACC_ORIENTATION(  ( (rawADC[3]<<2)        + ((rawADC[5]>>4)&0x2) ) ,
@@ -646,7 +646,7 @@ void i2c_ACC_init(){
 }
 
 void i2c_ACC_getADC(){
-  TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
+  //TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
   i2c_getSixRawADC(LIS3A,0x28+0x80);
   ACC_ORIENTATION(  (rawADC[3]<<8 | rawADC[2])/4 ,
                    -(rawADC[1]<<8 | rawADC[0])/4 ,
@@ -689,7 +689,7 @@ void Gyro_init() {
 }
 
 void Gyro_getADC () {
-  TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
+  //TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
   i2c_getSixRawADC(0XD2,0x80|0x28);
 
   GYRO_ORIENTATION(  ((rawADC[1]<<8) | rawADC[0])/20  ,
@@ -724,7 +724,7 @@ void Gyro_init() {
 }
 
 void Gyro_getADC () {
-  TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
+  //TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
   i2c_getSixRawADC(ITG3200_ADDRESS,0X1D);
   GYRO_ORIENTATION(  + ( ((rawADC[2]<<8) | rawADC[3])/4) , // range: +/- 8192; +/- 2000 deg/sec
                      - ( ((rawADC[0]<<8) | rawADC[1])/4 ) ,
@@ -745,7 +745,7 @@ void Mag_getADC() {
   uint8_t axis;
   if ( (micros()-t )  < 100000 ) return; //each read is spaced by 100ms
   t = micros();
-  TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
+  //TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
   Device_Mag_getADC();
   if (calibratingM == 1) {
     tCal = t;
@@ -852,7 +852,7 @@ void WMP_init(uint8_t d) {
 
 uint8_t WMP_getRawADC() {
   uint8_t axis;
-  TWBR = ((16000000L / I2C_SPEED) - 16) / 2; // change the I2C clock rate
+  //TWBR = ((16000000L / I2C_SPEED) - 16) / 2; // change the I2C clock rate
   i2c_getSixRawADC(0xA4,0x00);
 
   if (micros() < (neutralizeTime + NEUTRALIZE_DELAY)) {//we neutralize data in case of blocking+hard reset state
