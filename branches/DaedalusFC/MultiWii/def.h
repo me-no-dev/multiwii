@@ -104,15 +104,13 @@
 #if defined(DAEDALUSFC)
   #define ITG3200
   #define ADXL345
-  //#define BMP085
-  //#define HMC5883
+  #define BMP085
+  #define HMC5883
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = Y; accADC[YAW]  = Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = -Y; magADC[PITCH]  = X; magADC[YAW]  = Z;}
   #define ITG3200_ADDRESS 		0xD0
   #define ADXL345_ADDRESS               0xA6
-  
-  #define HAS_CONFIG_SWITCH
   #ifdef INTERNAL_I2C_PULLUPS
 	#undef INTERNAL_I2C_PULLUPS
   #endif
