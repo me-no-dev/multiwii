@@ -66,6 +66,11 @@ static uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
 static uint16_t powerMax = 0;           // highest ever current
 static uint16_t powerAvg = 0;           // last known current
 
+//Buzzer conditions
+static uint8_t warn_vbat = 0;                  //Battery warning level
+static uint8_t warn_powermeter = 0;            //powermeter warning
+static uint8_t warn_failsafe = 0;              //failsafe warning level
+
 // **********************
 // power meter
 // **********************
@@ -84,8 +89,8 @@ static uint8_t telemetry_auto = 0;
 // ******************
 // rc functions
 // ******************
-#define MINCHECK 1100
-#define MAXCHECK 1900
+#define MINCHECK 1160
+#define MAXCHECK 1850
 
 volatile int16_t failsafeCnt = 0;
 
@@ -133,6 +138,26 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   }
 }
 
+       // blinkLED(10,15,1+3*nunchuk);
+	//beepBuzzer(10, 5, 2);
+/*        
+void beepBuzzer(uint8_t pulse, uint8_t pause,uint8_t repeat) {
+  uint8_t i,r;
+  for (r=0;r<repeat;r++) {				//nb of repeats
+    for(i=0;i<10;i++) {
+      BUZZERPIN_ON delay(pulse);		//Beep length: pulse
+	  BUZZERPIN_OFF 
+    }
+    delay(pause);		//silence length: pause
+  }
+}*/
+//die for schleife verlangsamt den code wenn zuviele wiederhohlungen drin sind
+//wenn ich das zyklisch mit einer wiederholung aufrufe piept das dann gleichmässig genug?
+
+
+
+
+
 void annexCode() { //this code is excetuted at each loop and won't interfere with control loop if it lasts less than 650 microseconds
   static uint32_t serialTime = 0;
   static uint32_t buzzerTime = 0;
@@ -147,6 +172,27 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   static uint32_t telemetryAutoTime = 0;
   uint16_t pMeterRaw, powerValue;                //used for current reading
   static uint32_t psensorTime = 0;
+  
+
+
+//Global Buzzer handling by Jevermeister
+if ( warn_failsafe >0 || warn_powermeter >0 || warn_vbat >0 ) {
+	//the order of the below is the priority from low to high, the last entry has the highest priority
+	if (warn_vbat == 1)buzzerFreq = 1;      //vbat warning level 1
+	if (warn_vbat == 2)buzzerFreq = 2;      //vbat warning level 2
+	if (warn_vbat == 3)buzzerFreq = 10;      //vbat critical level
+	if (warn_powermeter == 1)buzzerFreq = 4;//powermeter warning
+	if (warn_failsafe == 1)buzzerFreq = 8 ;	//failsafe landing aktive
+	if (warn_failsafe == 2)buzzerFreq = 1;	//failsafe "find me" signal
+
+	if (buzzerState && (currentTime > buzzerTime + 250000) ) {			//buzzer is beeping -> stop beeping
+	  buzzerState = 0;BUZZERPIN_OFF;buzzerTime = currentTime;
+	} else if ( !buzzerState && (currentTime > (buzzerTime + (2000000>>buzzerFreq))) ) {	//buzzer is silent -> start beeping
+	  buzzerState = 1;BUZZERPIN_ON;buzzerTime = currentTime;
+	}
+}
+else {BUZZERPIN_OFF; buzzerState = 0; buzzerFreq = 0;}		//turn it all off 
+
 
   //PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
   if      (rcData[THROTTLE]<1500) prop2 = 100;
@@ -182,32 +228,24 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
 
   #if defined(VBAT)
     vbatRaw = (vbatRaw*15 + analogRead(V_BATPIN)*16)>>4; // smoothing of vbat readings  
-    vbat = vbatRaw / VBATSCALE;                  // result is Vbatt in 0.1V steps
-     
-    if ( (vbat>VBATLEVEL1_3S) 
-    #if defined(POWERMETER)
-                         && ( (pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0) )
-    #endif
-                         || (NO_VBAT>vbat)                              ) // ToLuSe
-    {                                          //VBAT ok AND powermeter ok, buzzer off
-      buzzerFreq = 0; buzzerState = 0; BUZZERPIN_OFF;
-    #if defined(POWERMETER)
-    } else if (pMeter[PMOTOR_SUM] > pAlarm) {                             // sound alarm for powermeter
-      buzzerFreq = 4;
-    #endif
-    } else if (vbat>VBATLEVEL2_3S)
-      buzzerFreq = 1;
-    else if (vbat>VBATLEVEL3_3S)
-      buzzerFreq = 2;
-    else
-      buzzerFreq = 4;
-    if (buzzerFreq) {
-      if (buzzerState && (currentTime > buzzerTime + 250000) ) {
-        buzzerState = 0;BUZZERPIN_OFF;buzzerTime = currentTime;
-      } else if ( !buzzerState && (currentTime > (buzzerTime + (2000000>>buzzerFreq))) ) {
-         buzzerState = 1;BUZZERPIN_ON;buzzerTime = currentTime;
-      }
-    }
+    vbat = vbatRaw / VBATSCALE;                  // result is Vbatt in 0.1V steps     
+	if ((vbat>VBATLEVEL1_3S) 
+	  #if defined(POWERMETER)
+	   	 && ( (pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0) )
+	  #endif
+	  || (NO_VBAT>vbat)                              ) // ToLuSe
+	  {                                          //VBAT ok AND powermeter ok, buzzer off
+	 warn_vbat = 0;	//set warning level to 0
+	    #if defined(POWERMETER)
+	      } else if (pMeter[PMOTOR_SUM] > pAlarm) {                             // sound alarm for powermeter
+		warn_powermeter = 1;  //increase warning level
+	    #endif
+	  } else if (vbat>VBATLEVEL2_3S)
+		warn_vbat = 1;  //increase warning level
+	  else if (vbat>VBATLEVEL3_3S)
+		warn_vbat = 2;  //increase warning level
+	  else
+		warn_vbat = 3; //set to critical level
   #endif
 
   if ( ( (calibratingA>0 && (ACC || nunchuk) ) || (calibratingG>0) ) ) {  // Calibration phasis
@@ -301,16 +339,21 @@ void loop () {
   int16_t AltPID = 0;
   static int16_t lastVelError = 0;
   static float AltHold = 0.0;
-      
+  static uint32_t serialTime = 0;
   if (currentTime > (rcTime + 20000) ) { // 50Hz
     rcTime = currentTime; 
     computeRC();
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level
+	//beepBuzzer(10, 60, 2);
+        warn_failsafe = 1;    //set failsafe warning level to 1
         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
         rcData[THROTTLE] = FAILSAVE_THR0TTLE;
-        if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) armed = 0; // Turn OFF motors after specified Time (in 0.1sec)
+        if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) {
+          armed = 0; // Turn OFF motors after specified Time (in 0.1sec)
+          warn_failsafe = 2;  // start "find me" signal
+        }
       }
       failsafeCnt++;
     #endif
