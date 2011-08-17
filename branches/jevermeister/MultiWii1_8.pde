@@ -138,26 +138,6 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   }
 }
 
-       // blinkLED(10,15,1+3*nunchuk);
-	//beepBuzzer(10, 5, 2);
-/*        
-void beepBuzzer(uint8_t pulse, uint8_t pause,uint8_t repeat) {
-  uint8_t i,r;
-  for (r=0;r<repeat;r++) {				//nb of repeats
-    for(i=0;i<10;i++) {
-      BUZZERPIN_ON delay(pulse);		//Beep length: pulse
-	  BUZZERPIN_OFF 
-    }
-    delay(pause);		//silence length: pause
-  }
-}*/
-//die for schleife verlangsamt den code wenn zuviele wiederhohlungen drin sind
-//wenn ich das zyklisch mit einer wiederholung aufrufe piept das dann gleichmässig genug?
-
-
-
-
-
 void annexCode() { //this code is excetuted at each loop and won't interfere with control loop if it lasts less than 650 microseconds
   static uint32_t serialTime = 0;
   static uint32_t buzzerTime = 0;
@@ -172,26 +152,35 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   static uint32_t telemetryAutoTime = 0;
   uint16_t pMeterRaw, powerValue;                //used for current reading
   static uint32_t psensorTime = 0;
-  
-
 
 //Global Buzzer handling by Jevermeister
 if ( warn_failsafe >0 || warn_powermeter >0 || warn_vbat >0 ) {
 	//the order of the below is the priority from low to high, the last entry has the highest priority
 	if (warn_vbat == 1)buzzerFreq = 1;      //vbat warning level 1
 	if (warn_vbat == 2)buzzerFreq = 2;      //vbat warning level 2
-	if (warn_vbat == 3)buzzerFreq = 10;      //vbat critical level
+	if (warn_vbat == 3)buzzerFreq = 6;      //vbat critical level
 	if (warn_powermeter == 1)buzzerFreq = 4;//powermeter warning
 	if (warn_failsafe == 1)buzzerFreq = 8 ;	//failsafe landing aktive
 	if (warn_failsafe == 2)buzzerFreq = 1;	//failsafe "find me" signal
 
-	if (buzzerState && (currentTime > buzzerTime + 250000) ) {			//buzzer is beeping -> stop beeping
-	  buzzerState = 0;BUZZERPIN_OFF;buzzerTime = currentTime;
+	if (buzzerState && (currentTime > buzzerTime + 200000) ) {			//buzzer is beeping -> stop beeping shorter time
+	  buzzerState = 0;
+          //BUZZERPIN_OFF;
+          LEDPIN_SWITCH;
+          buzzerTime = currentTime;
 	} else if ( !buzzerState && (currentTime > (buzzerTime + (2000000>>buzzerFreq))) ) {	//buzzer is silent -> start beeping
-	  buzzerState = 1;BUZZERPIN_ON;buzzerTime = currentTime;
+	  buzzerState = 1;
+          BUZZERPIN_ON;
+          //LEDPIN_SWITCH;
+          buzzerTime = currentTime;
 	}
 }
-else {BUZZERPIN_OFF; buzzerState = 0; buzzerFreq = 0;}		//turn it all off 
+else {
+  BUZZERPIN_OFF;
+  //LEDPIN_OFF; 
+  buzzerState = 0; 
+  buzzerFreq = 0;
+}		//turn it all off 
 
 
   //PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
@@ -346,18 +335,21 @@ void loop () {
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level
-	//beepBuzzer(10, 60, 2);
         warn_failsafe = 1;    //set failsafe warning level to 1
         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
         rcData[THROTTLE] = FAILSAVE_THR0TTLE;
-        if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) {
-          armed = 0; // Turn OFF motors after specified Time (in 0.1sec)
-          warn_failsafe = 2;  // start "find me" signal
+        if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
+          armed = 0;
+          warn_failsafe = 2;                                                // start "find me" signal
+          okToArm = 0;                                                      //This will prevent the copter to automatically rearm if failsafe shuts it down and prevents to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
+
         }
       }
       failsafeCnt++;
     #endif
     // end of failsave routine - next change is made with RcOptions setting
+
+//JM	if (warn_failsafe < 2){        //If the Failsafe is active, there should be no user inputs *sigh* so no evaluation is neccesary
     if (rcData[THROTTLE] < MINCHECK) {
       errorGyroI[ROLL] = 0; errorGyroI[PITCH] = 0; errorGyroI[YAW] = 0;
       errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
@@ -374,7 +366,7 @@ void loop () {
           previousTime = micros();
         }
       } else if (activate[BOXARM] > 0) {
-        if ((rcOptions & activate[BOXARM]) && okToArm) armed = 1;
+        if ((rcOptions & activate[BOXARM]) && okToArm && warn_failsafe < 2) armed = 1;    
         else if (armed) armed = 0;
         rcDelayCommand = 0;
       } else if ( (rcData[YAW] < MINCHECK || rcData[ROLL] < MINCHECK)  && armed == 1) {
@@ -454,7 +446,7 @@ void loop () {
   }
   if (MAG)  Mag_getADC();
   if (BARO) Baro_update();
-    
+   
   computeIMU();
   // Measure loop rate just afer reading the sensors
   currentTime = micros();
