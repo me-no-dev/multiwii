@@ -167,8 +167,8 @@ if ( warn_failsafe >0 || warn_powermeter >0 || warn_vbat >0 ) {
 
 	if (buzzerState && (currentTime > buzzerTime + 200000) ) {			//buzzer is beeping -> stop beeping shorter time
 	  buzzerState = 0;
-          //BUZZERPIN_OFF;
-          LEDPIN_SWITCH;
+          BUZZERPIN_OFF;
+          //LEDPIN_SWITCH;
           buzzerTime = currentTime;
 	} else if ( !buzzerState && (currentTime > (buzzerTime + (2000000>>buzzerFreq))) ) {	//buzzer is silent -> start beeping
 	  buzzerState = 1;
