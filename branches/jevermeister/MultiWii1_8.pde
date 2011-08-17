@@ -152,6 +152,8 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   static uint32_t telemetryAutoTime = 0;
   uint16_t pMeterRaw, powerValue;                //used for current reading
   static uint32_t psensorTime = 0;
+  
+
 
 //Global Buzzer handling by Jevermeister
 if ( warn_failsafe >0 || warn_powermeter >0 || warn_vbat >0 ) {
@@ -348,8 +350,6 @@ void loop () {
       failsafeCnt++;
     #endif
     // end of failsave routine - next change is made with RcOptions setting
-
-//JM	if (warn_failsafe < 2){        //If the Failsafe is active, there should be no user inputs *sigh* so no evaluation is neccesary
     if (rcData[THROTTLE] < MINCHECK) {
       errorGyroI[ROLL] = 0; errorGyroI[PITCH] = 0; errorGyroI[YAW] = 0;
       errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
@@ -366,7 +366,7 @@ void loop () {
           previousTime = micros();
         }
       } else if (activate[BOXARM] > 0) {
-        if ((rcOptions & activate[BOXARM]) && okToArm && warn_failsafe < 2) armed = 1;    
+        if ((rcOptions & activate[BOXARM]) && okToArm) armed = 1;
         else if (armed) armed = 0;
         rcDelayCommand = 0;
       } else if ( (rcData[YAW] < MINCHECK || rcData[ROLL] < MINCHECK)  && armed == 1) {
@@ -446,7 +446,7 @@ void loop () {
   }
   if (MAG)  Mag_getADC();
   if (BARO) Baro_update();
-   
+    
   computeIMU();
   // Measure loop rate just afer reading the sensors
   currentTime = micros();
