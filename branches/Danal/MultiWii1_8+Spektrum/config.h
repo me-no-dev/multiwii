@@ -12,9 +12,9 @@
 /* The type of multicopter */
 //#define GIMBAL
 //#define BI
-//#define TRI
+#define TRI
 //#define QUADP
-#define QUADX
+//#define QUADX
 //#define Y4
 //#define Y6
 //#define HEX6
@@ -30,11 +30,11 @@
 #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
 //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
-#define PROMINI  //Arduino type
-//#define MEGA
+//#define PROMINI  //Arduino type
+#define MEGA
 
 //enable internal I2C pull ups
-//#define INTERNAL_I2C_PULLUPS
+#define INTERNAL_I2C_PULLUPS
 
 //****** advanced users settings   *************
 
@@ -145,8 +145,16 @@
 //#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,CAMPITCH,CAMROLL //For Robe/Hitec/Futaba
 //#define SERIAL_SUM_PPM         PITCH,ROLL,THROTTLE,YAW,AUX1,AUX2,CAMPITCH,CAMROLL //For some Hitec/Sanwa/Others
 
-/* The following lines apply only for Spektrum Satellite Receiver on MEGA boards only */ //not yet implemented
-//#define SPEKTRUM
+/* The following lines apply only for Spektrum Satellite Receiver
+   Spektrum Satellites are 3V devices.  DO NOT connect to 5V!
+   For MEGA boards, attach sat grey wire to RX1, pin 19. Sat black wire to ground. Sat orange wire to Mega board's 3.3V (or any other 3V to 3.3V source).
+   For PROMINI, attach sat grey to RX0.  Attach sat black to ground.  
+     There is no 3.3V source on a pro mini; you can either use a different 3V source, or attach orange to 5V with a 3V regulator in-line (such as http://search.digikey.com/scripts/DkSearch/dksus.dll?Detail&name=MCP1700-3002E/TO-ND)
+     If you use an inline-regulator, a standard 3-pin servo connector can connect to ground, +5V, and RX0; solder the correct wires (and the 3V regulator!) to a Spektrum baseRX-to-Sat cable that has been cut in half. 
+     NOTE: Because there is only one serial port on the Pro Mini, using a Spektrum Satellite implies you CANNOT use the PC based configuration tool. Further, you cannot use on-aircraft serial LCD as the baud rates are incompatible. You can use an on-aircraft Eagle Tree LCD for setting gains, reading sensors, etc. 
+   (Contribution by Danal)
+*/
+#define SPEKTRUM
 
 /* interleaving delay in micro seconds between 2 readings WMP/NK in a WMP+NK config
    if the ACC calibration time is very long (20 or 30s), try to increase this delay up to 4000

@@ -97,6 +97,16 @@ static uint8_t rcRate8;
 static uint8_t rcExpo8;
 static int16_t lookupRX[7]; //  lookup table for expo & RC rate
 
+#if defined (SPEKTRUM)
+  #define SPEK_MAX_CHANNEL 7
+  #define SPEK_FRAME_SIZE 16 
+  #define SPEK_CHAN_SHIFT  2       // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
+  #define SPEK_CHAN_MASK   0x03    // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
+  volatile byte          spekFramePosition, spekFrameComplete, spekFrame[SPEK_FRAME_SIZE];
+  volatile unsigned long spekTimeLast, spekTimeInterval;
+  unsigned long          spekChannelData[SPEK_MAX_CHANNEL];
+#endif
+
 // **************
 // gyro+acc IMU
 // **************
@@ -318,9 +328,15 @@ void loop () {
   static int16_t lastVelError = 0;
   static float AltHold = 0.0;
       
+  #if defined(SPEKTRUM)
+    if (spekFrameComplete) computeRC();
+  #endif
+  
   if (currentTime > (rcTime + 20000) ) { // 50Hz
     rcTime = currentTime; 
+    #if !defined(SPEKTRUM)
     computeRC();
+    #endif
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level

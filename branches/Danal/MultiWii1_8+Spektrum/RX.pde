@@ -33,7 +33,7 @@ void configureReceiver() {
     PPM_PIN_INTERRUPT
   #endif
   #if defined (SPEKTRUM)
-  
+    SPEK_SERIAL_INTERRUPT
   #endif
 }
 
@@ -123,8 +123,22 @@ void rxInt() {
 #endif
 
 #if defined(SPEKTRUM)
-
-
+  ISR(SPEK_SERIAL_VECT) {
+    unsigned long spekTime;
+    spekTime=micros();
+    spekTimeInterval = spekTime - spekTimeLast;
+    spekTimeLast = spekTime; 
+    if (spekTimeInterval > 10000) spekFramePosition = 0;
+    spekFrame[spekFramePosition] = SPEK_DATA_REG;
+    if (spekFramePosition == SPEK_FRAME_SIZE - 1) {
+      spekFrameComplete = 1;
+      #if defined(FAILSAFE)
+        if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // clear FailSafe counter
+      #endif
+    } else {
+      spekFramePosition++;
+    }
+  }
 #endif
 
 uint16_t readRawRC(uint8_t chan) {
@@ -132,15 +146,33 @@ uint16_t readRawRC(uint8_t chan) {
   uint8_t oldSREG;
   oldSREG = SREG;
   cli(); // Let's disable interrupts
-  #ifndef SERIAL_SUM_PPM
+  #if !defined(SERIAL_SUM_PPM) && !defined(SPEKTRUM)
     data = rcPinValue[pinRcChannel[chan]]; // Let's copy the data Atomically
-  #else
+  #endif
+  #if defined(SERIAL_SUM_PPM)
     data = rcValue[rcChannel[chan]]; 
   #endif
+  #if defined(SPEKTRUM)
+    if (spekFrameComplete) {
+      for (byte b = 3; b < SPEK_FRAME_SIZE; b += 2) {
+        byte spekChannel = 0x0F & (spekFrame[b - 1] >> SPEK_CHAN_SHIFT);  
+        if (spekChannel <= SPEK_MAX_CHANNEL) spekChannelData[spekChannel] = (long(spekFrame[b - 1] & SPEK_CHAN_MASK) << 8) + spekFrame[b];
+      }
+      spekFrameComplete = 0;    
+    }
+  #endif
   SREG = oldSREG;
-  sei();// Let's enable the interrupts
-  #if defined(PROMINI) && !defined(SERIAL_SUM_PPM)
-  if (chan>4) return 1500;
+  sei();// Let's enable the interrupts    
+  #if defined(PROMINI) && !defined(SERIAL_SUM_PPM) && !defined(SPEKTRUM)
+    if (chan>4) data = 1500;
+  #endif
+  #if defined(SPEKTRUM)
+    static byte spekRcChannelMap[SPEK_MAX_CHANNEL] = {1,2,3,0,4,5,6};
+    if (chan > SPEK_MAX_CHANNEL) {
+      data = 1500;
+    } else {
+      data = 988 + spekChannelData[spekRcChannelMap[chan]];     // Assumes 1024 mode
+    }
   #endif
   return data; // We return the value correctly copied when the IRQ's where disabled
 }
