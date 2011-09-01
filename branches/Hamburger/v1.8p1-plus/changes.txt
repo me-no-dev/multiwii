@@ -1,0 +1,17 @@
+base: v1.8 patch1
+
+changes:
++ MWii: Flying Wing 
+	- added passthrough mode (does mixing of pitch and roll sticks)
+	- added 4 defines for 2 servos 2 directions for pitch and roll (no need to swap servo cables at rx with dx6i)
+	- added defines for min/mid/max values for servo travels
+
++ Wii: logging
+	- added logging of counters for error conditions i2c-resets (wmp) and failsafes
+	- added outputs to LCD config menu
+
++ Wii: LCD telemetry
+	- redid bug fix for LCD telemetry page D; uncommented erroneously commented code fragment
+	- added blinking attrribute for telemetry page B depending on buzzer state
+	- added extra char to telemetry page B to display error conditions  i2c-resets (wmp) or failsafes
+
