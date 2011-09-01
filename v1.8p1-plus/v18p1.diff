@@ -1,0 +1,253 @@
+Only in MultiWii_1_8_patch1/: .DS_Store
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/LCD.pde MultiWii_1_8_patch1/LCD.pde
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/LCD.pde	2011-08-28 16:19:08.000000000 +0200
++++ MultiWii_1_8_patch1/LCD.pde	2011-09-01 21:26:29.000000000 +0200
+@@ -42,6 +42,7 @@
+ static lcd_param_def_t __PS  = {&LPMS,  1, 1, 0};
+ static lcd_param_def_t __PT  = {&LTU8,  0, 1, 1};
+ static lcd_param_def_t __VB  = {&LTU8,  1, 1, 0};
++static lcd_param_def_t __L   = {&LTU8,  0, 1, 0};
+ // Parameters
+ static lcd_param_t lcd_param[] = {
+   {"PITCH&ROLL P",    &P8[ROLL],      &__P}
+@@ -78,6 +79,11 @@
+ #ifdef VBAT
+ , {"Battery Volt",    &vbat,          &__VB} 
+ #endif
++#ifdef LOG_VALUES
++, {"i2c errors",       &i2c_errors_count,          &__L} 
++, {"failsafe errors",  &failsafes_count,           &__L} 
++#endif
++//  0123456789.12345
+ };
+ #define PARAMMAX (sizeof(lcd_param)/sizeof(lcd_param_t) - 1)
+ // ************************************************************************************************************
+@@ -278,7 +284,7 @@
+     case 'B': // button B on Textstar LCD -> Voltage, PowerSum and power alarm trigger value
+       strcpy(line1,"__._V   _____mAh"); //uint8_t vbat, intPowerMeterSum
+       /*            0123456789.12345*/
+-      //    (line2,".......  ......."); // intPowerMeterSum, intPowerTrigger1
++      //    (line2,"....... ........"); // intPowerMeterSum, intPowerTrigger1
+     #ifdef VBAT
+       line1[0] = '0'+vbat/100; line1[1] = '0'+vbat/10-(vbat/100)*10; line1[3] = '0'+vbat-(vbat/10)*10;
+     #endif
+@@ -291,24 +297,32 @@
+       line1[12] = '0' + intPowerMeterSum        - (intPowerMeterSum/10)    * 10;
+       //line2[13] = '0'+powerTrigger1/100; line2[14] = '0'+powerTrigger1/10-(powerTrigger1/100)*10; line2[15] = '0'+powerTrigger1-(powerTrigger1/10)*10;
+     #endif
++      if (buzzerState) { // buzzer on? then add some blink for attention
++         //LCDprint(0x0c); //clear screen
++         line1[5] = '+'; line1[6] = '+'; line1[7] = '+';
++      }
++    #ifdef LOG_VALUES
++        // set mark, if we had i2c errors
++        if (i2c_errors_count || failsafes_count) line1[6] = 'I';
++    #endif
+       LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+       LCDprint(0xFE);LCDprint('L');LCDprint(2); //position on line 2 of LCD
+     #ifdef VBAT
+       LCD_BAR(7, (((vbat-VBATLEVEL1_3S)*100)/VBATREF) );
+-      LCDprintChar("  ");
++      LCDprint(' ');
+     #endif
+     #ifdef POWERMETER  
+       //     intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
+       //   pAlarm = (uint32_t) powerTrigger1 * (uint32_t) PLEVELSCALE * (uint32_t) PLEVELDIV; // need to cast before multiplying
+       if (powerTrigger1)
+-        LCD_BAR(7, (intPowerMeterSum/powerTrigger1 *2) ); // bar graph powermeter (scale intPowerMeterSum/powerTrigger1 with *100/PLEVELSCALE)
++        LCD_BAR(8, (intPowerMeterSum/powerTrigger1 *2) ); // bar graph powermeter (scale intPowerMeterSum/powerTrigger1 with *100/PLEVELSCALE)
+     #endif
+       break;
+     case 'A': // button A on Textstar LCD -> angles 
+       uint16_t unit;
+       strcpy(line1,"Deg ___._  ___._");
+       /*            0123456789.12345*/
+-      strcpy(line2,"___,_A max___,_A"); //uin16_t cycleTimeMax
++      strcpy(line2,"___,_A max___,_A");
+       if (angle[0] < 0 ) {
+         unit = -angle[0];
+         line1[3] = '-';
+@@ -343,8 +357,9 @@
+       LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+       break;    
+     case 'D': // button D on Textstar LCD -> sensors
+-    #define GYROLIMIT 20 // threshold: for larger values replace bar with dots
+-    #define ACCLIMIT 30 // threshold: for larger values replace bar with dots      LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar("G "); //refresh line 1 of LCD
++    #define GYROLIMIT 30 // threshold: for larger values replace bar with dots
++    #define ACCLIMIT 30 // threshold: for larger values replace bar with dots     
++      LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar("G "); //refresh line 1 of LCD
+       if (abs(gyroData[0]) < GYROLIMIT) { LCD_BAR(4,(GYROLIMIT+gyroData[0])*50/GYROLIMIT) } else LCDprintChar("...."); LCDprint(' ');
+       if (abs(gyroData[1]) < GYROLIMIT) { LCD_BAR(4,(GYROLIMIT+gyroData[1])*50/GYROLIMIT) } else LCDprintChar("...."); LCDprint(' ');
+       if (abs(gyroData[2]) < GYROLIMIT) { LCD_BAR(4,(GYROLIMIT+gyroData[2])*50/GYROLIMIT) } else LCDprintChar("....");
+@@ -355,4 +370,4 @@
+       break;
+   } // end switch (telemetry) 
+ } // end function
+-#endif //  LCD_TELEMETRY
++#endif //  LCD_TELEMETRY
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/MultiWii_1_8_patch1.pde MultiWii_1_8_patch1/MultiWii_1_8_patch1.pde
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/MultiWii_1_8_patch1.pde	2011-08-28 16:19:08.000000000 +0200
++++ MultiWii_1_8_patch1/MultiWii_1_8_patch1.pde	2011-09-01 18:08:57.000000000 +0200
+@@ -9,9 +9,16 @@
+ */
+ 
+ #include "config.h"
++
++#include "TRI60.h"
++
+ #include "def.h"
+ #define   VERSION  18
+ 
++#if defined(INTERNAL_I2C_PULLUPS) || not defined(FREEIMUv01)
++      #error "for freeimu v0.1 from fax8/Fabio Varesano, you MUST undefine internal i2c pullups. Else you destroy board!"
++#endif
++
+ /*********** RC alias *****************/
+ #define ROLL       0
+ #define PITCH      1
+@@ -59,12 +66,15 @@
+ static float    BaroAlt = 0.0f;
+ static float    EstVelocity = 0.0f;
+ static float    EstAlt = 0.0f;
+-
++static uint8_t  buzzerState = 0;
++  
+ //for log
+ static uint16_t cycleTimeMax = 0;       // highest ever cycle timen
+ static uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
+ static uint16_t powerMax = 0;           // highest ever current
+ static uint16_t powerAvg = 0;           // last known current
++static uint8_t i2c_errors_count = 0;    // count of wmp/nk resets
++static uint8_t failsafes_count = 0;     // count of failsafe occurrences
+ 
+ // **********************
+ // power meter
+@@ -137,7 +147,6 @@
+   static uint32_t serialTime = 0;
+   static uint32_t buzzerTime = 0;
+   static uint32_t calibratedAccTime;
+-  static uint8_t  buzzerState = 0;
+   static uint32_t vbatRaw = 0;       //used for smoothing voltage reading
+   static uint8_t buzzerFreq;         //delay between buzzer ring
+   uint8_t axis;
+@@ -310,6 +319,9 @@
+     // Failsafe routine - added by MIS
+     #if defined(FAILSAFE)
+       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level
++        #ifdef LOG_VALUES
++         failsafes_count = 1; //only toggle on, no actual count                                               // keep log of # of failsafe conditions
++        #endif
+         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
+         rcData[THROTTLE] = FAILSAVE_THR0TTLE;
+         if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
+@@ -523,4 +535,4 @@
+   #if defined(LOG_VALUES) || (POWERMETER == 1)
+     logMotorsPower();
+   #endif 
+-}
++}
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/Output.pde MultiWii_1_8_patch1/Output.pde
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/Output.pde	2011-08-28 16:19:08.000000000 +0200
++++ MultiWii_1_8_patch1/Output.pde	2011-08-30 22:58:57.000000000 +0200
+@@ -333,8 +333,16 @@
+     servo[2] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP   * angle[ROLL]  /16 + rcCommand[ROLL], TILT_ROLL_MIN, TILT_ROLL_MAX);
+   #endif
+   #ifdef FLYING_WING
+-    servo[1]  = constrain(1500 + axisPID[PITCH] - axisPID[ROLL], 1020, 2000); //LEFT the direction of the 2 servo can be changed here: invert the sign before axisPID
+-    servo[2]  = constrain(1500 + axisPID[PITCH] + axisPID[ROLL], 1020, 2000); //RIGHT
++    //if (passthroughMode) {// use raw stick values to drive output 
++    // follow aux1 as being three way switch **NOTE: better to implement via check boxes in GUI 
++    if (rcData[AUX1]<1300) { // passthrough
++
++       servo[1]  = constrain(WING_LEFT_MID  + PITCH_DIRECTION_L * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL]-MIDRC), WING_LEFT_MIN,  WING_LEFT_MAX); //LEFT
++       servo[2]  = constrain(WING_RIGHT_MID + PITCH_DIRECTION_R * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL]-MIDRC), WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
++    } else { // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
++       servo[1]  = constrain(WING_LEFT_MID  + PITCH_DIRECTION_L * axisPID[PITCH]        + ROLL_DIRECTION_L * axisPID[ROLL], WING_LEFT_MIN,  WING_LEFT_MAX); //LEFT
++       servo[2]  = constrain(WING_RIGHT_MID + PITCH_DIRECTION_R * axisPID[PITCH]        + ROLL_DIRECTION_R * axisPID[ROLL], WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
++    }
+   #endif
+ 
+   maxMotor=motor[0];
+@@ -354,4 +362,4 @@
+       motor[i] = MINCOMMAND;
+   }
+ }
+-
++
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/Sensors.pde MultiWii_1_8_patch1/Sensors.pde
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/Sensors.pde	2011-08-28 16:19:08.000000000 +0200
++++ MultiWii_1_8_patch1/Sensors.pde	2011-08-30 22:58:57.000000000 +0200
+@@ -134,6 +134,9 @@
+ void checkStatusI2C() {
+   if ( TW_STATUS  == 0xF8) { //TW_NO_INFO : this I2C error status indicates a wrong I2C communication.
+     // WMP does not respond anymore => we do a hard reset. I did not find another way to solve it. It takes only 13ms to reset and init to WMP or WMP+NK
++   #ifdef LOG_VALUES
++    i2c_errors_count++;
++   #endif
+     TWCR = 0;
+     if (!GYRO) {
+       POWERPIN_OFF //switch OFF WMP
+@@ -919,4 +922,4 @@
+   if (BARO) Baro_init();
+   if (ACC) ACC_init();
+   if (MAG) Mag_init();
+-}
++}
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/Serial.pde MultiWii_1_8_patch1/Serial.pde
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/Serial.pde	2011-08-28 16:19:08.000000000 +0200
++++ MultiWii_1_8_patch1/Serial.pde	2011-09-01 17:08:53.000000000 +0200
+@@ -87,8 +87,14 @@
+       serialize8(vbat);
+       serialize16(BaroAlt*100.0f); // 4 variables are here for general monitoring purpose
+       serialize16(0);              // debug2
+-      serialize16(0);              // debug3
+-      serialize16(0);              // debug4
++
++      #ifdef LOG_VALUES
++         serialize16(i2c_errors_count);              // debug4
++         serialize16(failsafes_count);              // debug4
++      #else
++         serialize16(0);              // debug3
++         serialize16(0);              // debug3
++      #endif      
+       serialize8('M');
+       UartSendData(); // Serial.write(s,point);
+       break;
+@@ -133,4 +139,4 @@
+       break;
+     }
+   }
+-}
++}
+Only in MultiWii_1_8_patch1/: TRI60.h
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/config.h MultiWii_1_8_patch1/config.h
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWiiV1_8_patch1/MultiWii_1_8_patch1/config.h	2011-08-28 16:19:08.000000000 +0200
++++ MultiWii_1_8_patch1/config.h	2011-08-30 18:03:17.000000000 +0200
+@@ -204,6 +204,20 @@
+ #define TRI_YAW_CONSTRAINT_MAX 2000
+ #define TRI_YAW_MIDDLE 1500
+ 
++/* Flying Wing: you can change change servo orientation and servo min/max values here */
++/* valid for all flight modes, even passThrough mode */
++/* need to setup servo directions here; no need to swap servos amongst channels at rx */ 
++#define PITCH_DIRECTION_L 1 // left servo - pitch orientation
++#define PITCH_DIRECTION_R -1  // right servo - pitch orientation (opposite sign to PITCH_DIRECTION_L, if servos are mounted in mirrored orientation)
++#define ROLL_DIRECTION_L 1 // left servo - roll orientation
++#define ROLL_DIRECTION_R 1  // right servo - roll orientation  (same sign as ROLL_DIRECTION_L, if servos are mounted in mirrored orientation)
++#define WING_LEFT_MID  1500 // left servo center pos. - use this for trim
++#define WING_RIGHT_MID 1500 // right servo center pos. - use this for trim
++#define WING_LEFT_MIN  1020 // limit servo travel range
++#define WING_LEFT_MAX  2000 // limit servo travel range
++#define WING_RIGHT_MIN 1020 // limit servo travel range
++#define WING_RIGHT_MAX 2000 // limit servo travel range
++
+ /* enable monitoring of the power consumption from battery (think of mAh) */
+ /* allows to set alarm value in GUI or via LCD */
+ /* Two options: */
+@@ -278,4 +292,4 @@
+ 
+ /**************************************/
+ /****END OF CONFIGURABLE PARAMETERS****/
+-/**************************************/
++/**************************************/
+Only in MultiWii_1_8_patch1/: config.h.orig
