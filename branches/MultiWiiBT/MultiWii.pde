@@ -319,8 +319,10 @@ void loop () {
   static float AltHold = 0.0;
       
   if (currentTime > (rcTime + 20000) ) { // 50Hz
-    rcTime = currentTime; 
-    computeRC();
+    rcTime = currentTime;
+    #if not defined(MWBT) 
+	  computeRC();
+    #endif
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level

@@ -11,10 +11,10 @@
 
 /* The type of multicopter */
 //#define GIMBAL
-//#define BI
+#define BI
 //#define TRI
 //#define QUADP
-#define QUADX
+//#define QUADX
 //#define Y4
 //#define Y6
 //#define HEX6
@@ -37,6 +37,11 @@
 //#define INTERNAL_I2C_PULLUPS
 
 //****** advanced users settings   *************
+
+/* Bluetooth remote control
+   enable this only if you are planning to use the Android app to control your multirotor RC model
+*/
+#define MWBT
 
 /* This option is here if you want to use the old level code from the verison 1.7
    It's just to have some feedback. This will be removed in the future */
