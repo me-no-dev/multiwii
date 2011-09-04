@@ -138,6 +138,9 @@ void serialCom() {
     case 'E': //GUI to arduino MAG calibration request
       calibratingM=1;
       break;
+    case 'Z': //Flight Control data
+      // API levels to be defined
+      break;
     }
   }
 }
