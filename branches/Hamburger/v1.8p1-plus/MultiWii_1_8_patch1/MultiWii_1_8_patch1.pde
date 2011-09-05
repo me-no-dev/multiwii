@@ -40,7 +40,7 @@ August  2011     V1.8
 #define BOXCAMSTAB  3
 #define BOXCAMTRIG  4
 #define BOXARM      5
-
+#define NUMCHECKBOXES 6
 
 static uint32_t currentTime = 0;
 static uint32_t previousTime = 0;
@@ -130,7 +130,7 @@ static uint8_t dynP8[3], dynI8[3], dynD8[3];
 static uint8_t rollPitchRate;
 static uint8_t yawRate;
 static uint8_t dynThrPID;
-static uint8_t activate[6];
+static uint8_t activate[NUMCHECKBOXES];
 
 void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   uint8_t i,r;
@@ -179,7 +179,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
      pMeterRaw =  analogRead(PSENSORPIN);
      powerValue = ( PSENSORNULL > pMeterRaw ? PSENSORNULL - pMeterRaw : pMeterRaw - PSENSORNULL); // do not use abs(), it would induce implicit cast to uint and overrun
      #ifdef LOG_VALUES
-       if ( powerValue < 256) {  // only accept reasonable values. 256 is empirical
+       if ( powerValue < 333) {  // only accept reasonable values. 333 is empirical
          if (powerValue > powerMax) powerMax = powerValue;
          powerAvg = powerValue;
        }

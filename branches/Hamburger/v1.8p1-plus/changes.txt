@@ -15,3 +15,9 @@ changes:
 	- added blinking attrribute for telemetry page B depending on buzzer state
 	- added extra char to telemetry page B to display error conditions  i2c-resets (wmp) or failsafes
 
++ Wii: powermeter 
+	- change empirical cutoff for hardware sensor from 256 to 333
+	- for software sensor increase steps from 16 to 64 for more accuracy
+	
++ All: aux1/aux2 switches
+	- Wii: turn # of options a define NUMCHECKBOXES
