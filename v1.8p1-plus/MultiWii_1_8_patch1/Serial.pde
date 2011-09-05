@@ -77,7 +77,7 @@ void serialCom() {
       serialize8(rcRate8); serialize8(rcExpo8);
       serialize8(rollPitchRate); serialize8(yawRate);
       serialize8(dynThrPID);
-      for(i=0;i<6;i++) serialize8(activate[i]);
+      for(i=0;i<NUMCHECKBOXES;i++) serialize8(activate[i]);
       #if defined(POWERMETER)
         intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
         intPowerTrigger1 = powerTrigger1 * PLEVELSCALE;
@@ -123,7 +123,7 @@ void serialCom() {
       rcRate8 = Serial.read(); rcExpo8 = Serial.read();
       rollPitchRate = Serial.read(); yawRate = Serial.read(); //16
       dynThrPID = Serial.read();
-      for(i=0;i<6;i++) activate[i] = Serial.read(); //22
+      for(i=0;i<NUMCHECKBOXES;i++) activate[i] = Serial.read(); //22
      #if defined(POWERMETER)
       powerTrigger1 = (Serial.read() + 256* Serial.read() ) / PLEVELSCALE; // we rely on writeParams() to compute corresponding pAlarm value
      #else
