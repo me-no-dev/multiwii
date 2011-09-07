@@ -20,4 +20,9 @@ changes:
 	- for software sensor increase steps from 16 to 64 for more accuracy
 	
 + All: aux1/aux2 switches
-	- Wii: turn # of options a define NUMCHECKBOXES
+	- Wii: turn # of option items into a define NUMCHECKBOXES
+	- GUI: turn # of option items into a variable NUMCHECKBOXES
+
++ GUI: passthrough option
+	- added option item (like ARM)
+	- added status display (like NUNCHUCK)
