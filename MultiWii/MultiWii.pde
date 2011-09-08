@@ -1,7 +1,7 @@
 /*
 MultiWiiCopter by Alexandre Dubus
 www.multiwii.com
-July  2011     V1.dev
+August  2011     V1.8
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -327,12 +327,11 @@ void loop () {
   static uint32_t camTime = 0;
   static uint32_t rcTime  = 0;
   static int16_t initialThrottleHold;
-  static int32_t errorAltitudeI = 0;
-  static int16_t AltPID = 0;
+  static int16_t errorAltitudeI = 0;
+  int16_t AltPID = 0;
   static int16_t lastVelError = 0;
-  static int16_t lastAltError = 0;
   static float AltHold = 0.0;
-
+      
   if (currentTime > (rcTime + 20000) ) { // 50Hz
     rcTime = currentTime; 
     computeRC();
@@ -341,7 +340,10 @@ void loop () {
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level
         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
         rcData[THROTTLE] = FAILSAVE_THR0TTLE;
-        if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) armed = 0; // Turn OFF motors after specified Time (in 0.1sec)
+        if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
+          armed = 0;   //This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
+          okToArm = 0; //to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
+        }
       }
       failsafeCnt++;
     #endif
@@ -361,10 +363,8 @@ void loop () {
           #endif
           previousTime = micros();
         }
-      } else if (rcData[YAW] < MINCHECK && rcData[PITCH] < MINCHECK && armed == 0) {
-        if (rcDelayCommand == 20) calibratingG=400;
       } else if (activate[BOXARM] > 0) {
-        if ((rcOptions & activate[BOXARM]) && okToArm) armed = 1;
+        if ((rcOptions & activate[BOXARM]) && okToArm ) armed = 1;
         else if (armed) armed = 0;
         rcDelayCommand = 0;
       } else if ( (rcData[YAW] < MINCHECK || rcData[ROLL] < MINCHECK)  && armed == 1) {
@@ -427,10 +427,8 @@ void loop () {
           baroMode = 1;
           AltHold = EstAlt;
           initialThrottleHold = rcCommand[THROTTLE];
-          AltPID = 0;
           errorAltitudeI = 0;
           lastVelError = 0;
-          lastAltError = 0;
           EstVelocity = 0;
         }
       } else baroMode = 0;
@@ -453,7 +451,6 @@ void loop () {
   cycleTime = currentTime - previousTime;
   previousTime = currentTime;
 
-
   if(MAG) {
     if (abs(rcCommand[YAW]) <70 && magMode) {
       int16_t dif = heading - magHold;
@@ -466,30 +463,29 @@ void loop () {
 
   if(BARO) {
     if (baroMode) {
+      if (abs(rcCommand[THROTTLE]-initialThrottleHold)>20) {
+        baroMode = 0;
+        errorAltitudeI = 0;
+      }
       //**** Alt. Set Point stabilization PID ****
-      error = constrain((AltHold - EstAlt)*100.0f, -1000.0f, 1000.0f);
-      delta = error - lastAltError;
-
+      error = constrain((AltHold - EstAlt)*10, -100, 100); //  +/-10m,  1 decimeter accuracy
       errorAltitudeI += error;
       errorAltitudeI = constrain(errorAltitudeI,-5000,5000);
-
-      PTerm = (int32_t)error*P8[PIDALT]/10/4;
-      ITerm = (int32_t)errorAltitudeI*I8[PIDALT]/1000/4;
-      DTerm = delta * D8[PIDALT]/10/4;
-
-      lastAltError = error;
-      AltPID = PTerm + ITerm - DTerm;
-     
+      
+      PTerm = P8[PIDALT]*error/100;                     // 16 bits is ok here
+      ITerm = (int32_t)I8[PIDALT]*errorAltitudeI/4000;  // 
+      
+      AltPID = PTerm + ITerm ;
 
       //**** Velocity stabilization PD ****        
       error = constrain(EstVelocity*2000.0f, -30000.0f, 30000.0f);
       delta = error - lastVelError;
       lastVelError = error;
 
-      PTerm = (int32_t)error*P8[PIDVEL]/800;
-      DTerm = delta * D8[PIDVEL]/16;
+      PTerm = (int32_t)error * P8[PIDVEL]/800;
+      DTerm = (int32_t)delta * D8[PIDVEL]/16;
       
-      rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE] - (PTerm - DTerm) + AltPID,max(rcCommand[THROTTLE]-350,MINTHROTTLE),min(rcCommand[THROTTLE]+350,MAXTHROTTLE));
+      rcCommand[THROTTLE] = initialThrottleHold + constrain(AltPID - (PTerm - DTerm),-100,+100);
     }
   }
 
@@ -497,7 +493,7 @@ void loop () {
   //**** PITCH & ROLL & YAW PID ****    
   for(axis=0;axis<3;axis++) {
     if (accMode == 1 && axis<2 ) { //LEVEL MODE
-      errorAngle = rcCommand[axis] - angle[axis] + accTrim[axis];                   //rcCommand can reach 500*5 (rcRate=5)   ;  500*5+1800 = 4300: 16 bits is ok here
+      errorAngle = constrain(2*rcCommand[axis],-700,+700) - angle[axis] + accTrim[axis]; //16 bits is ok here
       #ifdef LEVEL_PDF
         PTerm      = -(int32_t)angle[axis]*P8[PIDLEVEL]/100 ;
       #else  
