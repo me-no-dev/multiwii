@@ -895,7 +895,7 @@ void processSerialData() {
       magzData.addVal(magz);
       debug1Data.addVal(debug1);debug2Data.addVal(debug2);debug3Data.addVal(debug3);debug4Data.addVal(debug4);
     }
-  } else g_serial.readStringUntil('A');
+  } else g_serial.readStringUntil('M');
 }
 
 

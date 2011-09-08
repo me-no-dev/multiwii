@@ -38,15 +38,26 @@
   #define ITG3200
   #define BMA180
   #define HMC5883
-  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  -Y; accADC[PITCH]  = X; accADC[YAW]  = Z;}
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = Y; accADC[YAW]  = Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X;  gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
-  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X;  magADC[PITCH]  = Y; magADC[YAW]  = Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  -Y;  magADC[PITCH]  = X; magADC[YAW]  = Z;} 
   #undef INTERNAL_I2C_PULLUPS
   #if defined(FREEIMUv035_MS)
     #define MS561101BA
   #elif defined(FREEIMUv035_BMP)
     #define BMP085
   #endif
+#endif
+
+#if defined(FREEIMUv03)
+  #define ITG3200
+  #define ADXL345 // this is actually an ADXL346 but that's just the same as ADXL345
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  -Y; accADC[PITCH]  = X; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X;  gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  -Y;  magADC[PITCH]  = X; magADC[YAW]  = Z;} 
+  #define ADXL345_ADDRESS 0xA6
+  #undef INTERNAL_I2C_PULLUPS
 #endif
 
 #if defined(PIPO)
@@ -114,7 +125,7 @@
   #ifdef INTERNAL_I2C_PULLUPS
 	#undef INTERNAL_I2C_PULLUPS
   #endif
-  #define I2C_SPEED 100000L
+  #define I2C_SPEED 400000L
 #endif
 
 #if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(ADCACC)
@@ -173,7 +184,7 @@
   #define DIGITAL_BI_LEFT_HIGH       ;
   #define DIGITAL_BI_LEFT_LOW        ;
   #define PPM_PIN_INTERRUPT          attachInterrupt(0, rxInt, RISING); //PIN 0
-  #define MOTOR_ORDER                9,10,11,3,6,5  //for a quad+: rear,right,left,front
+  #define MOTOR_ORDER                9,3,11,10,6,5  //for a quad+: rear,right,left,front
   #define DIGITAL_CAM_PINMODE        ;
   #define DIGITAL_CAM_HIGH           ;
   #define DIGITAL_CAM_LOW            ;
@@ -246,7 +257,7 @@
   #define LEDPIN_OFF                 PORTB &= ~(1<<7);PORTC &= ~(1<<7);
   #define BUZZERPIN_PINMODE          pinMode (32, OUTPUT);
   #define BUZZERPIN_ON               PORTC |= 1<<5;
-  #define BUZZERPIN_OFF              PORTC &= ~1<<5;
+  #define BUZZERPIN_OFF              PORTC &= ~(1<<5);
   #define POWERPIN_PINMODE           pinMode (37, OUTPUT);
   #define POWERPIN_ON                PORTC |= 1<<0;
   #define POWERPIN_OFF               PORTC &= ~(1<<0);
@@ -257,24 +268,24 @@
   #define LCDPIN_ON                  PORTE |= 1;       //switch OFF digital PIN 0
   #define STABLEPIN_PINMODE          pinMode (31, OUTPUT);
   #define STABLEPIN_ON               PORTC |= 1<<6;
-  #define STABLEPIN_OFF              PORTC &= ~1<<6;
+  #define STABLEPIN_OFF              PORTC &= ~(1<<6);
   #define DIGITAL_SERVO_TRI_PINMODE  pinMode(2,OUTPUT); //PIN 2 //also right servo for BI COPTER
   #define DIGITAL_SERVO_TRI_HIGH     PORTE |= 1<<4;
   #define DIGITAL_SERVO_TRI_LOW      PORTE &= ~(1<<4);
   #define DIGITAL_TILT_PITCH_PINMODE pinMode(34,OUTPUT);pinMode(44,OUTPUT); // 34 + 44
   #define DIGITAL_TILT_PITCH_HIGH    PORTC |= 1<<3;PORTL |= 1<<5;
-  #define DIGITAL_TILT_PITCH_LOW     PORTC &= ~(1<<3);PORTL |= 1<<5;
+  #define DIGITAL_TILT_PITCH_LOW     PORTC &= ~(1<<3);PORTL &= ~(1<<5);
   #define DIGITAL_TILT_ROLL_PINMODE  pinMode(35,OUTPUT);pinMode(45,OUTPUT); // 35 + 45
   #define DIGITAL_TILT_ROLL_HIGH     PORTC |= 1<<2;PORTL |= 1<<4;
-  #define DIGITAL_TILT_ROLL_LOW      PORTC &= ~(1<<2);PORTL |= 1<<4;
+  #define DIGITAL_TILT_ROLL_LOW      PORTC &= ~(1<<2);PORTL &= ~(1<<4);
   #define DIGITAL_BI_LEFT_PINMODE    pinMode(6,OUTPUT); 
   #define DIGITAL_BI_LEFT_HIGH       PORTH |= 1<<3;
   #define DIGITAL_BI_LEFT_LOW        PORTH &= ~(1<<3);
   #define PPM_PIN_INTERRUPT          attachInterrupt(4, rxInt, RISING);  //PIN 19, also used for Spektrum satellite option
   #define MOTOR_ORDER                3,5,6,2,7,8,9,10   //for a quad+: rear,right,left,front   //+ for y6: 7:under right  8:under left
-  #define DIGITAL_CAM_PINMODE        pinMode(33,OUTPUT); // 33
-  #define DIGITAL_CAM_HIGH           PORTC |= 1<<4;
-  #define DIGITAL_CAM_LOW            PORTC &= ~(1<<4);
+  #define DIGITAL_CAM_PINMODE        pinMode(33,OUTPUT); pinMode(46,OUTPUT); // 33 + 46
+  #define DIGITAL_CAM_HIGH           PORTC |= 1<<4;PORTL |= 1<<3;
+  #define DIGITAL_CAM_LOW            PORTC &= ~(1<<4);PORTL &= ~(1<<3);
   //RX PIN assignment inside the port //for PORTK
   #define THROTTLEPIN                0  //PIN 62 =  PIN A8
   #define ROLLPIN                    1  //PIN 63 =  PIN A9
@@ -285,7 +296,7 @@
   #define CAM1PIN                    6  //PIN 68 =  PIN A14
   #define CAM2PIN                    7  //PIN 69 =  PIN A15
   #define ISR_UART                   ISR(USART0_UDRE_vect)
-  #define V_BATPIN                   A3    // Analog PIN 3
+  #define V_BATPIN                   A0    // Analog PIN 3
   #define PSENSORPIN                 A2    // Analog PIN 2
 #endif
 
