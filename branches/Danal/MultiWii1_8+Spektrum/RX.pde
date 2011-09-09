@@ -33,7 +33,7 @@ void configureReceiver() {
     PPM_PIN_INTERRUPT
   #endif
   #if defined (SPEKTRUM)
-    Serial1.begin(115200);
+    SPEK_BAUD_SET 
     SPEK_SERIAL_INTERRUPT
   #endif
 }
