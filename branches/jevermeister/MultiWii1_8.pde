@@ -162,7 +162,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   static uint32_t telemetryAutoTime = 0;
   uint16_t pMeterRaw, powerValue;                //used for current reading
   static uint32_t psensorTime = 0;
-  static uint8_t ontime, offtime, beepcount;
+  static uint16_t ontime, offtime, beepcount;
 
 //Global Buzzer handling by Jevermeister
 if ( warn_failsafe >0 || warn_powermeter >0 || warn_vbat >0 || confirmation_flag > 0) {
@@ -170,12 +170,12 @@ if ( warn_failsafe >0 || warn_powermeter >0 || warn_vbat >0 || confirmation_flag
   if (confirmation_flag)buzzerFreq = 2;   //fast confirmation beep
   if (warn_vbat == 1)buzzerFreq = 1;      //vbat warning level 1
   if (warn_vbat == 2)buzzerFreq = 2;      //vbat warning level 2
-  if (warn_vbat == 3)buzzerFreq = 5;      //vbat critical level
+  if (warn_vbat == 3)buzzerFreq = 20;      //vbat critical level
   if (warn_powermeter == 1)buzzerFreq = 5;//powermeter warning
-  if (warn_failsafe == 1)buzzerFreq = 10 ;	//failsafe landing aktive
+  if (warn_failsafe == 1)buzzerFreq = 40 ;	//failsafe landing aktive
   if (warn_failsafe == 2)buzzerFreq = 1;	//failsafe "find me" signal
   ontime=100;                              //ontime is a constant of 100ms
-  offtime=1000/ buzzerFreq;                //pause between beeps, the shorter the more anoying. high buzzerfreq-->short pause
+  offtime=2000/ buzzerFreq;                //pause between beeps, the shorter the more anoying. high buzzerfreq-->short pause 2000ms =2s
   
   if (beepcount <= confirmation_flag){      //cnfirmation flag is 0,1 or 2 
     if ( !buzzerState && (millis() >= (buzzerTime + offtime)) ) {	          // Buzzer is off and time is up -> turn it on
@@ -234,38 +234,7 @@ if ( warn_failsafe >0 || warn_powermeter >0 || warn_vbat >0 || confirmation_flag
 
   #if defined(VBAT)
     vbatRaw = (vbatRaw*15 + analogRead(V_BATPIN)*16)>>4; // smoothing of vbat readings  
-    vbat = vbatRaw / VBATSCALE;                  // result is Vbatt in 0.1V steps     
-   
-
-    
-    /* ==================  VBAT Smoothing Mode 2 using moving average solution form arduino FAQ ================== 
-    // Define the number of samples to keep track of.  The higher the number,
-    // the more the readings will be smoothed, but the slower the output will
-    // respond to the input.  Using a constant rather than a normal variable lets
-    // use this value to determine the size of the readings array.
-    
-
-    //#if defined(VBAT_SMOOTH)
-
-    const int vbat_numReadings = 5;
-    static int vbat_readings[vbat_numReadings];      // the readings from the analog input
-    static int vbat_index = 0;                  // the index of the current reading
-    static int vbat_total = 0;                  // the running total
-    static int vbat_average = 0;                // the average
-
-      
-      vbat_total= vbat_total - vbat_readings[vbat_index];     // subtract this reading from the old turn to drop it off the ringbuffer:     
-      vbat_readings[vbat_index] = vbat;                       // read from the input variable: 
-      vbat_total= vbat_total + vbat_readings[vbat_index];     // add the reading to the total:   
-      vbat_index = vbat_index + 1;                            // advance to the next position in the array:              
-      if (vbat_index >= vbat_numReadings)                     // if we're at the end of the array...         
-        vbat_index = 0;                                       // ...wrap around to the beginning:                         
-      vbat_average = vbat_total / vbat_numReadings;           // calculate the average:       
-      vbat = vbat_average;                                    // send it to the code 
-
-    //#endif
-    /* ==========================================================================================  */
-
+    vbat = vbatRaw / VBATSCALE;                  // result is Vbatt in 0.1V steps  
   if ((vbat>VBATLEVEL1_3S) 
 	  #if defined(POWERMETER)
 	   	 && ( (pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0) )
@@ -387,11 +356,14 @@ void loop () {
         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
         rcData[THROTTLE] = FAILSAVE_THR0TTLE;
         if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
-          armed = 0;
+          armed = 0;							    // turn motors off
           warn_failsafe = 2;                                                // start "find me" signal
           okToArm = 0;                                                      //This will prevent the copter to automatically rearm if failsafe shuts it down and prevents to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
         }
       }
+      if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==0) {                  // tx turned off while motors are off
+        warn_failsafe = 2;                                                // start "find me" signal
+	  }
       failsafeCnt++;
     #endif
     // end of failsave routine - next change is made with RcOptions setting
@@ -471,7 +443,7 @@ void loop () {
     if(BARO) {
       if (rcOptions & activate[BOXBARO]) {
         if (baroMode == 0) {
-	 confirmation_flag = 1;		
+	 //confirmation_flag = 1;		
           baroMode = 1;
           AltHold = EstAlt;
           initialThrottleHold = rcCommand[THROTTLE];
@@ -484,7 +456,7 @@ void loop () {
     if(MAG) {	
       if (rcOptions & activate[BOXMAG]) {
         if (magMode == 0) {
-	 confirmation_flag = 1;	
+	 //confirmation_flag = 1;	
           magMode = 1;
           magHold = heading;
         }
