@@ -8,8 +8,8 @@
 
 /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller)
    This is the minimum value that allow motors to run at a idle speed  */
-#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
-//#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
+//#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
+#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
 //#define MINTHROTTLE 1220
 //#define MINTHROTTLE 1150 
 
@@ -60,7 +60,7 @@
 #define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
 #define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
 #define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
-#define FAILSAVE_THR0TTLE  (MINTHROTTLE + 100)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
+#define FAILSAVE_THR0TTLE  (MINTHROTTLE + 250)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
 
 
 /* The following lines apply only for a pitch/roll tilt stabilization system
