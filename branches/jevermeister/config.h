@@ -2,10 +2,6 @@
 /****CONFIGURABLE PARAMETERS****/
 /*******************************/
 
-
-// 2011-08-07 - Init: Edited minthrottle, Mega, Pan/Tilt, Quadx, acc, ppm
-
-
 /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller)
    This is the minimum value that allow motors to run at a idle speed  */
 //#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
@@ -46,8 +42,9 @@
    Additional information: http://wbb.multiwii.com/viewtopic.php?f=8&t=503 */
 //#define LEVEL_PDF
 
-/* introduce a deadband around the stick center */
-//#define DEADBAND
+/* introduce a deadband around the stick center
+   Must be greater than zero, comment if you dont want a deadband on roll, pitch and yaw */
+//#define DEADBAND 6
 
 /* Failsave settings - added by MIS
    Failsafe check pulse on THROTTLE channel. If the pulse is OFF (on only THROTTLE or on all channels) the failsafe procedure is initiated.
@@ -83,6 +80,7 @@
 //#define FFIMUv1         // first 9DOF+baro board from Jussi, with HMC5843                   <- confirmed by Alex
 //#define FFIMUv2         // second version of 9DOF+baro board from Jussi, with HMC5883       <- confirmed by Alex
 //#define FREEIMUv1       // v0.1 & v0.2 & v0.3 version of 9DOF board from Fabio
+//#define FREEIMUv03      // FreeIMU v0.3 and v0.3.1
 //#define FREEIMUv035     // FreeIMU v0.3.5 no baro
 //#define FREEIMUv035_MS  // FreeIMU v0.3.5_MS
 //#define FREEIMUv035_BMP // FreeIMU v0.3.5_MS
@@ -91,6 +89,7 @@
 //#define ALLINONE        // full FC board or standalone 9DOF+baro board from CSG_EU
 //#define AEROQUADSHIELDv2
 //#define ATAVRSBIN1      // Atmel 9DOF (Contribution by EOSBandi). The board requires 3.3V power.
+
 
 //if you use independent sensors
 //leave it commented it you already checked a specific board above

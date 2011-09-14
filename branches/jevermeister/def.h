@@ -38,15 +38,26 @@
   #define ITG3200
   #define BMA180
   #define HMC5883
-  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  -Y; accADC[PITCH]  = X; accADC[YAW]  = Z;}
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = Y; accADC[YAW]  = Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X;  gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
-  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X;  magADC[PITCH]  = Y; magADC[YAW]  = Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  -Y;  magADC[PITCH]  = X; magADC[YAW]  = Z;} 
   #undef INTERNAL_I2C_PULLUPS
   #if defined(FREEIMUv035_MS)
     #define MS561101BA
   #elif defined(FREEIMUv035_BMP)
     #define BMP085
   #endif
+#endif
+
+#if defined(FREEIMUv03)
+  #define ITG3200
+  #define ADXL345 // this is actually an ADXL346 but that's just the same as ADXL345
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  -Y; accADC[PITCH]  = X; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X;  gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  -Y;  magADC[PITCH]  = X; magADC[YAW]  = Z;} 
+  #define ADXL345_ADDRESS 0xA6
+  #undef INTERNAL_I2C_PULLUPS
 #endif
 
 #if defined(PIPO)
@@ -209,9 +220,9 @@
   #define DIGITAL_BI_LEFT_LOW        PORTH &= ~(1<<3);
   #define PPM_PIN_INTERRUPT          attachInterrupt(4, rxInt, RISING);  //PIN 19, also used for Spektrum satellite option
   #define MOTOR_ORDER                3,5,6,2,7,8,9,10   //for a quad+: rear,right,left,front   //+ for y6: 7:under right  8:under left
-  #define DIGITAL_CAM_PINMODE        pinMode(33,OUTPUT); // 33
-  #define DIGITAL_CAM_HIGH           PORTC |= 1<<4;
-  #define DIGITAL_CAM_LOW            PORTC &= ~(1<<4);
+  #define DIGITAL_CAM_PINMODE        pinMode(33,OUTPUT); pinMode(46,OUTPUT); // 33 + 46
+  #define DIGITAL_CAM_HIGH           PORTC |= 1<<4;PORTL |= 1<<3;
+  #define DIGITAL_CAM_LOW            PORTC &= ~(1<<4);PORTL &= ~(1<<3);
   //RX PIN assignment inside the port //for PORTK
   #define THROTTLEPIN                0  //PIN 62 =  PIN A8
   #define ROLLPIN                    1  //PIN 63 =  PIN A9
