@@ -1,7 +1,7 @@
 /*
 MultiWiiCopter by Alexandre Dubus
 www.multiwii.com
-August  2011     V1.dev
+August  2011     V1.8 Patch 2  Spektrum
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -33,7 +33,7 @@ August  2011     V1.dev
 #define BOXCAMSTAB  3
 #define BOXCAMTRIG  4
 #define BOXARM      5
-#define BOXGPS      6
+
 
 static uint32_t currentTime = 0;
 static uint32_t previousTime = 0;
@@ -47,7 +47,6 @@ static uint8_t  nunchuk = 0;
 static uint8_t  accMode = 0;        // if level mode is a activated
 static uint8_t  magMode = 0;        // if compass heading hold is a activated
 static uint8_t  baroMode = 0;       // if altitude hold is activated
-static uint8_t  GPSMode = 0;        // if GPS RTH is activated
 static int16_t  gyroADC[3],accADC[3],magADC[3];
 static int16_t  accSmooth[3];       // projection of smoothed and normalized gravitation force vector on x/y/z axis, as measured by accelerometer
 static int16_t  accTrim[2] = {0, 0};
@@ -131,7 +130,7 @@ static uint8_t dynP8[3], dynI8[3], dynD8[3];
 static uint8_t rollPitchRate;
 static uint8_t yawRate;
 static uint8_t dynThrPID;
-static uint8_t activate[7];
+static uint8_t activate[6];
 
 void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   uint8_t i,r;
@@ -143,16 +142,6 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
     delay(60);
   }
 }
-
-// **********************
-// GPS
-// **********************
-static int32_t  GPS_latitude,GPS_longitude;
-static int32_t  GPS_latitude_home,GPS_longitude_home;
-static uint8_t  GPS_fix , GPS_fix_home = 0;
-static uint8_t  GPS_numSat;
-static uint16_t distanceToHome;
-static int16_t directionToHome = 0;
 
 void annexCode() { //this code is excetuted at each loop and won't interfere with control loop if it lasts less than 650 microseconds
   static uint32_t serialTime = 0;
@@ -302,9 +291,6 @@ void setup() {
     for(uint8_t i=0;i<=PMOTOR_SUM;i++)
       pMeter[i]=0;
   #endif
-  #if defined(GPS)
-    GPS_SERIAL.begin(GPS_BAUD);
-  #endif
 }
 
 // ******** Main Loop *********
@@ -443,10 +429,6 @@ void loop () {
         }
       } else magMode = 0;
     }
-    #if defined(GPS)
-      if (rcOptions & activate[BOXGPS]) {GPSMode = 1;}
-      else GPSMode = 0;
-    #endif
   }
   if (MAG)  Mag_getADC();
   if (BARO) Baro_update();
@@ -556,20 +538,5 @@ void loop () {
   writeMotors();
   #if defined(LOG_VALUES) || (POWERMETER == 1)
     logMotorsPower();
-  #endif
-  
-  //GPS
-  #if defined(GPS)
-    while (GPS_SERIAL.available())
-      if (GPS_newFrame(GPS_SERIAL.read())) {
-        if (GPS_fix == 1) {
-          if (GPS_fix_home == 0) {
-            GPS_fix_home = 1;
-            GPS_latitude_home = GPS_latitude;
-            GPS_longitude_home = GPS_longitude;
-          }
-          GPS_distance(GPS_latitude_home,GPS_longitude_home,GPS_latitude,GPS_longitude, &distanceToHome, &directionToHome);
-        }
-      }
-  #endif
+  #endif 
 }
