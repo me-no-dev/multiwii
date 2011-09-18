@@ -61,13 +61,13 @@ void serialCom() {
       for(i=0;i<3;i++) serialize16(accSmooth[i]);
       for(i=0;i<3;i++) serialize16(gyroData[i]/8);
       for(i=0;i<3;i++) serialize16(magADC[i]/3);
-      serialize16(EstAlt*100.0f);
+      serialize16(EstAlt*10.0f);
       serialize16(heading); // compass
       for(i=0;i<4;i++) serialize16(servo[i]);
       for(i=0;i<8;i++) serialize16(motor[i]);
       for(i=0;i<8;i++) serialize16(rcData[i]);
-      serialize8(nunchuk|ACC<<1|BARO<<2|MAG<<3|GPSPRESENT<<4);
-      serialize8(accMode|baroMode<<1|magMode<<2|GPSMode<<3);
+      serialize8(nunchuk|ACC<<1|BARO<<2|MAG<<3);
+      serialize8(accMode|baroMode<<1|magMode<<2);
       serialize16(cycleTime);
       for(i=0;i<2;i++) serialize16(angle[i]/10);
       serialize8(MULTITYPE);
@@ -77,11 +77,7 @@ void serialCom() {
       serialize8(rcRate8); serialize8(rcExpo8);
       serialize8(rollPitchRate); serialize8(yawRate);
       serialize8(dynThrPID);
-      for(i=0;i<7;i++) serialize8(activate[i]);
-      serialize16(distanceToHome);
-      serialize16(directionToHome);
-      serialize8(GPS_numSat);
-      serialize8(GPS_fix);
+      for(i=0;i<6;i++) serialize8(activate[i]);
       #if defined(POWERMETER)
         intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
         intPowerTrigger1 = powerTrigger1 * PLEVELSCALE;
@@ -89,7 +85,7 @@ void serialCom() {
       serialize16(intPowerMeterSum);
       serialize16(intPowerTrigger1);
       serialize8(vbat);
-      serialize16(BaroAlt*100.0f); // 4 variables are here for general monitoring purpose
+      serialize16(BaroAlt*10.0f); // 4 variables are here for general monitoring purpose
       serialize16(0);              // debug2
       serialize16(0);              // debug3
       serialize16(0);              // debug4
@@ -114,14 +110,14 @@ void serialCom() {
       UartSendData();
       break;
     case 'W': //GUI write params to eeprom @ arduino
-      while (Serial.available()<32) {}
+      while (Serial.available()<29) {}
       for(i=0;i<5;i++) {P8[i]= Serial.read(); I8[i]= Serial.read(); D8[i]= Serial.read();} //9
       P8[PIDLEVEL] = Serial.read(); I8[PIDLEVEL] = Serial.read(); //11
       P8[PIDMAG] = Serial.read();
       rcRate8 = Serial.read(); rcExpo8 = Serial.read();
       rollPitchRate = Serial.read(); yawRate = Serial.read(); //16
       dynThrPID = Serial.read();
-      for(i=0;i<7;i++) activate[i] = Serial.read(); //22
+      for(i=0;i<6;i++) activate[i] = Serial.read(); //22
      #if defined(POWERMETER)
       powerTrigger1 = (Serial.read() + 256* Serial.read() ) / PLEVELSCALE; // we rely on writeParams() to compute corresponding pAlarm value
      #else
