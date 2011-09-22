@@ -34,14 +34,9 @@
 //#define MEGA
 
 //enable internal I2C pull ups
-//#define INTERNAL_I2C_PULLUPS
+#define INTERNAL_I2C_PULLUPS
 
 //****** advanced users settings   *************
-
-/* Bluetooth remote control
-   enable this only if you are planning to use the Android app to control your multirotor RC model
-*/
-#define MWBT
 
 /* This option is here if you want to use the old level code from the verison 1.7
    It's just to have some feedback. This will be removed in the future */
@@ -73,7 +68,7 @@
    Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
    If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
    If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
-#define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
+//#define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
 #define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
 #define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
 #define FAILSAVE_THR0TTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
@@ -154,8 +149,24 @@
 //#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,CAMPITCH,CAMROLL //For Robe/Hitec/Futaba
 //#define SERIAL_SUM_PPM         PITCH,ROLL,THROTTLE,YAW,AUX1,AUX2,CAMPITCH,CAMROLL //For some Hitec/Sanwa/Others
 
-/* The following lines apply only for Spektrum Satellite Receiver on MEGA boards only */ //not yet implemented
+/* EXPERIMENTAL !!
+   The following lines apply only for Spektrum Satellite Receiver
+   Spektrum Satellites are 3V devices.  DO NOT connect to 5V!
+   For MEGA boards, attach sat grey wire to RX1, pin 19. Sat black wire to ground. Sat orange wire to Mega board's 3.3V (or any other 3V to 3.3V source).
+   For PROMINI, attach sat grey to RX0.  Attach sat black to ground.
+   There is no 3.3V source on a pro mini; you can either use a different 3V source, or attach orange to 5V with a 3V regulator in-line (such as http://search.digikey.com/scripts/DkSearch/dksus.dll?Detail&name=MCP1700-3002E/TO-ND)
+   If you use an inline-regulator, a standard 3-pin servo connector can connect to ground, +5V, and RX0; solder the correct wires (and the 3V regulator!) to a Spektrum baseRX-to-Sat cable that has been cut in half.
+   NOTE: Because there is only one serial port on the Pro Mini, using a Spektrum Satellite implies you CANNOT use the PC based configuration tool. Further, you cannot use on-aircraft serial LCD as the baud rates are incompatible. You can use an on-aircraft Eagle Tree LCD for setting gains, reading sensors, etc.
+   (Contribution by Danal) */
 //#define SPEKTRUM
+
+/* EXPERIMENTAL !!
+   contribution from Captain IxI and Zaggo
+   cf http://www.multiwii.com/forum/viewtopic.php?f=7&t=289
+   The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1).
+   You have to invert the S-Bus-Serial Signal e.g. with a Hex-Inverter like IC SN74 LS 04 */
+//#define SBUS   PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,CAMPITCH,CAMROLL // Order of channels in the SBUS
+
 
 /* interleaving delay in micro seconds between 2 readings WMP/NK in a WMP+NK config
    if the ACC calibration time is very long (20 or 30s), try to increase this delay up to 4000
@@ -190,7 +201,7 @@
 
 /* In order to save space, it's possibile to desactivate the LCD configuration functions
    comment this line only if you don't plan to used a LCD */
-#define LCD_CONF
+//#define LCD_CONF
 
 /* to use Cat's whisker TEXTSTAR LCD, uncomment following line.
    Pleae note this display needs a full 4 wire connection to (+5V, Gnd, RXD, TXD )
@@ -298,3 +309,4 @@
 /**************************************/
 /****END OF CONFIGURABLE PARAMETERS****/
 /**************************************/
+
