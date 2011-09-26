@@ -89,7 +89,7 @@
 //#define ALLINONE        // full FC board or standalone 9DOF+baro board from CSG_EU
 //#define AEROQUADSHIELDv2
 //#define ATAVRSBIN1      // Atmel 9DOF (Contribution by EOSBandi). The board requires 3.3V power.
-
+//#define SIRIUS          // Sirius Navigator IMU                                             <- confirmed by Alex
 
 //if you use independent sensors
 //leave it commented it you already checked a specific board above
