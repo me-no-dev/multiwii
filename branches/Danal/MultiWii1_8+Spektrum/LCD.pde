@@ -1,3 +1,4 @@
+
 // ************************************************************************************************************
 // LCD & display & monitoring
 // ************************************************************************************************************
@@ -85,9 +86,14 @@ static lcd_param_t lcd_param[] = {
 // 1000000 / 9600  = 104 microseconds at 9600 baud.
 // we set it below to take some margin with the running interrupts
 #define BITDELAY 102
+
+
 void LCDprint(uint8_t i) {
   #if defined(LCD_TEXTSTAR)
     Serial.print( i , BYTE);
+  #endif
+  #if defined(LCD_ETPP) 
+   i2c_ETPP_send_char(i);
   #else
     LCDPIN_OFF
     delayMicroseconds(BITDELAY);
@@ -100,8 +106,13 @@ void LCDprint(uint8_t i) {
   #endif
 }
 
+
 void LCDprintChar(const char *s) {
-  while (*s) LCDprint(*s++);
+//  #if defined(LCD_ETPP) 
+//    i2c_ETPP_send_string(*s)
+//  #else
+    while (*s) LCDprint(*s++);
+//  #endif
 }
 
 void initLCD() {
@@ -117,6 +128,14 @@ void initLCD() {
     LCDprintChar("for all params");
     delay(2500);
     LCDprint(0x0c); //clear screen
+  #endif
+  #if defined(LCD_ETPP)
+    i2c_ETPP_init();
+    LCDprintChar("MultiWii Config");
+    LCDprint(0x0d); // carriage return
+    LCDprintChar("for all params");
+    delay(2500);
+    lcdClear();
   #else
     Serial.end();
     //init LCD
@@ -194,6 +213,10 @@ void configurationLoop() {
       #if defined(LCD_TEXTSTAR)
         LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
         LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
+      #endif
+      #if defined(LCD_ETPP)
+        i2c_ETPP_set_cursor(0,0);LCDprintChar(line1);
+        i2c_ETPP_set_cursor(0,1);LCDprintChar(line2);
       #else
         LCDprint(0xFE);LCDprint(128);LCDprintChar(line1);
         LCDprint(0xFE);LCDprint(192);LCDprintChar(line2);
@@ -225,8 +248,12 @@ void configurationLoop() {
     LCDprint(0x0c); //clear screen
     if (LCD == 0) LCDprintChar("Saving Settings.."); else LCDprintChar("skipping Save.");
   #endif
+  #if defined(LCD_ETPP)
+    lcdClear();
+    if (LCD == 0) LCDprintChar("Saving Settings.."); else LCDprintChar("skipping Save.");
+  #endif
   if (LCD == 0) writeParams();
-  #if defined(LCD_TEXTSTAR)
+  #if (defined(LCD_TEXTSTAR) || defined(LCD_ETPP))
     LCDprintChar("..done! Exit.");
   #else
     Serial.begin(SERIAL_COM_SPEED);
@@ -356,3 +383,56 @@ void lcd_telemetry() {
   } // end switch (telemetry) 
 } // end function
 #endif //  LCD_TELEMETRY
+
+
+
+#if defined(LCD_ETPP)
+  // *********************
+  // i2c Eagle Tree Power Panel primitives
+  // *********************
+    void i2c_ETPP_init () {
+      i2c_rep_start(0x76+0);      // ETPP i2c address: 0x3B in 7 bit form. Shift left one bit and concatenate i2c write command bit of zero = 0x76 in 8 bit form.
+      i2c_write(0x00);            // ETPP command register
+      i2c_write(0x24);            // Function Set 001D0MSL D : data length for parallel interface only; M: 0 = 1x32 , 1 = 2x16; S: 0 = 1:18 multiplex drive mode, 1×32 or 2×16 character display, 1 = 1:9 multiplex drive mode, 1×16 character display; H: 0 = basic instruction set plus standard instruction set, 1 = basic instruction set plus extended instruction set
+      i2c_write(0x0C);            // Display on   00001DCB D : 0 = Display Off, 1 = Display On; C : 0 = Underline Cursor Off, 1 = Underline Cursor On; B : 0 = Blinking Cursor Off, 1 = Blinking Cursor On
+      i2c_write(0x06);            // Cursor Move  000001IS I : 0 = DDRAM or CGRAM address decrements by 1, cursor moves to the left, 1 = DDRAM or CGRAM address increments by 1, cursor moves to the right; S : 0 = display does not shift,  1 = display does shifts
+      lcdClear();         
+    }
+    void i2c_ETPP_send_cmd (byte c) {
+      i2c_rep_start(0x76+0);      // I2C write direction
+      i2c_write(0x00);            // ETPP command register
+      i2c_write(c);
+    }
+    void i2c_ETPP_send_char (char c) {
+      if (c > 0x0f) c |=  0x80;   // ETPP uses character set "R", which has A->z mapped same as ascii + high bit; don't mess with custom chars. 
+      i2c_rep_start(0x76+0);      // I2C write direction
+      i2c_write(0x40);            // ETPP data register
+      i2c_write(c);
+    }
+//    void i2c_ETPP_send_string (const char *s) {
+//      i2c_rep_start(0x76+0);      // I2C write direction
+//      i2c_write(0x40);            // ETPP data register
+//      while (*s) {byte c = *s++; if (c > 0x0f) c |=  0x80; i2c_write(c);}
+//    }
+    void i2c_ETPP_set_cursor (byte addr) {  
+      i2c_ETPP_send_cmd(0x80 | addr);    // High bit is "Set DDRAM" command, remaing bits are addr.  
+    }
+    void i2c_ETPP_set_cursor (byte col, byte row) {  
+      row = min(row,1);
+      col = min(col,15);  
+      byte addr = col + row * 0x40;      // Why 0x40? RAM in this controller has many more bytes than are displayed.  In particular, the start of the second line (line 1 char 0) is 0x40 in DDRAM. The bytes between 0x0F (last char of line 1) and 0x40 are not displayable (unless the display is placed in marquee scroll mode)
+      i2c_ETPP_set_cursor(addr);          
+    }
+//    void i2c_ETPP_create_char (byte idx, uint8_t* array) {
+//      i2c_ETPP_send_cmd(0x80);                   // CGRAM and DDRAM share an address register, but you can't set certain bits with the CGRAM address command.   Use DDRAM address command to be sure high order address bits are zero. 
+//      i2c_ETPP_send_cmd(0x40 | byte(idx * 8));   // Set CGRAM address 
+//      i2c_rep_start(0x76+0);                     // I2C write direction
+//      i2c_write(0x40);                           // ETPP data register
+//      for (byte i = 0 ; i<8 ; i++) {i2c_write(*array); array++;}
+//    }
+  //*******************************************************************************************************************************************************************
+    void lcdClear() {
+      i2c_ETPP_send_cmd(0x01);                              // Clear display command, which does NOT clear an Eagle Tree because character set "R" has a '>' at 0x20
+      for (byte i = 0; i<80; i++) i2c_ETPP_send_char(' ');  // Blanks for all 80 bytes of RAM in the controller, not just the 2x16 display
+    }
+#endif
