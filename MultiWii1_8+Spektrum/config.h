@@ -191,7 +191,15 @@
 
 /* In order to save space, it's possibile to desactivate the LCD configuration functions
    comment this line only if you don't plan to used a LCD */
-//#define LCD_CONF
+#define LCD_CONF
+
+/* To use an Eagle Tree Power Panel LCD for configuration, uncomment this line
+ White wire  to Ground
+ Red wire    to +5V VCC (or to the WMP power pin, if you prefer to reset everything on the bus when WMP resets)
+ Yellow wire to SDA - Pin A4 Mini Pro - Pin 20 Mega
+ Brown wire  to SCL - Pin A5 Mini Pro - Pin 21 Mega 
+ (Contribution by Danal) */
+#define LCD_ETPP
 
 /* to use Cat's whisker TEXTSTAR LCD, uncomment following line.
    Pleae note this display needs a full 4 wire connection to (+5V, Gnd, RXD, TXD )

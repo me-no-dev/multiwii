@@ -291,6 +291,12 @@ void setup() {
     for(uint8_t i=0;i<=PMOTOR_SUM;i++)
       pMeter[i]=0;
   #endif
+  #if defined(LCD_ETPP)
+    i2c_ETPP_init();
+    i2c_ETPP_set_cursor(0,0);LCDprintChar("MultiWii V1.8P2");
+    i2c_ETPP_set_cursor(0,1);LCDprintChar("Ready to Fly!");
+  #endif
+
 }
 
 // ******** Main Loop *********
