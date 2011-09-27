@@ -5,7 +5,6 @@
  S  acc Sensor calibration request
  E  mag Sensor calibration request
 */
-
 import processing.serial.*; // serial library
 import controlP5.*; // controlP5 library
 import processing.opengl.*;
@@ -15,18 +14,17 @@ ControlP5 controlP5;
 Textlabel txtlblWhichcom,version; 
 ListBox commListbox;
 
-int frame_size = 122;
+int frame_size = 123;
 
 cGraph g_graph;
-int windowsX    = 800; int windowsY    = 540;
-int xGraph      = 10;  int yGraph      = 325;
-int xObj        = 700; int yObj        = 450;
-int xParam      = 120; int yParam      = 10;
-int xRC         = 650; int yRC         = 15;
-int xMot        = 490; int yMot        = 30;
-
-int xButton   = 485;         int yButton    = 185;
-int xBox      = xParam+190;  int yBox      = yParam+90;
+int windowsX    = 800;        int windowsY    = 540;
+int xGraph      = 10;         int yGraph      = 325;
+int xObj        = 700;        int yObj        = 450;
+int xParam      = 120;        int yParam      = 10;
+int xRC         = 650;        int yRC         = 15;
+int xMot        = 490;        int yMot        = 30;
+int xButton     = 485;        int yButton    = 185;
+int xBox        = xParam+190; int yBox      = yParam+70;
 
 boolean axGraph =true,ayGraph=true,azGraph=true,gxGraph=true,gyGraph=true,gzGraph=true,baroGraph=true,headGraph=true, magxGraph =true,magyGraph=true,magzGraph=true;
 boolean debug1Graph = false,debug2Graph = false,debug3Graph = false,debug4Graph = false;
@@ -68,8 +66,8 @@ color yellow_ = color(200, 200, 20), green_ = color(30, 120, 30), red_ = color(1
 boolean graphEnable = false;boolean readEnable = false;boolean writeEnable = false;boolean calibrateEnable = false;
 
 float gx,gy,gz,ax,ay,az,magx,magy,magz,baro,head,angx,angy,debug1,debug2,debug3,debug4;
-float GPS_distanceToHome, GPS_directionToHome;
-int  GPS_numSat,GPS_fix;
+int GPS_distanceToHome, GPS_directionToHome;
+int  GPS_numSat,GPS_fix,GPS_update;
 int init_com,graph_on,pMeterSum,intPowerTrigger,bytevbat;
 
 Numberbox confPowerTrigger;
@@ -83,8 +81,6 @@ int nunchukPresent,i2cAccPresent,i2cBaroPresent,i2cMagnetoPresent,GPSPresent,lev
 
 float time1,time2;
 int cycleTime;
-
-private static final int BOXACC = 0,BOXBARO = 1,BOXMAG = 2,BOXCAMSTAB = 3,BOXCAMTRIG = 4,BOXARM = 5,GPS = 6;
 
 CheckBox checkbox[] = new CheckBox[7];
 int activation[] = new int[7];
@@ -191,9 +187,6 @@ void setup() {
   controlP5.addTextlabel("debug3","debug3",x+330,y6);
   controlP5.addTextlabel("debug4","debug4",x+450,y6);
 
-  controlP5.addTextlabel("GPSDISTlabel","DIST HOME :",xo,y7);
-  controlP5.addTextlabel("GPSNUMlabel","NUM SAT     :",xo,y7+15);
-
   axSlider   =         controlP5.addSlider("axSlider",-1000,+1000,0,x+20,y1+10,50,10);axSlider.setDecimalPrecision(0);axSlider.setLabel("");
   aySlider   =         controlP5.addSlider("aySlider",-1000,+1000,0,x+20,y1+20,50,10);aySlider.setDecimalPrecision(0);aySlider.setLabel("");
   azSlider   =         controlP5.addSlider("azSlider",-1000,+1000,0,x+20,y1+30,50,10);azSlider.setDecimalPrecision(0);azSlider.setLabel("");
@@ -210,34 +203,15 @@ void setup() {
   debug3Slider  =    controlP5.addSlider("debug3Slider",-5000,+5000,0,x+370,y6,50,10);debug3Slider.setDecimalPrecision(0);debug3Slider.setLabel("");
   debug4Slider  =    controlP5.addSlider("debug4Slider",-5000,+5000,0,x+490,y6,50,10);debug4Slider.setDecimalPrecision(0);debug4Slider.setLabel("");
 
-  confP[ROLL] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confP_ROLL",0,xParam+40,yParam+20,30,14));confP[ROLL].setDecimalPrecision(1);confP[ROLL].setMultiplier(0.1);confP[ROLL].setMax(20);
-  confI[ROLL] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confI_ROLL",0,xParam+75,yParam+20,40,14));confI[ROLL].setDecimalPrecision(3);confI[ROLL].setMultiplier(0.001);confI[ROLL].setMax(0.250);
-  confD[ROLL] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confD_ROLL",0,xParam+120,yParam+20,30,14));confD[ROLL].setDecimalPrecision(0);confD[ROLL].setMultiplier(1);confD[ROLL].setMax(50);
-
-  confP[PITCH] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confP_PITCH",0,xParam+40,yParam+40,30,14));confP[PITCH].setDecimalPrecision(1);confP[PITCH].setMultiplier(0.1);confP[PITCH].setMax(20);
-  confI[PITCH] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confI_PITCH",0,xParam+75,yParam+40,40,14));confI[PITCH].setDecimalPrecision(3);confI[PITCH].setMultiplier(0.001);confI[PITCH].setMax(0.250);
-  confD[PITCH] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confD_PITCH",0,xParam+120,yParam+40,30,14));confD[PITCH].setDecimalPrecision(0);confD[PITCH].setMultiplier(1);confD[PITCH].setMax(50);
-
-  confP[YAW] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confP_YAW",0,xParam+40,yParam+60,30,14));confP[YAW].setDecimalPrecision(1);confP[YAW].setMultiplier(0.1);confP[YAW].setMax(20);
-  confI[YAW] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confI_YAW",0,xParam+75,yParam+60,40,14));confI[YAW].setDecimalPrecision(3);confI[YAW].setMultiplier(0.001);confI[YAW].setMax(0.250);
-  confD[YAW] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confD_YAW",0,xParam+120,yParam+60,30,14));confD[YAW].setDecimalPrecision(0);confD[YAW].setMultiplier(1);confD[YAW].setMax(50);
-
-  confP[ALT] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confP_ALT",0,xParam+40,yParam+80,30,14));confP[ALT].setDecimalPrecision(1);confP[ALT].setMultiplier(0.1);confP[ALT].setMax(20);
-  confI[ALT] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confI_ALT",0,xParam+75,yParam+80,40,14));confI[ALT].setDecimalPrecision(3);confI[ALT].setMultiplier(0.001);confI[ALT].setMax(0.250);
-  confD[ALT] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confD_ALT",0,xParam+120,yParam+80,30,14));confD[ALT].setDecimalPrecision(0);confD[ALT].setMultiplier(1);confD[ALT].setMax(50);
-
-  confP[VEL] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confP_VEL",0,xParam+40,yParam+100,30,14));confP[VEL].setDecimalPrecision(1);confP[VEL].setMultiplier(0.1);confP[VEL].setMax(20);
-  confI[VEL] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confI_VEL",0,xParam+75,yParam+100,40,14));confI[VEL].setDecimalPrecision(3);confI[VEL].setMultiplier(0.001);confI[VEL].setMax(0.250);
-  confD[VEL] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confD_VEL",0,xParam+120,yParam+100,30,14));confD[VEL].setDecimalPrecision(0);confD[VEL].setMultiplier(1);confD[VEL].setMax(50);
-
-  confP[LEVEL] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confP_LEVEL",0,xParam+40,yParam+120,30,14));confP[LEVEL].setDecimalPrecision(1);confP[LEVEL].setMultiplier(0.1);confP[LEVEL].setMax(25);
-  confI[LEVEL] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confI_LEVEL",0,xParam+75,yParam+120,40,14));confI[LEVEL].setDecimalPrecision(3);confI[LEVEL].setMultiplier(0.001);confI[LEVEL].setMax(0.250);
-
-  confP[MAG] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confP_MAG",0,xParam+40,yParam+138,30,14));confP[MAG].setDecimalPrecision(1);confP[MAG].setMultiplier(0.1);confP[MAG].setMax(15);
-
-  for(int i=0;i<7;i++) {confP[i].setColorBackground(red_);confP[i].setMin(0);confP[i].setDirection(Controller.HORIZONTAL);}
-  for(int i=0;i<6;i++) {confI[i].setColorBackground(red_);confI[i].setMin(0);confI[i].setDirection(Controller.HORIZONTAL);}
-  for(int i=0;i<5;i++) {confD[i].setColorBackground(red_);confD[i].setMin(0);confD[i].setDirection(Controller.HORIZONTAL);}
+  for(int i=0;i<7;i++) {
+    confP[i] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confP"+i,0,xParam+40,yParam+20+i*20,30,14));
+    confP[i].setColorBackground(red_);confP[i].setMin(0);confP[i].setDirection(Controller.HORIZONTAL);confP[i].setDecimalPrecision(1);confP[i].setMultiplier(0.1);confP[i].setMax(20);}
+  for(int i=0;i<6;i++) {
+    confI[i] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confI"+i,0,xParam+75,yParam+20+i*20,40,14));
+    confI[i].setColorBackground(red_);confI[i].setMin(0);confI[i].setDirection(Controller.HORIZONTAL);confI[i].setDecimalPrecision(3);confI[i].setMultiplier(0.001);confI[i].setMax(0.250);}
+  for(int i=0;i<5;i++) {
+    confD[i] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confD"+i,0,xParam+120,yParam+20+i*20,30,14));
+    confD[i].setColorBackground(red_);confD[i].setMin(0);confD[i].setDirection(Controller.HORIZONTAL);confD[i].setDecimalPrecision(0);confD[i].setMultiplier(1);confD[i].setMax(50);}
 
   rollPitchRate = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("rollPitchRate",0,xParam+160,yParam+30,30,14));rollPitchRate.setDecimalPrecision(2);rollPitchRate.setMultiplier(0.01);
   rollPitchRate.setDirection(Controller.HORIZONTAL);rollPitchRate.setMin(0);rollPitchRate.setMax(1);rollPitchRate.setColorBackground(red_);
@@ -251,15 +225,8 @@ void setup() {
   confRC_EXPO = controlP5.addNumberbox("RC EXPO",0,xParam+40,yParam+200,30,14);confRC_EXPO.setDecimalPrecision(2);confRC_EXPO.setMultiplier(0.01);confRC_EXPO.setLabel("");
   confRC_EXPO.setDirection(Controller.HORIZONTAL);confRC_EXPO.setMin(0);confRC_EXPO.setMax(1);confRC_EXPO.setColorBackground(red_);
 
-  checkbox[BOXACC] = controlP5.addCheckBox("cbBOXACC",xBox+40,yBox+20);
-  checkbox[BOXBARO] = controlP5.addCheckBox("cbBOXARO",xBox+40,yBox+33);
-  checkbox[BOXMAG] = controlP5.addCheckBox("cbBOXMAG",xBox+40,yBox+46);
-  checkbox[BOXCAMSTAB] = controlP5.addCheckBox("cbBOXCAMSTAB",xBox+40,yBox+59);
-  checkbox[BOXCAMTRIG] = controlP5.addCheckBox("cbBOXCAMTRIG",xBox+40,yBox+72);
-  checkbox[BOXARM] = controlP5.addCheckBox("cbBOXARM",xBox+40,yBox+85);
-  checkbox[GPS] = controlP5.addCheckBox("cbBOXGPS",xBox+40,yBox+98);
-
   for(int i=0;i<7;i++) {
+    checkbox[i] =  controlP5.addCheckBox("cb"+i,xBox+40,yBox+20+13*i);
     checkbox[i].setColorActive(color(255));checkbox[i].setColorBackground(color(120));
     checkbox[i].setItemsPerRow(6);checkbox[i].setSpacingColumn(10);
     checkbox[i].setLabel("");
@@ -267,10 +234,10 @@ void setup() {
     hideLabel(checkbox[i].addItem(i + "4",4));hideLabel(checkbox[i].addItem(i + "5",5));hideLabel(checkbox[i].addItem(i + "6",6));
   }
 
-  buttonREAD =      controlP5.addButton("READ",1,xParam+5,yParam+225,60,16);buttonREAD.setColorBackground(red_);
-  buttonWRITE =     controlP5.addButton("WRITE",1,xParam+290,yParam+225,60,16);buttonWRITE.setColorBackground(red_);
-  buttonCALIBRATE_ACC = controlP5.addButton("CALIB_ACC",1,xParam+210,yParam+225,70,16);buttonCALIBRATE_ACC.setColorBackground(red_);
-  buttonCALIBRATE_MAG = controlP5.addButton("CALIB_MAG",1,xParam+130,yParam+225,70,16);buttonCALIBRATE_MAG.setColorBackground(red_);
+  buttonREAD =      controlP5.addButton("READ",1,xParam+5,yParam+260,60,16);buttonREAD.setColorBackground(red_);
+  buttonWRITE =     controlP5.addButton("WRITE",1,xParam+290,yParam+260,60,16);buttonWRITE.setColorBackground(red_);
+  buttonCALIBRATE_ACC = controlP5.addButton("CALIB_ACC",1,xParam+210,yParam+260,70,16);buttonCALIBRATE_ACC.setColorBackground(red_);
+  buttonCALIBRATE_MAG = controlP5.addButton("CALIB_MAG",1,xParam+130,yParam+260,70,16);buttonCALIBRATE_MAG.setColorBackground(red_);
 
   rcStickThrottleSlider = controlP5.addSlider("Throttle",900,2100,1500,xRC,yRC,10,100);rcStickThrottleSlider.setDecimalPrecision(0);
   rcStickPitchSlider =    controlP5.addSlider("Pitch",900,2100,1500,xRC+80,yRC,10,100);rcStickPitchSlider.setDecimalPrecision(0);
@@ -315,6 +282,13 @@ void draw() {
   text("Power:",xGraph-5,yGraph-30); text(pMeterSum,xGraph+50,yGraph-30);
   text("pAlarm:",xGraph-5,yGraph-15);
   text("Volt:",xGraph-5,yGraph-2);  text(bytevbat/10.0,xGraph+50,yGraph-2);
+
+  text("DIST HOME :",xGraph-8,yGraph+185+8);
+  text(GPS_distanceToHome,xGraph+70,yGraph+185+8);
+  if(GPS_fix == 0) fill(255,100,100); else fill(0,128,0);
+  text("NUM SAT     :",xGraph-8,yGraph+185+23);
+  text(GPS_numSat,xGraph+70,yGraph+185+23);
+  fill(255,255,255);
 
   time1=millis();
   if (init_com==1 && (time1-time2)>50 && graph_on==1) {
@@ -479,7 +453,13 @@ void draw() {
   translate(xObj-20,yObj-133);
 
   size=15;
-  strokeWeight(1.5);fill(125);stroke(125);ellipse(0,  0,   4*size+7, 4*size+7);
+  strokeWeight(1.5);
+  if (GPS_update == 1) {
+    fill(125);stroke(125);
+  } else {
+    fill(160);stroke(160);
+  }
+  ellipse(0,  0,   4*size+7, 4*size+7);
 
   rotate(GPS_directionToHome*PI/180);
   strokeWeight(4);stroke(200);line(0,0, 0,-3*size);line(0,-3*size, -5 ,-3*size+10); line(0,-3*size, +5 ,-3*size+10);  
@@ -492,10 +472,8 @@ void draw() {
   rotate(head*PI/180);
   line(0,size, 0,-size); line(0,-size, -5 ,-size+10); line(0,-size, +5 ,-size+10);
   popMatrix();
-  text("N",xObj-25,yObj-155);
-  text("S",xObj-25,yObj-100);
-  text("W",xObj-53,yObj-127);
-  text("E",xObj   ,yObj-127);
+  text("N",xObj-25,yObj-155);text("S",xObj-25,yObj-100);
+  text("W",xObj-53,yObj-127);text("E",xObj   ,yObj-127);
 
   strokeWeight(1);
   fill(255, 255, 255);
@@ -511,13 +489,12 @@ void draw() {
   }
   
   float BaroMin = (baroData.getMinVal() + baroData.getRange() / 2) - 10;
-  float BaroMax = (baroData.getMinVal() + baroData.getRange() / 2) + 10;
-  
+  float BaroMax = (baroData.getMaxVal() + baroData.getRange() / 2) + 10;
+
   stroke(200, 200, 0);  if (gxGraph)   g_graph.drawLine(gyroROLL, -300, +300);
   stroke(0, 255, 255);  if (gyGraph)   g_graph.drawLine(gyroPITCH, -300, +300);
   stroke(255, 0, 255);  if (gzGraph)   g_graph.drawLine(gyroYAW, -300, +300);
   stroke(125, 125, 125);if (baroGraph) g_graph.drawLine(baroData, BaroMin, BaroMax);
-
   stroke(225, 225, 125);if (headGraph)  g_graph.drawLine(headData, -370, +370);
   stroke(50, 100, 150); if (magxGraph) g_graph.drawLine(magxData, -500, +500);
   stroke(100, 50, 150); if (magyGraph) g_graph.drawLine(magyData, -500, +500);
@@ -535,7 +512,7 @@ void draw() {
   rectMode(CORNERS);
   rect(xMot-5,yMot-20, xMot+145, yMot+150);
   rect(xRC-5,yRC-5, xRC+185, yRC+235);
-  rect(xParam,yParam, xParam+355, yParam+245);
+  rect(xParam,yParam, xParam+355, yParam+280);
 
   int xSens       = xParam + 80;
   int ySens       = yParam + 175;
@@ -645,7 +622,6 @@ public void READ() {
 
 public void WRITE() {
   if(writeEnable == false) {return;}
-
   for(int i=0;i<7;i++) {byteP[i] = (round(confP[i].value()*10));}
   for(int i=0;i<6;i++) {byteI[i] = (round(confI[i].value()*1000));}
   for(int i=0;i<5;i++) {byteD[i] = (round(confD[i].value()));}
@@ -744,6 +720,7 @@ void processSerialData() {
       GPS_directionToHome = read16();
       GPS_numSat = read8();
       GPS_fix = read8();
+      GPS_update = read8();
       pMeterSum = read16();
       intPowerTrigger = read16();
       bytevbat = read8();
