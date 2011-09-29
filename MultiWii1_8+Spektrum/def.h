@@ -239,10 +239,10 @@
   #define DIGITAL_BI_LEFT_HIGH       PORTH |= 1<<3;
   #define DIGITAL_BI_LEFT_LOW        PORTH &= ~(1<<3);
   #define PPM_PIN_INTERRUPT          attachInterrupt(4, rxInt, RISING);  //PIN 19, also used for Spektrum satellite option
-  #define SPEK_SERIAL_VECT           USART1_RX_vect
-  #define SPEK_BAUD_SET              UCSR1A  = (1<<U2X1); UBRR1H = ((F_CPU  / 4 / 115200 -1) / 2) >> 8; UBRR1L = ((F_CPU  / 4 / 115200 -1) / 2);
-  #define SPEK_SERIAL_INTERRUPT      UCSR1B |= (1<<RXEN1)|(1<<RXCIE1);  
-  #define SPEK_DATA_REG              UDR1
+  #define SPEK_SERIAL_VECT           USART3_RX_vect
+  #define SPEK_BAUD_SET              UCSR3A  = (1<<U2X3); UBRR3H = ((F_CPU  / 4 / 115200 -1) / 2) >> 8; UBRR3L = ((F_CPU  / 4 / 115200 -1) / 2);
+  #define SPEK_SERIAL_INTERRUPT      UCSR3B |= (1<<RXEN3)|(1<<RXCIE3);  
+  #define SPEK_DATA_REG              UDR3
   #define MOTOR_ORDER                3,5,6,2,7,8,9,10   //for a quad+: rear,right,left,front   //+ for y6: 7:under right  8:under left
   #define DIGITAL_CAM_PINMODE        pinMode(33,OUTPUT); pinMode(46,OUTPUT); // 33 + 46
   #define DIGITAL_CAM_HIGH           PORTC |= 1<<4;PORTL |= 1<<3;
