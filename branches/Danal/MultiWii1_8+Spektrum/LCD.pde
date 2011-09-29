@@ -122,25 +122,27 @@ void initLCD() {
     // http://cats-whisker.com/resources/documents/cw-lcd-02_datasheet.pdf
     // Modified by Luca Brizzi aka gtrick90 @ RCG
     LCDprint(0xFE);LCDprint(0x43);LCDprint(0x02); //cursor blink mode
-    LCDprint(0x0c); //clear screen
-    LCDprintChar("MultiWii Config");
-    LCDprint(0x0d); // carriage return
-    LCDprintChar("for all params");
-    delay(2500);
-    LCDprint(0x0c); //clear screen
   #endif
   #if defined(LCD_ETPP)
+    // Eagle Tree Power Panel - I2C & Daylight Readable LCD
+    // Contributed by Danal
     i2c_ETPP_init();
-    LCDprintChar("MultiWii Config");
-    LCDprint(0x0d); // carriage return
-    LCDprintChar("for all params");
-    delay(2500);
-    lcdClear();
-  #else
+  #endif
+  #if !defined(LCD_TEXTSTAR) && !defined(LCD_ETPP)
     Serial.end();
     //init LCD
     PINMODE_LCD //TX PIN for LCD = Arduino RX PIN (more convenient to connect a servo plug on arduino pro mini)
   #endif
+  LCDclear();
+  LCDprintChar("MultiWii Config");
+  #if defined(LCD_TEXTSTAR)
+    LCDprint(0x0d); // carriage return
+  #else
+    i2c_ETPP_set_cursor(0,1);
+  #endif
+  LCDprintChar("for all params");
+  delay(2500);
+  LCDclear();
 }
 
 static char line1[17],line2[17];
@@ -244,18 +246,16 @@ void configurationLoop() {
     }
   } // while (LCD == 1)
   blinkLED(20,30,1);
-  #if defined(LCD_TEXTSTAR)
-    LCDprint(0x0c); //clear screen
-    if (LCD == 0) LCDprintChar("Saving Settings.."); else LCDprintChar("skipping Save.");
-  #endif
-  #if defined(LCD_ETPP)
-    lcdClear();
-    if (LCD == 0) LCDprintChar("Saving Settings.."); else LCDprintChar("skipping Save.");
-  #endif
+  LCDclear();
+  if (LCD == 0) LCDprintChar("Saving Settings.."); else LCDprintChar("skipping Save.");
   if (LCD == 0) writeParams();
-  #if (defined(LCD_TEXTSTAR) || defined(LCD_ETPP))
-    LCDprintChar("..done! Exit.");
+  #if defined(LCD_TEXTSTAR)
+    LCDprint(0x0d); // carriage return
   #else
+    i2c_ETPP_set_cursor(0,1);
+  #endif
+  LCDprintChar("..done! Exit.");
+  #if !defined(LCD_TEXTSTAR) && !defined(LCD_ETPP)
     Serial.begin(SERIAL_COM_SPEED);
   #endif
   #ifdef LCD_TELEMETRY
@@ -396,7 +396,7 @@ void lcd_telemetry() {
       i2c_write(0x24);            // Function Set 001D0MSL D : data length for parallel interface only; M: 0 = 1x32 , 1 = 2x16; S: 0 = 1:18 multiplex drive mode, 1×32 or 2×16 character display, 1 = 1:9 multiplex drive mode, 1×16 character display; H: 0 = basic instruction set plus standard instruction set, 1 = basic instruction set plus extended instruction set
       i2c_write(0x0C);            // Display on   00001DCB D : 0 = Display Off, 1 = Display On; C : 0 = Underline Cursor Off, 1 = Underline Cursor On; B : 0 = Blinking Cursor Off, 1 = Blinking Cursor On
       i2c_write(0x06);            // Cursor Move  000001IS I : 0 = DDRAM or CGRAM address decrements by 1, cursor moves to the left, 1 = DDRAM or CGRAM address increments by 1, cursor moves to the right; S : 0 = display does not shift,  1 = display does shifts
-      lcdClear();         
+      LCDclear();         
     }
     void i2c_ETPP_send_cmd (byte c) {
       i2c_rep_start(0x76+0);      // I2C write direction
@@ -431,8 +431,13 @@ void lcd_telemetry() {
 //      for (byte i = 0 ; i<8 ; i++) {i2c_write(*array); array++;}
 //    }
   //*******************************************************************************************************************************************************************
-    void lcdClear() {
-      i2c_ETPP_send_cmd(0x01);                              // Clear display command, which does NOT clear an Eagle Tree because character set "R" has a '>' at 0x20
-      for (byte i = 0; i<80; i++) i2c_ETPP_send_char(' ');  // Blanks for all 80 bytes of RAM in the controller, not just the 2x16 display
+    void LCDclear() {
+      #if defined(LCD_ETPP)
+        i2c_ETPP_send_cmd(0x01);                              // Clear display command, which does NOT clear an Eagle Tree because character set "R" has a '>' at 0x20
+        for (byte i = 0; i<80; i++) i2c_ETPP_send_char(' ');  // Blanks for all 80 bytes of RAM in the controller, not just the 2x16 display
+      #endif
+      #if defined(LCD_TEXTSTAR)
+        LCDprint(0x0c); //clear screen
+      #endif
     }
 #endif

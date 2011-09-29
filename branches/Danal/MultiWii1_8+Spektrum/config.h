@@ -30,8 +30,8 @@
 #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
 //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
-#define PROMINI  //Arduino type
-//#define MEGA
+//#define PROMINI  //Arduino type
+#define MEGA
 
 //enable internal I2C pull ups
 #define INTERNAL_I2C_PULLUPS
