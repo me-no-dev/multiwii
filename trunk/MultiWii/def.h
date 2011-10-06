@@ -201,9 +201,9 @@
   #define PITCHPIN                   5
   #define YAWPIN                     6
   #define AUX1PIN                    7
-  #define AUX2PIN                    7   //unused just for compatibility with MEGA
-  #define CAM1PIN                    7   //unused just for compatibility with MEGA
-  #define CAM2PIN                    7   //unused just for compatibility with MEGA
+  #define AUX2PIN                    0 // optional PIN 8 or PIN 12
+  #define CAM1PIN                    1 // unused 
+  #define CAM2PIN                    3 // unused 
   #define ISR_UART                   ISR(USART_UDRE_vect)
   #define V_BATPIN                   A3    // Analog PIN 3
   #define PSENSORPIN                 A2    // Analog PIN 2
@@ -261,6 +261,20 @@
   #define V_BATPIN                   A0    // Analog PIN 3
   #define PSENSORPIN                 A2    // Analog PIN 2
 #endif
+
+#if defined(RCAUXPIN8)
+  #define BUZZERPIN_PINMODE          ;
+  #define BUZZERPIN_ON               ;
+  #define BUZZERPIN_OFF              ;
+  #define RCAUXPIN
+#endif
+#if defined(RCAUXPIN12)
+  #define POWERPIN_PINMODE           ;
+  #define POWERPIN_ON                ;
+  #define POWERPIN_OFF               ;
+  #define RCAUXPIN
+#endif
+
 
 #if defined(POWERMETER)
   #ifndef VBAT

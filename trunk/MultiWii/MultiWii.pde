@@ -1,7 +1,7 @@
 /*
 MultiWiiCopter by Alexandre Dubus
 www.multiwii.com
-September  2011     V1.dev
+October  2011     V1.dev
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -498,17 +498,16 @@ void loop () {
         PTerm      = (int32_t)errorAngle*P8[PIDLEVEL]/100 ;                         //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
       #endif
 
-      errorAngleI[axis] += errorAngle;                                              //16 bits is ok here
-      errorAngleI[axis]  = constrain(errorAngleI[axis],-10000,+10000); //WindUp     //16 bits is ok here
-      ITerm              = (int32_t)errorAngleI[axis]*I8[PIDLEVEL]/4000;            //32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
+      errorAngleI[axis]  = constrain(errorAngleI[axis]+errorAngle,-10000,+10000); //WindUp     //16 bits is ok here
+      ITerm              = ((int32_t)errorAngleI[axis]*I8[PIDLEVEL])>>12;            //32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
     } else { //ACRO MODE or YAW axis
       if (abs(rcCommand[axis])<350) error =          rcCommand[axis]*10*8/P8[axis] - gyroData[axis]; //16 bits is needed for calculation: 350*10*8 = 28000      16 bits is ok for result if P8>2 (P>0.2)
                                else error = (int32_t)rcCommand[axis]*10*8/P8[axis] - gyroData[axis]; //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
       PTerm = rcCommand[axis];
       
-      errorGyroI[axis]  = constrain(errorGyroI[axis]+error,-16000,+16000); //WindUp       //16 bits is ok here
+      errorGyroI[axis]  = constrain(errorGyroI[axis]+error,-16000,+16000); //WindUp //16 bits is ok here
       if (abs(gyroData[axis])>640) errorGyroI[axis] = 0;
-      ITerm = (int32_t)errorGyroI[axis]*I8[axis]/1000/8;                            //32 bits is needed for calculation: 16000*I8  16 bits is ok for result
+      ITerm = (errorGyroI[axis]/125*I8[axis])>>6;                                   //16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
     }
     if (abs(gyroData[axis])<160) PTerm -=          gyroData[axis]*dynP8[axis]/10/8; //16 bits is needed for calculation   160*200 = 32000         16 bits is ok for result
                             else PTerm -= (int32_t)gyroData[axis]*dynP8[axis]/10/8; //32 bits is needed for calculation   
@@ -518,8 +517,9 @@ void loop () {
     deltaSum       = delta1[axis]+delta2[axis]+delta;
     delta2[axis]   = delta1[axis];
     delta1[axis]   = delta;
-    if (abs(deltaSum)<640) DTerm = (deltaSum)*dynD8[axis]/3/8;                      //16 bits is needed for calculation 640*50 = 32000           16 bits is ok for result 
-                      else DTerm = (int32_t)(deltaSum)*dynD8[axis]/3/8;             //32 bits is needed for calculation
+ 
+    if (abs(deltaSum)<640) DTerm = (deltaSum*dynD8[axis])>>5;                      //16 bits is needed for calculation 640*50 = 32000           16 bits is ok for result 
+                      else DTerm = ((int32_t)deltaSum*dynD8[axis])>>5;             //32 bits is needed for calculation
                       
     axisPID[axis] =  PTerm + ITerm - DTerm;
   }

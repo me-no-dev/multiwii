@@ -54,8 +54,8 @@ void writeParams() {
 void checkFirstTime() {
   uint8_t test_val; eeprom_read_block((void*)&test_val, (void*)(0), sizeof(test_val));
   if (test_val == checkNewConf) return;
-  P8[ROLL] = 40; I8[ROLL] = 30; D8[ROLL] = 17;
-  P8[PITCH] = 40; I8[PITCH] = 30; D8[PITCH] = 17;
+  P8[ROLL] = 40; I8[ROLL] = 30; D8[ROLL] = 23;
+  P8[PITCH] = 40; I8[PITCH] = 30; D8[PITCH] = 23;
   P8[YAW]  = 85; I8[YAW]  = 0;  D8[YAW]  = 0;
   P8[PIDALT]  = 47; I8[PIDALT]  = 0;  D8[PIDALT]  = 0;
   P8[PIDVEL]  =  0; I8[PIDVEL]  = 0;  D8[PIDVEL]  = 0;

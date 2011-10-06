@@ -34,7 +34,7 @@
 //#define MEGA
 
 //enable internal I2C pull ups
-//#define INTERNAL_I2C_PULLUPS
+#define INTERNAL_I2C_PULLUPS
 
 //****** advanced users settings   *************
 
@@ -43,6 +43,12 @@
    (no need to use a PPM sum receiver)
 */
 //#define A0_A1_PIN_HEX
+
+/* possibility to use PIN8 or PIN12 as the AUX2 RC input
+   it deactivates in this case the POWER PIN (pin 12) or the BUZZER PIN (pin 8)
+*/
+//#define RCAUXPIN8
+//#define RCAUXPIN12
 
 /* This option is here if you want to use the old level code from the verison 1.7
    It's just to have some feedback. This will be removed in the future */
