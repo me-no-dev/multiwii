@@ -550,15 +550,11 @@ void ACC_getADC () {
 //
 // 0x20    bw_tcs:   |                                           bw<3:0> |                        tcs<3:0> |
 //                   |                                             150Hz |                 !!Calibration!! |
-//
-// 0x35 offset_lsb1: |                                     offset_x<3:0> |        range<2:0> |    smp_skip |
-//                   |                                   !!Calibration!! |                2g |     IRQ 1/T |
 // ************************************************************************************************************
 #if defined(BMA180)
 void ACC_init () {
   delay(10);
   //default range 2G: 1G = 4096 unit.
-  i2c_writeReg(BMA180_ADDRESS,0x0D,1<<4); // register: ctrl_reg0  -- value: set bit ee_w to 1 to enable writing
   uint8_t control = i2c_readReg(BMA180_ADDRESS, 0x20);
   control = control & 0x0F; // register: bw_tcs reg: bits 4-7 to set bw -- value: set low pass filter to 10Hz (bits value = 0000xxxx)
   delay(5);

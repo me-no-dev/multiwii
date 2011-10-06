@@ -23,7 +23,10 @@ void configureReceiver() {
       // PCINT activated only for specific pin inside [D0-D7]  , [D2 D4 D5 D6 D7] for this multicopter
       PORTD   = (1<<2) | (1<<4) | (1<<5) | (1<<6) | (1<<7); //enable internal pull ups on the PINs of PORTD (no high impedence PINs)
       PCMSK2 |= (1<<2) | (1<<4) | (1<<5) | (1<<6) | (1<<7); 
-      PCICR   = (1<<2); // PCINT activated only for the port dealing with [D0-D7] PINs
+      PCICR   = (1<<2) ; // PCINT activated only for the port dealing with [D0-D7] PINs on port B
+      #if defined(RCAUXPIN)
+        PCICR  |= (1<<0) ; // PCINT activated also for PINS [D8-D13] on port B
+      #endif
     #endif
     #if defined(MEGA)
       // PCINT activated only for specific pin inside [A8-A15]
@@ -105,6 +108,31 @@ ISR(PCINT2_vect) { //this ISR is common to every receiver channel, it is call ev
     if (mask & 1<<THROTTLEPIN) {    // If pulse present on THROTTLE pin (independent from ardu version), clear FailSafe counter  - added by MIS
       if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0; }
   #endif
+}
+#endif
+
+#if defined(RCAUXPIN)
+/* this ISR is a simplication of the previous one for PROMINI on port D
+   it's simplier because we know the interruption deals only with on PIN:
+   bit 0 of PORT B, ie Arduino PIN 8
+   or bit 4 of PORTB, ie Arduino PIN 12
+ => no need to check which PIN has changed */
+ISR(PCINT0_vect) {
+  uint8_t pin;
+  uint16_t cTime,dTime;
+  static uint16_t edgeTime;
+
+  pin = PINB;
+  sei();
+  cTime = micros();
+  #if defined(RCAUXPIN8)
+   if (!(pin & 1<<0)) {     //indicates if the bit 0 of the arduino port [B0-B7] is not at a high state (so that we match here only descending PPM pulse)
+  #endif
+  #if defined(RCAUXPIN12)
+   if (!(pin & 1<<4)) {     //indicates if the bit 4 of the arduino port [B0-B7] is not at a high state (so that we match here only descending PPM pulse)
+  #endif
+    dTime = cTime-edgeTime; if (900<dTime && dTime<2200) rcValue[0] = dTime; // just a verification: the value must be in the range [1000;2000] + some margin
+  } else edgeTime = cTime;    // if the bit 2 is at a high state (ascending PPM pulse), we memorize the time
 }
 #endif
 
