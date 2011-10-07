@@ -26,6 +26,12 @@ void configureReceiver() {
       PCICR   = (1<<2) ; // PCINT activated only for the port dealing with [D0-D7] PINs on port B
       #if defined(RCAUXPIN)
         PCICR  |= (1<<0) ; // PCINT activated also for PINS [D8-D13] on port B
+        #if defined(RCAUXPIN8)
+          PCMSK0 = (1<<0);
+        #endif
+        #if defined(RCAUXPIN12)
+          PCMSK0 = (1<<4);
+        #endif
       #endif
     #endif
     #if defined(MEGA)
