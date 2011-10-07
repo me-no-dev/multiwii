@@ -14,7 +14,7 @@
 //#define BI
 //#define TRI
 //#define QUADP
-#define QUADX
+//#define QUADX
 //#define Y4
 //#define Y6
 //#define HEX6
@@ -23,6 +23,8 @@
 //#define OCTOFLATP //beta
 //#define OCTOFLATX //beta
 //#define FLYING_WING //experimental
+#define VTOL_DUAL //vertical take-off & land tri with dual front yaw control
+//#define VTOL_TAIL //vertical take-off & land tri with tail yaw control
 
 #define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
 //#define YAW_DIRECTION -1
@@ -34,21 +36,9 @@
 //#define MEGA
 
 //enable internal I2C pull ups
-#define INTERNAL_I2C_PULLUPS
+//#define INTERNAL_I2C_PULLUPS
 
 //****** advanced users settings   *************
-
-/* PIN A0 and A1 instead of PIN D5 & D6 for 6 motors config and promini config
-   This mod allow the use of a standard receiver on a pro mini
-   (no need to use a PPM sum receiver)
-*/
-//#define A0_A1_PIN_HEX
-
-/* possibility to use PIN8 or PIN12 as the AUX2 RC input
-   it deactivates in this case the POWER PIN (pin 12) or the BUZZER PIN (pin 8)
-*/
-//#define RCAUXPIN8
-//#define RCAUXPIN12
 
 /* This option is here if you want to use the old level code from the verison 1.7
    It's just to have some feedback. This will be removed in the future */
@@ -61,17 +51,24 @@
    the GPS must be configured to output NMEA sentences (which is generally the default conf for most GPS devices)
 */
 //#define GPS
-//#define GPS_SERIAL Serial3 // should be Serial2 for flyduino v2
-//#define GPS_BAUD   4800
-//#define GPS_BAUD   9600
+#define GPS_SERIAL Serial3 // should be Serial2 for flyduino v2
+#define GPS_BAUD   4800
 
 /* Pseudo-derivative conrtroller for level mode (experimental)
-   Additional information: http://www.multiwii.com/forum/viewtopic.php?f=8&t=503 */
+   Additional information: http://wbb.multiwii.com/viewtopic.php?f=8&t=503 */
 //#define LEVEL_PDF
 
 /* introduce a deadband around the stick center
    Must be greater than zero, comment if you dont want a deadband on roll, pitch and yaw */
 //#define DEADBAND 6
+
+/* Servo manipulation - added by cass3825
+   Setting the appropriate bit in the stretch variable below extends the servo rotation from 90degrees to about 135degrees.
+   Setting the appropriate bit in the slow variable below enables speed control of the respective servo.  The speed is then controlled by 
+   the array servoSpeed.  Range is 1 to 40 with 1 being the slowest movement.  Default is 5. */
+#define STRETCH 0b00110000                        // servo 0bxx543210, enables servo signal stretching from 1000-2000us to 500-2500us
+#define SLOW    0b00000000                        // servo 0bxx543210, enables servo speed control, set with SERVO_SPEED below
+#define SERVO_SPEED {5,5,5,5,5,5}                 // servo 0,1,2,3,4,5
 
 /* Failsave settings - added by MIS
    Failsafe check pulse on THROTTLE channel. If the pulse is OFF (on only THROTTLE or on all channels) the failsafe procedure is initiated.
@@ -117,6 +114,7 @@
 //#define AEROQUADSHIELDv2
 //#define ATAVRSBIN1      // Atmel 9DOF (Contribution by EOSBandi). requires 3.3V power.
 //#define SIRIUS          // Sirius Navigator IMU                                             <- confirmed by Alex
+#define MINIWII         // Jussi's MiniWii Flight Controller
 
 //if you use independent sensors
 //leave it commented it you already checked a specific board above
@@ -161,25 +159,10 @@
 //#define SERIAL_SUM_PPM         PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,CAMPITCH,CAMROLL //For Graupner/Spektrum
 //#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,CAMPITCH,CAMROLL //For Robe/Hitec/Futaba
 //#define SERIAL_SUM_PPM         PITCH,ROLL,THROTTLE,YAW,AUX1,AUX2,CAMPITCH,CAMROLL //For some Hitec/Sanwa/Others
+#define SERIAL_SUM_PPM         PITCH,YAW,THROTTLE,ROLL,AUX2,CAMPITCH,AUX1,CAMROLL //Custom
 
-/* EXPERIMENTAL !!
-   The following lines apply only for Spektrum Satellite Receiver
-   Spektrum Satellites are 3V devices.  DO NOT connect to 5V!
-   For MEGA boards, attach sat grey wire to RX1, pin 19. Sat black wire to ground. Sat orange wire to Mega board's 3.3V (or any other 3V to 3.3V source).
-   For PROMINI, attach sat grey to RX0.  Attach sat black to ground.
-   There is no 3.3V source on a pro mini; you can either use a different 3V source, or attach orange to 5V with a 3V regulator in-line (such as http://search.digikey.com/scripts/DkSearch/dksus.dll?Detail&name=MCP1700-3002E/TO-ND)
-   If you use an inline-regulator, a standard 3-pin servo connector can connect to ground, +5V, and RX0; solder the correct wires (and the 3V regulator!) to a Spektrum baseRX-to-Sat cable that has been cut in half.
-   NOTE: Because there is only one serial port on the Pro Mini, using a Spektrum Satellite implies you CANNOT use the PC based configuration tool. Further, you cannot use on-aircraft serial LCD as the baud rates are incompatible. You can use an on-aircraft Eagle Tree LCD for setting gains, reading sensors, etc.
-   (Contribution by Danal) */
+/* The following lines apply only for Spektrum Satellite Receiver on MEGA boards only */ //not yet implemented
 //#define SPEKTRUM
-
-/* EXPERIMENTAL !!
-   contribution from Captain IxI and Zaggo
-   cf http://www.multiwii.com/forum/viewtopic.php?f=7&t=289
-   The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1).
-   You have to invert the S-Bus-Serial Signal e.g. with a Hex-Inverter like IC SN74 LS 04 */
-//#define SBUS   PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,CAMPITCH,CAMROLL // Order of channels in the SBUS
-
 
 /* interleaving delay in micro seconds between 2 readings WMP/NK in a WMP+NK config
    if the ACC calibration time is very long (20 or 30s), try to increase this delay up to 4000
