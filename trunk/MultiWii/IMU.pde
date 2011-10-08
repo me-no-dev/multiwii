@@ -149,8 +149,10 @@ void getEstimatedAttitude(){
 // Currently Magnetometer uses separate CF which is used only
 // for heading approximation.
 //
-// Last Modified: 19/04/2011
-// Version: V1.1   
+// Modified: 19/04/2011  by ziss_dm
+// Version: V1.1
+//
+// code size deduction and tmp vector intermediate step for vector rotation computation: October 2011 by Alex
 // **************************************************
 
 //******  advanced users settings *******************
@@ -196,7 +198,7 @@ void getEstimatedAttitude(){
 #define ssin(val) (val)
 #define scos(val) 1.0f
 
-typedef struct {
+typedef struct fp_vector {
   float X;
   float Y;
   float Z;
@@ -229,20 +231,29 @@ int16_t _atan2(float y, float x){
   return z;
 }
 
+// Rotate Estimated vector(s) with small angle approximation, according to the gyro data
+void rotateV(struct fp_vector *v,float* delta) {
+  fp_vector v_tmp = *v;
+  v->Z -= delta[ROLL]  * v_tmp.X + delta[PITCH] * v_tmp.Y;
+  v->X += delta[ROLL]  * v_tmp.Z - delta[YAW]   * v_tmp.Y;
+  v->Y += delta[PITCH] * v_tmp.Z + delta[YAW]   * v_tmp.X; 
+}
+
 void getEstimatedAttitude(){
   uint8_t axis;
-  uint16_t accLim, accMag = 0;
-  static t_fp_vector EstG = {0,0,300};
-  static t_fp_vector EstM = {0,0,300};
-  float scale, deltaGyroAngle;
+  int16_t accLim, accMag = 0;
+  static t_fp_vector EstG,EstM;
   static int16_t mgSmooth[3];  //projection of smoothed and normalized magnetic vector on x/y/z axis, as measured by magnetometer
   static uint16_t previousT;
-  uint16_t currentT;
+  uint16_t currentT = micros();
+  float scale, deltaGyroAngle[3];
   
-  currentT  = micros();
   scale = (currentT - previousT) * GYRO_SCALE;
   previousT = currentT;
-  
+
+  for (axis = 0; axis < 3; axis++)
+    deltaGyroAngle[axis] = gyroADC[axis]  * scale;
+
   // Initialization
   for (axis = 0; axis < 3; axis++) {
     #if defined(ACC_LPF_FACTOR)
@@ -253,7 +264,7 @@ void getEstimatedAttitude(){
       accSmooth[axis] = accADC[axis];
       #define ACC_VALUE accADC[axis]
     #endif
-    accMag += (ACC_VALUE * 10 / acc_1G) * (ACC_VALUE * 10 / acc_1G); //788
+    accMag += (ACC_VALUE * 10 / acc_1G) * (ACC_VALUE * 10 / acc_1G);
     #if MAG
       #if defined(MG_LPF_FACTOR)
         mgSmooth[axis] = (mgSmooth[axis] * (MG_LPF_FACTOR - 1) + magADC[axis]) / MG_LPF_FACTOR; // LPF for Magnetometer values
@@ -264,47 +275,28 @@ void getEstimatedAttitude(){
     #endif
   }
 
-  // Rotate Estimated vector(s), ROLL
-  deltaGyroAngle  = gyroADC[ROLL] * scale;
-  EstG.V.Z =  scos(deltaGyroAngle) * EstG.V.Z - ssin(deltaGyroAngle) * EstG.V.X;
-  EstG.V.X =  ssin(deltaGyroAngle) * EstG.V.Z + scos(deltaGyroAngle) * EstG.V.X;
+  rotateV(&EstG.V,deltaGyroAngle);
   #if MAG
-    EstM.V.Z =  scos(deltaGyroAngle) * EstM.V.Z - ssin(deltaGyroAngle) * EstM.V.X;
-    EstM.V.X =  ssin(deltaGyroAngle) * EstM.V.Z + scos(deltaGyroAngle) * EstM.V.X;
+    rotateV(&EstM.V,deltaGyroAngle);
   #endif 
-  // Rotate Estimated vector(s), PITCH
-  deltaGyroAngle  = gyroADC[PITCH] * scale;
-  EstG.V.Y =  scos(deltaGyroAngle) * EstG.V.Y + ssin(deltaGyroAngle) * EstG.V.Z;
-  EstG.V.Z = -ssin(deltaGyroAngle) * EstG.V.Y + scos(deltaGyroAngle) * EstG.V.Z;
-  #if MAG
-    EstM.V.Y =  scos(deltaGyroAngle) * EstM.V.Y + ssin(deltaGyroAngle) * EstM.V.Z;
-    EstM.V.Z = -ssin(deltaGyroAngle) * EstM.V.Y + scos(deltaGyroAngle) * EstM.V.Z;
-  #endif 
-  // Rotate Estimated vector(s), YAW
-  deltaGyroAngle  = gyroADC[YAW] * scale;
-  EstG.V.X =  scos(deltaGyroAngle) * EstG.V.X - ssin(deltaGyroAngle) * EstG.V.Y;
-  EstG.V.Y =  ssin(deltaGyroAngle) * EstG.V.X + scos(deltaGyroAngle) * EstG.V.Y;
-  #if MAG
-    EstM.V.X =  scos(deltaGyroAngle) * EstM.V.X - ssin(deltaGyroAngle) * EstM.V.Y;
-    EstM.V.Y =  ssin(deltaGyroAngle) * EstM.V.X + scos(deltaGyroAngle) * EstM.V.Y;
-  #endif
- 
+  
   // Apply complimentary filter (Gyro drift correction)
   // If accel magnitude >1.4G or <0.6G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
   // To do that, we just skip filter, as EstV already rotated by Gyro
-  accLim = acc_1G*4/10;
-  if ( ( 36 < accMag && accMag < 196 ) || (  abs(accSmooth[ROLL])<accLim  && abs(accSmooth[PITCH])<accLim ) ) {
-    for (axis = 0; axis < 3; axis++)
+  accLim = acc_1G>>1;
+  if ( ( 36 < accMag && accMag < 196 ) || ( abs(accSmooth[ROLL])<accLim && abs(accSmooth[PITCH])<accLim  ) ) {
+    for (axis = 0; axis < 3; axis++) {
       EstG.A[axis] = (EstG.A[axis] * GYR_CMPF_FACTOR + ACC_VALUE) * INV_GYR_CMPF_FACTOR;
+      #if MAG
+        EstM.A[axis] = (EstM.A[axis] * GYR_CMPFM_FACTOR  + MAG_VALUE) * INV_GYR_CMPFM_FACTOR;
+      #endif
+    }
   }
 
   // Attitude of the estimated vector
-  angle[ROLL]  =  _atan2(EstG.V.X, EstG.V.Z) ;
-  angle[PITCH] =  _atan2(EstG.V.Y, EstG.V.Z) ;
+  angle[ROLL]  =  _atan2(EstG.V.X , EstG.V.Z) ;
+  angle[PITCH] =  _atan2(EstG.V.Y , EstG.V.Z) ;
   #if MAG
-    // Apply complimentary filter (Gyro drift correction)
-    for (axis = 0; axis < 3; axis++)
-      EstM.A[axis] = (EstM.A[axis] * GYR_CMPFM_FACTOR + MAG_VALUE) * INV_GYR_CMPFM_FACTOR;
     // Attitude of the cross product vector GxM
     heading = _atan2( EstG.V.X * EstM.V.Z - EstG.V.Z * EstM.V.X , EstG.V.Z * EstM.V.Y - EstG.V.Y * EstM.V.Z  ) / 10;
   #endif

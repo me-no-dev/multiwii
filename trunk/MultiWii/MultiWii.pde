@@ -208,7 +208,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   #endif
 
   #if defined(VBAT)
-    uint8_t ind;
+    static uint8_t ind;
     uint16_t vbatRaw = 0;
     static uint16_t vbatRawArray[8];
     vbatRawArray[(ind++)%8] = analogRead(V_BATPIN);
