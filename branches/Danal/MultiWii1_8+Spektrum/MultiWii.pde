@@ -88,6 +88,7 @@ static uint8_t telemetry_auto = 0;
 #define MAXCHECK 1900
 
 volatile int16_t failsafeCnt = 0;
+         int16_t failsafeEvents = 0;
 
 static int16_t rcData[8];    // interval [1000;2000]
 static int16_t rcCommand[4]; // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
@@ -242,7 +243,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   #ifdef LCD_TELEMETRY_AUTO
     if ( (telemetry_auto) && (micros() > telemetryAutoTime + LCD_TELEMETRY_AUTO) ) { // every 2 seconds
       telemetry++;
-      if ( (telemetry < 'A' ) || (telemetry > 'D' ) ) telemetry = 'A';
+      if ( (telemetry < 'A' ) || (telemetry > 'E' ) ) telemetry = 'A';
       telemetryAutoTime = micros(); // why use micros() and not the variable currentTime ?
     }
   #endif  
@@ -327,8 +328,12 @@ void loop () {
   if (currentTime > (rcTime + 20000) ) { // 50Hz
     rcTime = currentTime; 
     #if !defined(SPEKTRUM)
-    computeRC();
+      computeRC();
     #endif
+int rawkey = analogRead(A0);
+if ((rawkey < 900) && (rawkey > 600)) { telemetry_auto=0; telemetry=0; LCDclear(); LCDprintChar("Done");}
+if (rawkey < 320) telemetry_auto = 0;
+if (rawkey < 140) telemetry_auto = 1;
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level
@@ -338,6 +343,7 @@ void loop () {
           armed = 0;   //This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
           okToArm = 0; //to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
         }
+        failsafeEvents++;
       }
       failsafeCnt++;
     #endif

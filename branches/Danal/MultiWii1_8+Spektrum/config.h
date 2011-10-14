@@ -14,11 +14,11 @@
 //#define BI
 //#define TRI
 //#define QUADP
-#define QUADX
+//#define QUADX
 //#define Y4
 //#define Y6
 //#define HEX6
-//#define HEX6X
+#define HEX6X
 //#define OCTOX8 //beta
 //#define OCTOFLATP //beta
 //#define OCTOFLATX //beta
@@ -30,8 +30,8 @@
 #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
 //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
-//#define PROMINI  //Arduino type
-#define MEGA
+#define PROMINI  //Arduino type
+//#define MEGA
 
 //enable internal I2C pull ups
 #define INTERNAL_I2C_PULLUPS
@@ -214,7 +214,7 @@
 
 /* motors will not spin when the throttle command is in low position
    this is an alternative method to stop immediately the motors */
-//#define MOTOR_STOP
+#define MOTOR_STOP
 
 /* some radios have not a neutral point centered on 1500. can be changed here */
 #define MIDRC 1500
@@ -282,12 +282,12 @@
 /* The active page on the LCD does get updated automatically */
 /* Easy to use with Terminal application or Textstar LCD - the 4 buttons are preconfigured to send 'A', 'B', 'C', 'D' */
 /* The value represents the refresh interval in cpu time (micro seconds) */
-//#define LCD_TELEMETRY 100011
+#define LCD_TELEMETRY 100011
 /* to enable automatic hopping between 4 telemetry pages uncomment this. */
 /* This may be useful if your LCD has no buttons or the sending is broken */
 /* hopping is activated and deactivated in unarmed mode with throttle=low & roll=left & pitch=forward */
 /* The value represents the hopping interval in cpu time (micro seconds) */
-//#define LCD_TELEMETRY_AUTO 2000123
+#define LCD_TELEMETRY_AUTO 2000123
 /* on telemetry page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
 /* Example: 12.6V - VBATLEVEL1_3S  (for me = 126 - 102 = 24) */
