@@ -330,10 +330,6 @@ void loop () {
     #if !defined(SPEKTRUM)
       computeRC();
     #endif
-int rawkey = analogRead(A0);
-if ((rawkey < 900) && (rawkey > 600)) { telemetry_auto=0; telemetry=0; LCDclear(); LCDprintChar("Done");}
-if (rawkey < 320) telemetry_auto = 0;
-if (rawkey < 140) telemetry_auto = 1;
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level
