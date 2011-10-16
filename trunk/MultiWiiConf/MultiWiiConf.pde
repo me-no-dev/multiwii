@@ -14,7 +14,7 @@ ControlP5 controlP5;
 Textlabel txtlblWhichcom,version; 
 ListBox commListbox;
 
-int frame_size = 123;
+int frame_size = 124;
 
 cGraph g_graph;
 int windowsX    = 800;        int windowsY    = 540;
@@ -82,8 +82,8 @@ int nunchukPresent,i2cAccPresent,i2cBaroPresent,i2cMagnetoPresent,GPSPresent,lev
 float time1,time2;
 int cycleTime;
 
-CheckBox checkbox[] = new CheckBox[7];
-int activation[] = new int[7];
+CheckBox checkbox[] = new CheckBox[8];
+int activation[] = new int[8];
 
 PFont font8,font12,font15;
 
@@ -220,12 +220,12 @@ void setup() {
   dynamic_THR_PID = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("dynamic_THR_PID",0,xParam+300,yParam+12,30,14));dynamic_THR_PID.setDecimalPrecision(2);dynamic_THR_PID.setMultiplier(0.01);
   dynamic_THR_PID.setDirection(Controller.HORIZONTAL);dynamic_THR_PID.setMin(0);dynamic_THR_PID.setMax(1);dynamic_THR_PID.setColorBackground(red_);
 
-  confRC_RATE = controlP5.addNumberbox("RC RATE",1,xParam+40,yParam+183,30,14);confRC_RATE.setDecimalPrecision(2);confRC_RATE.setMultiplier(0.02);confRC_RATE.setLabel("");
+  confRC_RATE = controlP5.addNumberbox("RC RATE",1,xParam+40,yParam+213,30,14);confRC_RATE.setDecimalPrecision(2);confRC_RATE.setMultiplier(0.02);confRC_RATE.setLabel("");
   confRC_RATE.setDirection(Controller.HORIZONTAL);confRC_RATE.setMin(0);confRC_RATE.setMax(5);confRC_RATE.setColorBackground(red_);
-  confRC_EXPO = controlP5.addNumberbox("RC EXPO",0,xParam+40,yParam+200,30,14);confRC_EXPO.setDecimalPrecision(2);confRC_EXPO.setMultiplier(0.01);confRC_EXPO.setLabel("");
+  confRC_EXPO = controlP5.addNumberbox("RC EXPO",0,xParam+40,yParam+240,30,14);confRC_EXPO.setDecimalPrecision(2);confRC_EXPO.setMultiplier(0.01);confRC_EXPO.setLabel("");
   confRC_EXPO.setDirection(Controller.HORIZONTAL);confRC_EXPO.setMin(0);confRC_EXPO.setMax(1);confRC_EXPO.setColorBackground(red_);
 
-  for(int i=0;i<7;i++) {
+  for(int i=0;i<8;i++) {
     checkbox[i] =  controlP5.addCheckBox("cb"+i,xBox+40,yBox+20+13*i);
     checkbox[i].setColorActive(color(255));checkbox[i].setColorBackground(color(120));
     checkbox[i].setItemsPerRow(6);checkbox[i].setSpacingColumn(10);
@@ -515,7 +515,7 @@ void draw() {
   rect(xParam,yParam, xParam+355, yParam+280);
 
   int xSens       = xParam + 80;
-  int ySens       = yParam + 175;
+  int ySens       = yParam + 210;
   stroke(255);
   a=min(confRC_RATE.value(),1);
   b=confRC_EXPO.value();
@@ -537,25 +537,26 @@ void draw() {
   textFont(font15);    
   text("P",xParam+45,yParam+15);text("I",xParam+90,yParam+15);text("D",xParam+130,yParam+15);
   textFont(font12);
-  text("    RC",xParam+3,yParam+185);
-  text("RATE",xParam+3,yParam+198);
-  text("EXPO",xParam+3,yParam+214);
+  text("    RC",xParam+3,yParam+220);
+  text("RATE",xParam+3,yParam+232);
+  text("EXPO",xParam+3,yParam+250);
   text("RATE",xParam+160,yParam+15);
   text("ROLL",xParam+3,yParam+32);text("PITCH",xParam+3,yParam+52);text("YAW",xParam+3,yParam+72);
   text("ALT",xParam+3,yParam+92);
   text("VEL",xParam+3,yParam+112);
   text("LEVEL",xParam+1,yParam+132);
-  text("MAG",xParam+3,yParam+149); 
+  text("MAG",xParam+3,yParam+152); 
   text("Throttle PID",xParam+220,yParam+15);text("attenuation",xParam+220,yParam+30);
   text("AUX1",xBox+55,yBox+5);text("AUX2",xParam+295,yBox+5);
   text("LEVEL",xBox,yBox+30);
   text("BARO",xBox,yBox+43);
   text("MAG",xBox,yBox+56);
   text("ARM",xBox,yBox+95);
-  text("GPS",xBox,yBox+108);
   textFont(font8);
   text("CAMSTAB",xBox-5,yBox+69);
   text("CAMTRIG",xBox-5,yBox+82);
+  text("GPS HOME",xBox-5,yBox+108);
+  text("GPS HOLD",xBox-5,yBox+121);
   text("LOW",xBox+37,yBox+15);text("MID",xBox+57,yBox+15);text("HIGH",xBox+74,yBox+15);
   text("LOW",xBox+100,yBox+15);text("MID",xBox+123,yBox+15);text("HIGH",xBox+140,yBox+15);
 }
@@ -612,7 +613,7 @@ public void READ() {
   
   confRC_RATE.setColorBackground(green_);confRC_EXPO.setColorBackground(green_);rollPitchRate.setColorBackground(green_);yawRate.setColorBackground(green_);dynamic_THR_PID.setColorBackground(green_);
 
-  for(int i=0;i<7;i++) for(int a=0;a<6;a++)
+  for(int i=0;i<8;i++) for(int a=0;a<6;a++)
     if ((byte(activation[i])&(1<<a))>0) checkbox[i].activate(a); else checkbox[i].deactivate(a);
 
   confPowerTrigger.setValue(intPowerTrigger);
@@ -632,14 +633,14 @@ public void WRITE() {
   byteYawRate = (round(yawRate.value()*100));
   byteDynThrPID = (round(dynamic_THR_PID.value()*100));
 
-  for(int i=0;i<7;i++) {
+  for(int i=0;i<8;i++) {
     activation[i] = 0;
     for(int a=0;a<6;a++) activation[i] += (int)(checkbox[i].arrayValue()[a]*(1<<a));
   }
   
   intPowerTrigger = (round(confPowerTrigger.value()));
 
-  int[] s = new int[33];
+  int[] s = new int[34];
   int p = 0;
    s[p++] = 'W'; //0 write to Eeprom @ arduino //1
    for(int i=0;i<5;i++) {s[p++] = byteP[i];  s[p++] = byteI[i];  s[p++] =  byteD[i];} //16
@@ -649,7 +650,7 @@ public void WRITE() {
    s[p++] = byteRollPitchRate; 
    s[p++] = byteYawRate;
    s[p++] = byteDynThrPID; //24
-   for(int i=0;i<7;i++) s[p++] = activation[i]; //31
+   for(int i=0;i<8;i++) s[p++] = activation[i]; //31
    s[p++] = intPowerTrigger ;
    s[p++] = intPowerTrigger >>8 &0xff; //33
    for(int i =0;i<33;i++)    g_serial.write(char(s[i]));
@@ -715,7 +716,7 @@ void processSerialData() {
       byteRollPitchRate = read8();
       byteYawRate = read8();
       byteDynThrPID = read8();                                                        //95
-      for(int i=0;i<7;i++) activation[i] = read8();                                   //102
+      for(int i=0;i<8;i++) activation[i] = read8();                                   //102
       GPS_distanceToHome = read16();
       GPS_directionToHome = read16();
       GPS_numSat = read8();
