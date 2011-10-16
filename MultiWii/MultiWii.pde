@@ -33,7 +33,8 @@ October  2011     V1.dev
 #define BOXCAMSTAB  3
 #define BOXCAMTRIG  4
 #define BOXARM      5
-#define BOXGPS      6
+#define BOXGPSHOME  6
+#define BOXGPSHOLD  7
 
 static uint32_t currentTime = 0;
 static uint16_t previousTime = 0;
@@ -43,11 +44,13 @@ static uint8_t  calibratingM = 0;
 static uint16_t calibratingG;
 static uint8_t  armed = 0;
 static uint16_t acc_1G;             // this is the 1G measured acceleration
+static int16_t  acc_25deg;
 static uint8_t  nunchuk = 0;
 static uint8_t  accMode = 0;        // if level mode is a activated
 static uint8_t  magMode = 0;        // if compass heading hold is a activated
 static uint8_t  baroMode = 0;       // if altitude hold is activated
-static uint8_t  GPSMode = 0;        // if GPS RTH is activated
+static uint8_t  GPSModeHome = 0;    // if GPS RTH is activated
+static uint8_t  GPSModeHold = 0;    // if GPS PH is activated
 static int16_t  gyroADC[3],accADC[3],magADC[3];
 static int16_t  accSmooth[3];       // projection of smoothed and normalized gravitation force vector on x/y/z axis, as measured by accelerometer
 static int16_t  accTrim[2] = {0, 0};
@@ -92,23 +95,13 @@ static uint8_t telemetry_auto = 0;
 #define MAXCHECK 1900
 
 volatile int16_t failsafeCnt = 0;
-
+static int16_t failsafeEvents = 0;
 static int16_t rcData[8];    // interval [1000;2000]
 static int16_t rcCommand[4]; // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
-
 static uint8_t rcRate8;
 static uint8_t rcExpo8;
 static int16_t lookupRX[7]; //  lookup table for expo & RC rate
-
-#if defined(SPEKTRUM)
-  #define SPEK_MAX_CHANNEL 7
-  #define SPEK_FRAME_SIZE 16
-  #define SPEK_CHAN_SHIFT  2       // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
-  #define SPEK_CHAN_MASK   0x03    // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
-  volatile byte          spekFramePosition, spekFrameComplete, spekFrame[SPEK_FRAME_SIZE];
-  volatile unsigned long spekTimeLast, spekTimeInterval;
-  unsigned long          spekChannelData[SPEK_MAX_CHANNEL];
-#endif
+volatile uint8_t rcFrameComplete; //for serial rc receiver Spektrum
 
 // **************
 // gyro+acc IMU
@@ -118,7 +111,7 @@ static int16_t gyroZero[3] = {0,0,0};
 static int16_t accZero[3]  = {0,0,0};
 static int16_t magZero[3]  = {0,0,0};
 static int16_t angle[2]    = {0,0};  // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
-static int8_t  smallAngle;
+static int8_t  smallAngle18;
 
 // *************************
 // motor and servo functions
@@ -135,7 +128,7 @@ static uint8_t dynP8[3], dynI8[3], dynD8[3];
 static uint8_t rollPitchRate;
 static uint8_t yawRate;
 static uint8_t dynThrPID;
-static uint8_t activate[7];
+static uint8_t activate[8];
 
 void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   uint8_t i,r;
@@ -245,9 +238,9 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
     if (armed) {LEDPIN_ON}
   }
 
-  if (abs(angle[ROLL])>180 || abs(angle[PITCH])>180) smallAngle = 0; else smallAngle = 1; //more than 18 deg detection
+  if (abs(angle[ROLL])>180 || abs(angle[PITCH])>180) smallAngle18 = 0; else smallAngle18 = 1; //more than 18 deg detection
   if ( currentTime > calibratedAccTime ) {
-    if (smallAngle == 0) {
+    if (smallAngle18 == 0) {
       calibratedACC = 0; //the multi uses ACC and is not calibrated or is too much inclinated
       LEDPIN_SWITCH
       calibratedAccTime = currentTime + 500000;
@@ -298,6 +291,11 @@ void setup() {
   #if defined(GPS)
     GPS_SERIAL.begin(GPS_BAUD);
   #endif
+  #if defined(LCD_ETPP)
+    i2c_ETPP_init();
+    i2c_ETPP_set_cursor(0,0);LCDprintChar("MultiWii");
+    i2c_ETPP_set_cursor(0,1);LCDprintChar("Ready to Fly!");
+  #endif
 }
 
 // ******** Main Loop *********
@@ -320,7 +318,7 @@ void loop () {
   static int32_t AltHold;
  
   #if defined(SPEKTRUM)
-    if (spekFrameComplete) computeRC();
+    if (rcFrameComplete) computeRC();
   #endif
   
   if (currentTime > rcTime ) { // 50Hz
@@ -340,6 +338,7 @@ void loop () {
           armed = 0;   //This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
           okToArm = 0; //to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
         }
+        failsafeEvents++;
       }
       failsafeCnt++;
     #endif
@@ -384,13 +383,13 @@ void loop () {
         if (rcDelayCommand == 20) calibratingA=400;
         rcDelayCommand++;
       } else if (rcData[PITCH] > MAXCHECK) {
-         accTrim[PITCH]++;writeParams();
+         accTrim[PITCH]+=2;writeParams();
       } else if (rcData[PITCH] < MINCHECK) {
-         accTrim[PITCH]--;writeParams();
+         accTrim[PITCH]-=2;writeParams();
       } else if (rcData[ROLL] > MAXCHECK) {
-         accTrim[ROLL]++;writeParams();
+         accTrim[ROLL]+=2;writeParams();
       } else if (rcData[ROLL] < MINCHECK) {
-         accTrim[ROLL]--;writeParams();
+         accTrim[ROLL]-=2;writeParams();
       } else {
         rcDelayCommand = 0;
       }
@@ -438,8 +437,10 @@ void loop () {
       } else magMode = 0;
     }
     #if defined(GPS)
-      if (rcOptions & activate[BOXGPS]) {GPSMode = 1;}
-      else GPSMode = 0;
+      if (rcOptions & activate[BOXGPSHOME]) {GPSModeHome = 1;}
+      else GPSModeHome = 0;
+      if (rcOptions & activate[BOXGPSHOLD]) {GPSModeHold = 1;}
+      else GPSModeHold = 0;
     #endif
   }
   if (MAG)  Mag_getADC();
@@ -456,7 +457,7 @@ void loop () {
       int16_t dif = heading - magHold;
       if (dif <= - 180) dif += 360;
       if (dif >= + 180) dif -= 360;
-      if ( smallAngle ) rcCommand[YAW] -= dif*P8[PIDMAG]/30;  //18 deg
+      if ( smallAngle18 ) rcCommand[YAW] -= dif*P8[PIDMAG]/30;  //18 deg
     } else magHold = heading;
   }
 
@@ -491,7 +492,8 @@ void loop () {
   //**** PITCH & ROLL & YAW PID ****    
   for(axis=0;axis<3;axis++) {
     if (accMode == 1 && axis<2 ) { //LEVEL MODE
-      errorAngle = constrain(2*rcCommand[axis],-700,+700) - angle[axis] + accTrim[axis]; //16 bits is ok here
+      // 50 degrees max inclination
+      errorAngle = constrain(2*rcCommand[axis],-500,+500) - angle[axis] + accTrim[axis]; //16 bits is ok here
       #ifdef LEVEL_PDF
         PTerm      = -(int32_t)angle[axis]*P8[PIDLEVEL]/100 ;
       #else  

@@ -898,6 +898,6 @@ void initSensors() {
   if (GYRO) Gyro_init();
   else WMP_init(250);
   if (BARO) Baro_init();
-  if (ACC) ACC_init();
+  if (ACC) {ACC_init();acc_25deg = acc_1G * 0.423;}
   if (MAG) Mag_init();
 }

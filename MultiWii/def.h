@@ -124,6 +124,15 @@
   #define ITG3200_ADDRESS 0XD0
 #endif
 
+#if defined(SIRIUS600)
+  #define BMA180
+  #define BMP085
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = Y; accADC[YAW]  = Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = -Y;  magADC[PITCH] = X; magADC[YAW]  = Z;}
+  #define BMA180_ADDRESS 0x80
+#endif
+
 
 #if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(ADCACC)
   #define ACC 1

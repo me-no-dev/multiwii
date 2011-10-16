@@ -1,6 +1,6 @@
 #include <avr/eeprom.h>
 
-static uint8_t checkNewConf = 145;
+static uint8_t checkNewConf = 146;
 
 typedef struct eep_entry_t{
   void *  var;
@@ -11,8 +11,8 @@ typedef struct eep_entry_t{
 // EEPROM Layout definition
 // ************************************************************************************************************
 static eep_entry_t eep_entry[] = {
-  &checkNewConf, sizeof(checkNewConf),
-  &P8, sizeof(P8)
+  &checkNewConf, sizeof(checkNewConf)
+, &P8, sizeof(P8)
 , &I8, sizeof(I8) 
 , &D8, sizeof(D8) 
 , &rcRate8, sizeof(rcRate8)
@@ -20,10 +20,10 @@ static eep_entry_t eep_entry[] = {
 , &rollPitchRate, sizeof(rollPitchRate)
 , &yawRate, sizeof(yawRate)
 , &dynThrPID, sizeof(dynThrPID)
-, &activate, sizeof(activate)
 , &accZero, sizeof(accZero)
 , &magZero, sizeof(magZero)
 , &accTrim, sizeof(accTrim)
+, &activate, sizeof(activate)
 #if defined(POWERMETER)
 , &powerTrigger1, sizeof(powerTrigger1)
 #endif
@@ -66,7 +66,7 @@ void checkFirstTime() {
   rollPitchRate = 0;
   yawRate = 0;
   dynThrPID = 0;
-  for(uint8_t i=0;i<7;i++) activate[i] = 0;
+  for(uint8_t i=0;i<8;i++) activate[i] = 0;
   accTrim[0] = 0; accTrim[1] = 0;
 #if defined(POWERMETER)
   powerTrigger1 = 0;
