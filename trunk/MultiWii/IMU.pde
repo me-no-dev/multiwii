@@ -79,8 +79,6 @@ void getEstimatedAttitude(){
   uint16_t tCurrent,deltaTime;
   float a[2], mag[2], cos_[2];
 
-  int16_t acc_25deg = acc_1G * 0.423;
-
   tCurrent = micros();
   deltaTime = tCurrent-tPrevious;
   tPrevious = tCurrent;
@@ -241,13 +239,14 @@ void rotateV(struct fp_vector *v,float* delta) {
 
 void getEstimatedAttitude(){
   uint8_t axis;
-  int16_t accLim, accMag = 0;
+  int16_t accMag = 0;
   static t_fp_vector EstG,EstM;
   static int16_t mgSmooth[3];  //projection of smoothed and normalized magnetic vector on x/y/z axis, as measured by magnetometer
   static uint16_t previousT;
   uint16_t currentT = micros();
   float scale, deltaGyroAngle[3];
-  
+  uint8_t smallAngle25;
+
   scale = (currentT - previousT) * GYRO_SCALE;
   previousT = currentT;
 
@@ -258,7 +257,7 @@ void getEstimatedAttitude(){
   for (axis = 0; axis < 3; axis++) {
     #if defined(ACC_LPF_FACTOR)
 //      accSmooth[axis] = (accSmooth[axis] * (ACC_LPF_FACTOR - 1) + accADC[axis]) / ACC_LPF_FACTOR; // LPF for ACC values
-        accSmooth[axis] =(accSmooth[axis]*7+accADC[axis]+4)>>3;
+        accSmooth[axis] =(accSmooth[axis]*15+accADC[axis]+8)>>4;
       #define ACC_VALUE accSmooth[axis]
     #else  
       accSmooth[axis] = accADC[axis];
@@ -279,20 +278,26 @@ void getEstimatedAttitude(){
   #if MAG
     rotateV(&EstM.V,deltaGyroAngle);
   #endif 
-  
+   
+  //We consider ACCZ = acc_1G when the acc on other axis is small.
+  //It's a tweak to deal with some configs where ACC_Z tends to a value < acc_1G when high throttle is applied.
+  //This tweak applies only when the multi is not in inverted position
+  if ( abs(accSmooth[ROLL])<acc_25deg && abs(accSmooth[PITCH])<acc_25deg && accSmooth[YAW]>0) {
+    smallAngle25 = 1;
+    EstG.V.Z = acc_1G;
+  } else
+    smallAngle25 = 0;
+
   // Apply complimentary filter (Gyro drift correction)
   // If accel magnitude >1.4G or <0.6G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
   // To do that, we just skip filter, as EstV already rotated by Gyro
-  accLim = acc_1G>>1;
-  if ( ( 36 < accMag && accMag < 196 ) || ( abs(accSmooth[ROLL])<accLim && abs(accSmooth[PITCH])<accLim  ) ) {
-    for (axis = 0; axis < 3; axis++) {
+  if ( ( 36 < accMag && accMag < 196 ) || smallAngle25 )
+    for (axis = 0; axis < 3; axis++)
       EstG.A[axis] = (EstG.A[axis] * GYR_CMPF_FACTOR + ACC_VALUE) * INV_GYR_CMPF_FACTOR;
-      #if MAG
-        EstM.A[axis] = (EstM.A[axis] * GYR_CMPFM_FACTOR  + MAG_VALUE) * INV_GYR_CMPFM_FACTOR;
-      #endif
-    }
-  }
-
+  #if MAG
+    for (axis = 0; axis < 3; axis++)
+      EstM.A[axis] = (EstM.A[axis] * GYR_CMPFM_FACTOR  + MAG_VALUE) * INV_GYR_CMPFM_FACTOR;
+  #endif
   // Attitude of the estimated vector
   angle[ROLL]  =  _atan2(EstG.V.X , EstG.V.Z) ;
   angle[PITCH] =  _atan2(EstG.V.Y , EstG.V.Z) ;

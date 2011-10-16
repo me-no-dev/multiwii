@@ -67,7 +67,7 @@ void serialCom() {
       for(i=0;i<8;i++) serialize16(motor[i]);
       for(i=0;i<8;i++) serialize16(rcData[i]);
       serialize8(nunchuk|ACC<<1|BARO<<2|MAG<<3|GPSPRESENT<<4);
-      serialize8(accMode|baroMode<<1|magMode<<2|GPSMode<<3);
+      serialize8(accMode|baroMode<<1|magMode<<2|(GPSModeHome|GPSModeHold)<<3);
       serialize16(cycleTime);
       for(i=0;i<2;i++) serialize16(angle[i]/10);
       serialize8(MULTITYPE);
@@ -80,7 +80,7 @@ void serialCom() {
       serialize8(rollPitchRate);
       serialize8(yawRate);
       serialize8(dynThrPID);
-      for(i=0;i<7;i++) serialize8(activate[i]);
+      for(i=0;i<8;i++) serialize8(activate[i]);
       serialize16(GPS_distanceToHome);
       serialize16(GPS_directionToHome);
       serialize8(GPS_numSat);
@@ -125,7 +125,7 @@ void serialCom() {
       rcRate8 = Serial.read(); rcExpo8 = Serial.read();
       rollPitchRate = Serial.read(); yawRate = Serial.read(); //16
       dynThrPID = Serial.read();
-      for(i=0;i<7;i++) activate[i] = Serial.read(); //22
+      for(i=0;i<8;i++) activate[i] = Serial.read(); //22
      #if defined(POWERMETER)
       powerTrigger1 = (Serial.read() + 256* Serial.read() ) / PLEVELSCALE; // we rely on writeParams() to compute corresponding pAlarm value
      #else
