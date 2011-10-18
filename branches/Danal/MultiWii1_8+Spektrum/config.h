@@ -304,6 +304,14 @@
 //#define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -Y; gyroADC[PITCH] =  X; gyroADC[YAW] = Z;}
 //#define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = X; magADC[PITCH]  = Y; magADC[YAW]  = Z;}
 
+/* When ESC_CALIBRATE is defined, all flight functions are supressed. 
+   Instead, motor outputs immediately follow received throttle.
+   This allows calibration of ESCs
+   Note: Most ESCs need the specific high-throttle signal (to enter calibration) BEFORE the Arduino gets past the bootloader.  
+         Therefore, it is recommended to power the Arduino before powering the ESCs. 
+*/
+//#define ESC_CALIBRATE
+
 /**************************************/
 /****END OF CONFIGURABLE PARAMETERS****/
 /**************************************/

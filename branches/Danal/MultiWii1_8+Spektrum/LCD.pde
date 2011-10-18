@@ -368,7 +368,7 @@ void lcd_telemetry() {
       if (abs(accSmooth[1]) < ACCLIMIT) { LCD_BAR(4,(ACCLIMIT+accSmooth[1])*50/ACCLIMIT) } else LCDprintChar("...."); LCDprint(' ');
       if (abs(accSmooth[2] - acc_1G) < ACCLIMIT) { LCD_BAR(4,(ACCLIMIT+accSmooth[2]-acc_1G)*50/ACCLIMIT) } else LCDprintChar("....");
       break;
-    case 'E': // No E button.  Displays with auto telemetry only
+    case 'Z': // No Z button.  Displays with auto telemetry only
       strcpy(line1,"Failsafe -----  ");  
       /*            0123456789012345   */
       strcpy(line2,"                ");
