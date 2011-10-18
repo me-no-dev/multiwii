@@ -243,7 +243,8 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   #ifdef LCD_TELEMETRY_AUTO
     if ( (telemetry_auto) && (micros() > telemetryAutoTime + LCD_TELEMETRY_AUTO) ) { // every 2 seconds
       telemetry++;
-      if ( (telemetry < 'A' ) || (telemetry > 'E' ) ) telemetry = 'A';
+      if (telemetry == 'E') telemetry = 'Z';
+        else if ( (telemetry < 'A' ) || (telemetry > 'D' ) ) telemetry = 'A';
       telemetryAutoTime = micros(); // why use micros() and not the variable currentTime ?
     }
   #endif  
@@ -320,7 +321,20 @@ void loop () {
   int16_t AltPID = 0;
   static int16_t lastVelError = 0;
   static float AltHold = 0.0;
-      
+  
+  #if defined(ESC_CALIBRATE)
+    blinkLED(20,30,1);
+    while (true) {  
+      if (currentTime > (rcTime + 20000) ) { // 50Hz
+        rcTime = currentTime; 
+        computeRC();
+        rcData[THROTTLE] = constrain(rcData[THROTTLE],900,MAXTHROTTLE);
+        for (uint8_t i =0;i<NUMBER_MOTOR;i++) motor[i]=rcData[THROTTLE];
+        writeMotors();
+      }
+      currentTime = micros();
+    }
+  #endif
   #if defined(SPEKTRUM)
     if (spekFrameComplete) computeRC();
   #endif

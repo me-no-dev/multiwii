@@ -3,20 +3,6 @@
   #define SERVO
 #endif
 
-#if defined(GIMBAL) || defined(FLYING_WING)
-  #define NUMBER_MOTOR 0
-#elif defined(BI)
-  #define NUMBER_MOTOR 2
-#elif defined(TRI)
-  #define NUMBER_MOTOR 3
-#elif defined(QUADP) || defined(QUADX) || defined(Y4)
-  #define NUMBER_MOTOR 4
-#elif defined(Y6) || defined(HEX6) || defined(HEX6X)
-  #define NUMBER_MOTOR 6
-#elif defined(OCTOX8) || defined(OCTOFLATP) || defined(OCTOFLATX)
-  #define NUMBER_MOTOR 8
-#endif
-
 uint8_t PWM_PIN[8] = {MOTOR_ORDER};
 volatile uint8_t atomicServo[4] = {125,125,125,125};
 
