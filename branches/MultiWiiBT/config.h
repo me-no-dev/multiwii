@@ -38,6 +38,18 @@
 
 //****** advanced users settings   *************
 
+/* PIN A0 and A1 instead of PIN D5 & D6 for 6 motors config and promini config
+   This mod allow the use of a standard receiver on a pro mini
+   (no need to use a PPM sum receiver)
+*/
+//#define A0_A1_PIN_HEX
+
+/* possibility to use PIN8 or PIN12 as the AUX2 RC input
+   it deactivates in this case the POWER PIN (pin 12) or the BUZZER PIN (pin 8)
+*/
+//#define RCAUXPIN8
+//#define RCAUXPIN12
+
 /* This option is here if you want to use the old level code from the verison 1.7
    It's just to have some feedback. This will be removed in the future */
 //#define STAB_OLD_17
@@ -49,11 +61,12 @@
    the GPS must be configured to output NMEA sentences (which is generally the default conf for most GPS devices)
 */
 //#define GPS
-#define GPS_SERIAL Serial3 // should be Serial2 for flyduino v2
-#define GPS_BAUD   4800
+//#define GPS_SERIAL Serial3 // should be Serial2 for flyduino v2
+//#define GPS_BAUD   4800
+//#define GPS_BAUD   9600
 
 /* Pseudo-derivative conrtroller for level mode (experimental)
-   Additional information: http://wbb.multiwii.com/viewtopic.php?f=8&t=503 */
+   Additional information: http://www.multiwii.com/forum/viewtopic.php?f=8&t=503 */
 //#define LEVEL_PDF
 
 /* introduce a deadband around the stick center
@@ -68,7 +81,7 @@
    Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
    If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
    If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
-//#define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
+#define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
 #define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
 #define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
 #define FAILSAVE_THR0TTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
@@ -104,6 +117,7 @@
 //#define AEROQUADSHIELDv2
 //#define ATAVRSBIN1      // Atmel 9DOF (Contribution by EOSBandi). requires 3.3V power.
 //#define SIRIUS          // Sirius Navigator IMU                                             <- confirmed by Alex
+//#define SIRIUS600       // Sirius Navigator IMU  using the WMP for the gyro
 
 //if you use independent sensors
 //leave it commented it you already checked a specific board above
@@ -120,7 +134,7 @@
 
 /* I2C barometer */
 //#define BMP085
-//#define MS561101BA  //non tested
+//#define MS561101BA
 
 /* I2C magnetometer */
 //#define HMC5843
@@ -149,15 +163,17 @@
 //#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,CAMPITCH,CAMROLL //For Robe/Hitec/Futaba
 //#define SERIAL_SUM_PPM         PITCH,ROLL,THROTTLE,YAW,AUX1,AUX2,CAMPITCH,CAMROLL //For some Hitec/Sanwa/Others
 
-/* EXPERIMENTAL !!
-   The following lines apply only for Spektrum Satellite Receiver
+/* The following lines apply only for Spektrum Satellite Receiver
    Spektrum Satellites are 3V devices.  DO NOT connect to 5V!
    For MEGA boards, attach sat grey wire to RX1, pin 19. Sat black wire to ground. Sat orange wire to Mega board's 3.3V (or any other 3V to 3.3V source).
-   For PROMINI, attach sat grey to RX0.  Attach sat black to ground.
-   There is no 3.3V source on a pro mini; you can either use a different 3V source, or attach orange to 5V with a 3V regulator in-line (such as http://search.digikey.com/scripts/DkSearch/dksus.dll?Detail&name=MCP1700-3002E/TO-ND)
-   If you use an inline-regulator, a standard 3-pin servo connector can connect to ground, +5V, and RX0; solder the correct wires (and the 3V regulator!) to a Spektrum baseRX-to-Sat cable that has been cut in half.
-   NOTE: Because there is only one serial port on the Pro Mini, using a Spektrum Satellite implies you CANNOT use the PC based configuration tool. Further, you cannot use on-aircraft serial LCD as the baud rates are incompatible. You can use an on-aircraft Eagle Tree LCD for setting gains, reading sensors, etc.
-   (Contribution by Danal) */
+   For PROMINI, attach sat grey to RX0.  Attach sat black to ground.  
+     There is no 3.3V source on a pro mini; you can either use a different 3V source, or attach orange to 5V with a 3V regulator in-line (such as http://search.digikey.com/scripts/DkSearch/dksus.dll?Detail&name=MCP1700-3002E/TO-ND)
+     If you use an inline-regulator, a standard 3-pin servo connector can connect to ground, +5V, and RX0; solder the correct wires (and the 3V regulator!) to a Spektrum baseRX-to-Sat cable that has been cut in half. 
+     NOTE: Because there is only one serial port on the Pro Mini, using a Spektrum Satellite implies you CANNOT use the PC based configuration tool. Further, you cannot use on-aircraft serial LCD as the baud rates are incompatible. You can configure by one of two methods:
+       1) Coming soon: Use an on-aircraft Eagle Tree LCD for setting gains, reading sensors, etc. 
+       2) Available now: Comment out the Spektrum definition, upload, plug in PC, configure; uncomment the Spektrum definition, upload, plug in RX, and fly.  Repeat as required to configure. 
+   (Contribution by Danal)
+*/
 //#define SPEKTRUM
 
 /* EXPERIMENTAL !!
@@ -165,8 +181,7 @@
    cf http://www.multiwii.com/forum/viewtopic.php?f=7&t=289
    The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1).
    You have to invert the S-Bus-Serial Signal e.g. with a Hex-Inverter like IC SN74 LS 04 */
-//#define SBUS   PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,CAMPITCH,CAMROLL // Order of channels in the SBUS
-
+//#define SBUS
 
 /* interleaving delay in micro seconds between 2 readings WMP/NK in a WMP+NK config
    if the ACC calibration time is very long (20 or 30s), try to increase this delay up to 4000
@@ -203,16 +218,19 @@
    comment this line only if you don't plan to used a LCD */
 //#define LCD_CONF
 
+/* To use an Eagle Tree Power Panel LCD for configuration, uncomment this line
+ White wire  to Ground
+ Red wire    to +5V VCC (or to the WMP power pin, if you prefer to reset everything on the bus when WMP resets)
+ Yellow wire to SDA - Pin A4 Mini Pro - Pin 20 Mega
+ Brown wire  to SCL - Pin A5 Mini Pro - Pin 21 Mega 
+ (Contribution by Danal) */
+//#define LCD_ETPP
+
 /* to use Cat's whisker TEXTSTAR LCD, uncomment following line.
    Pleae note this display needs a full 4 wire connection to (+5V, Gnd, RXD, TXD )
    Configure display as follows: 115K baud, and TTL levels for RXD and TXD, terminal mode
    NO rx / tx line reconfiguration, use natural pins */
 //#define LCD_TEXTSTAR
-/* keys to navigate the LCD menu (preset to TEXTSTAR key-depress codes)*/
-#define LCD_MENU_PREV 'a'
-#define LCD_MENU_NEXT 'c'
-#define LCD_VALUE_UP 'd'
-#define LCD_VALUE_DOWN 'b'
 
 /* motors will not spin when the throttle command is in low position
    this is an alternative method to stop immediately the motors */
@@ -309,4 +327,3 @@
 /**************************************/
 /****END OF CONFIGURABLE PARAMETERS****/
 /**************************************/
-
