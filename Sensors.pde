@@ -134,6 +134,9 @@ void waitTransmissionI2C() {
 void checkStatusI2C() {
   if ( TW_STATUS  == 0xF8) { //TW_NO_INFO : this I2C error status indicates a wrong I2C communication.
     // WMP does not respond anymore => we do a hard reset. I did not find another way to solve it. It takes only 13ms to reset and init to WMP or WMP+NK
+    #ifdef LOG_VALUES
+      i2c_errors_count++;
+    #endif
     TWCR = 0;
     if (!GYRO) {
       POWERPIN_OFF //switch OFF WMP
@@ -370,9 +373,8 @@ void Baro_update() {
     case 3: 
       i2c_BMP085_UP_Read(); 
       i2c_BMP085_Calculate(); 
-      BaroAlt = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 44330.0f;
-      bmp085_ctx.state = 0;
-      bmp085_ctx.deadline += 20000; 
+      BaroAlt = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 4433000.0f;
+      bmp085_ctx.state = 0; bmp085_ctx.deadline += 20000; 
       break;
   } 
 }
@@ -494,7 +496,7 @@ void Baro_update() {
     case 3: 
       i2c_MS561101BA_UP_Read();
       i2c_MS561101BA_Calculate();
-      BaroAlt = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 44330.0f;
+      BaroAlt = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 4433000.0f;
       ms561101ba_ctx.state = 0; ms561101ba_ctx.deadline += 30000;
       break;
   } 
@@ -548,15 +550,11 @@ void ACC_getADC () {
 //
 // 0x20    bw_tcs:   |                                           bw<3:0> |                        tcs<3:0> |
 //                   |                                             150Hz |                 !!Calibration!! |
-//
-// 0x35 offset_lsb1: |                                     offset_x<3:0> |        range<2:0> |    smp_skip |
-//                   |                                   !!Calibration!! |                2g |     IRQ 1/T |
 // ************************************************************************************************************
 #if defined(BMA180)
 void ACC_init () {
   delay(10);
   //default range 2G: 1G = 4096 unit.
-  i2c_writeReg(BMA180_ADDRESS,0x0D,1<<4); // register: ctrl_reg0  -- value: set bit ee_w to 1 to enable writing
   uint8_t control = i2c_readReg(BMA180_ADDRESS, 0x20);
   control = control & 0x0F; // register: bw_tcs reg: bits 4-7 to set bw -- value: set low pass filter to 10Hz (bits value = 0000xxxx)
   delay(5);
@@ -900,7 +898,6 @@ void initSensors() {
   if (GYRO) Gyro_init();
   else WMP_init(250);
   if (BARO) Baro_init();
-  if (ACC) ACC_init();
+  if (ACC) {ACC_init();acc_25deg = acc_1G * 0.423;}
   if (MAG) Mag_init();
 }
-

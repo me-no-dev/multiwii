@@ -31,7 +31,7 @@ void serialCom() {
   int16_t a;
   uint8_t i;
 
-  uint16_t intPowerMeterSum, intPowerTrigger1, intTempVal;   
+  uint16_t intPowerMeterSum, intPowerTrigger1;   
 
   if ((!tx_busy) && Serial.available()) {
     switch (Serial.read()) {
@@ -61,13 +61,13 @@ void serialCom() {
       for(i=0;i<3;i++) serialize16(accSmooth[i]);
       for(i=0;i<3;i++) serialize16(gyroData[i]/8);
       for(i=0;i<3;i++) serialize16(magADC[i]/3);
-      serialize16(EstAlt*10.0f);
+      serialize16(EstAlt/10);
       serialize16(heading); // compass
       for(i=0;i<4;i++) serialize16(servo[i]);
       for(i=0;i<8;i++) serialize16(motor[i]);
       for(i=0;i<8;i++) serialize16(rcData[i]);
       serialize8(nunchuk|ACC<<1|BARO<<2|MAG<<3|GPSPRESENT<<4);
-      serialize8(accMode|baroMode<<1|magMode<<2|GPSMode<<3);
+      serialize8(accMode|baroMode<<1|magMode<<2|(GPSModeHome|GPSModeHold)<<3);
       serialize16(cycleTime);
       for(i=0;i<2;i++) serialize16(angle[i]/10);
       serialize8(MULTITYPE);
@@ -80,11 +80,12 @@ void serialCom() {
       serialize8(rollPitchRate);
       serialize8(yawRate);
       serialize8(dynThrPID);
-      for(i=0;i<7;i++) serialize8(activate[i]);
-      serialize16(distanceToHome);
-      serialize16(directionToHome);
+      for(i=0;i<8;i++) serialize8(activate[i]);
+      serialize16(GPS_distanceToHome);
+      serialize16(GPS_directionToHome);
       serialize8(GPS_numSat);
       serialize8(GPS_fix);
+      serialize8(GPS_update);
       #if defined(POWERMETER)
         intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
         intPowerTrigger1 = powerTrigger1 * PLEVELSCALE;
@@ -92,7 +93,7 @@ void serialCom() {
       serialize16(intPowerMeterSum);
       serialize16(intPowerTrigger1);
       serialize8(vbat);
-      serialize16(BaroAlt*10.0f); // 4 variables are here for general monitoring purpose
+      serialize16(BaroAlt/10); // 4 variables are here for general monitoring purpose
       serialize16(0);              // debug2
       serialize16(0);              // debug3
       serialize16(0);              // debug4
@@ -124,7 +125,7 @@ void serialCom() {
       rcRate8 = Serial.read(); rcExpo8 = Serial.read();
       rollPitchRate = Serial.read(); yawRate = Serial.read(); //16
       dynThrPID = Serial.read();
-      for(i=0;i<7;i++) activate[i] = Serial.read(); //22
+      for(i=0;i<8;i++) activate[i] = Serial.read(); //22
      #if defined(POWERMETER)
       powerTrigger1 = (Serial.read() + 256* Serial.read() ) / PLEVELSCALE; // we rely on writeParams() to compute corresponding pAlarm value
      #else
@@ -139,25 +140,14 @@ void serialCom() {
       calibratingM=1;
       break;
     case 'Z': //receive stuff from Serial port as a remote
-/*
-	      rcCommand[THROTTLE] = (Serial.read() * 5) + 900;
-	      rcCommand[ROLL]     = (Serial.read() * 5) + 900;
-	      rcCommand[PITCH]    = (Serial.read() * 5) + 900;
-	      rcCommand[YAW]      = (Serial.read() * 5) + 900;
-*/
-/*
-	      rcValue[THROTTLE] = (Serial.read() * 5) + 900;
-	      rcValue[ROLL]     = (Serial.read() * 5) + 900;
-	      rcValue[PITCH]    = (Serial.read() * 5) + 900;
-	      rcValue[YAW]      = (Serial.read() * 5) + 900;
-*/
-
-	      rcData[THROTTLE] = (Serial.read() * 5) + 900;
-	      rcData[ROLL]     = (Serial.read() * 5) + 900;
-	      rcData[PITCH]    = (Serial.read() * 5) + 900;
-	      rcData[YAW]      = (Serial.read() * 5) + 900;
-
+	      rcData[THROTTLE] = (Serial.read() * 4) + 1000;
+	      rcData[ROLL]     = (Serial.read() * 4) + 1000;
+	      rcData[PITCH]    = (Serial.read() * 4) + 1000;
+	      rcData[YAW]      = (Serial.read() * 4) + 1000;
+	      rcData[AUX1]     = (Serial.read() * 4) + 1000;
       break;
+      
+      
     }
   }
 }

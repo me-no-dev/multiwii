@@ -1,7 +1,7 @@
 /*
 MultiWiiCopter by Alexandre Dubus
 www.multiwii.com
-September  2011     V1.dev
+October  2011     V1.dev
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -33,10 +33,10 @@ September  2011     V1.dev
 #define BOXCAMSTAB  3
 #define BOXCAMTRIG  4
 #define BOXARM      5
-#define BOXGPS      6
+#define BOXGPSHOME  6
+#define BOXGPSHOLD  7
 
 static uint32_t currentTime = 0;
-static uint16_t currentTime16 = 0;
 static uint16_t previousTime = 0;
 static uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 static uint16_t calibratingA = 0;  // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
@@ -44,11 +44,13 @@ static uint8_t  calibratingM = 0;
 static uint16_t calibratingG;
 static uint8_t  armed = 0;
 static uint16_t acc_1G;             // this is the 1G measured acceleration
+static int16_t  acc_25deg;
 static uint8_t  nunchuk = 0;
 static uint8_t  accMode = 0;        // if level mode is a activated
 static uint8_t  magMode = 0;        // if compass heading hold is a activated
 static uint8_t  baroMode = 0;       // if altitude hold is activated
-static uint8_t  GPSMode = 0;        // if GPS RTH is activated
+static uint8_t  GPSModeHome = 0;    // if GPS RTH is activated
+static uint8_t  GPSModeHold = 0;    // if GPS PH is activated
 static int16_t  gyroADC[3],accADC[3],magADC[3];
 static int16_t  accSmooth[3];       // projection of smoothed and normalized gravitation force vector on x/y/z axis, as measured by accelerometer
 static int16_t  accTrim[2] = {0, 0};
@@ -57,16 +59,19 @@ static uint8_t  calibratedACC = 0;
 static uint8_t  vbat;               // battery voltage in 0.1V steps
 static uint8_t  okToArm = 0;
 static uint8_t  rcOptions;
-static int32_t  pressure = 0;
-static float    BaroAlt = 0.0f;
-static float    EstVelocity = 0.0f;
-static float    EstAlt = 0.0f;
-
+static int32_t  pressure;
+static int32_t  BaroAlt;
+static int32_t  EstVelocity;
+static int32_t  EstAlt;             // in cm
+static uint8_t  buzzerState = 0;
+  
 //for log
 static uint16_t cycleTimeMax = 0;       // highest ever cycle timen
 static uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
 static uint16_t powerMax = 0;           // highest ever current
 static uint16_t powerAvg = 0;           // last known current
+static uint8_t i2c_errors_count = 0;    // count of wmp/nk resets
+static uint8_t failsafes_count = 0;     // count of failsafe occurrences
 
 // **********************
 // power meter
@@ -90,23 +95,13 @@ static uint8_t telemetry_auto = 0;
 #define MAXCHECK 1900
 
 volatile int16_t failsafeCnt = 0;
-
+static int16_t failsafeEvents = 0;
 static int16_t rcData[8];    // interval [1000;2000]
 static int16_t rcCommand[4]; // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
-
 static uint8_t rcRate8;
 static uint8_t rcExpo8;
 static int16_t lookupRX[7]; //  lookup table for expo & RC rate
-
-#if defined(SPEKTRUM)
-  #define SPEK_MAX_CHANNEL 7
-  #define SPEK_FRAME_SIZE 16
-  #define SPEK_CHAN_SHIFT  2       // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
-  #define SPEK_CHAN_MASK   0x03    // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
-  volatile byte          spekFramePosition, spekFrameComplete, spekFrame[SPEK_FRAME_SIZE];
-  volatile unsigned long spekTimeLast, spekTimeInterval;
-  unsigned long          spekChannelData[SPEK_MAX_CHANNEL];
-#endif
+volatile uint8_t rcFrameComplete; //for serial rc receiver Spektrum
 
 // **************
 // gyro+acc IMU
@@ -116,6 +111,7 @@ static int16_t gyroZero[3] = {0,0,0};
 static int16_t accZero[3]  = {0,0,0};
 static int16_t magZero[3]  = {0,0,0};
 static int16_t angle[2]    = {0,0};  // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+static int8_t  smallAngle18;
 
 // *************************
 // motor and servo functions
@@ -132,7 +128,7 @@ static uint8_t dynP8[3], dynI8[3], dynD8[3];
 static uint8_t rollPitchRate;
 static uint8_t yawRate;
 static uint8_t dynThrPID;
-static uint8_t activate[7];
+static uint8_t activate[8];
 
 void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   uint8_t i,r;
@@ -152,16 +148,15 @@ static int32_t  GPS_latitude,GPS_longitude;
 static int32_t  GPS_latitude_home,GPS_longitude_home;
 static uint8_t  GPS_fix , GPS_fix_home = 0;
 static uint8_t  GPS_numSat;
-static uint16_t distanceToHome;
-static int16_t  directionToHome = 0;
+static uint16_t GPS_distanceToHome;
+static int16_t  GPS_directionToHome = 0;
+static uint8_t  GPS_update = 0;
 
 void annexCode() { //this code is excetuted at each loop and won't interfere with control loop if it lasts less than 650 microseconds
   static uint32_t serialTime;
   static uint32_t buzzerTime,calibratedAccTime,telemetryTime,telemetryAutoTime,psensorTime;
-  static uint8_t  buzzerState = 0;
   static uint8_t  buzzerFreq;         //delay between buzzer ring
-  uint8_t axis;
-  uint8_t prop1,prop2;
+  uint8_t axis,prop1,prop2;
   uint16_t pMeterRaw, powerValue;                //used for current reading
 
   //PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
@@ -195,7 +190,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
      pMeterRaw =  analogRead(PSENSORPIN);
      powerValue = ( PSENSORNULL > pMeterRaw ? PSENSORNULL - pMeterRaw : pMeterRaw - PSENSORNULL); // do not use abs(), it would induce implicit cast to uint and overrun
      #ifdef LOG_VALUES
-       if ( powerValue < 256) {  // only accept reasonable values. 256 is empirical
+       if ( powerValue < 333) {  // only accept reasonable values. 333 is empirical
          if (powerValue > powerMax) powerMax = powerValue;
          powerAvg = powerValue;
        }
@@ -206,7 +201,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   #endif
 
   #if defined(VBAT)
-    uint8_t ind;
+    static uint8_t ind;
     uint16_t vbatRaw = 0;
     static uint16_t vbatRawArray[8];
     vbatRawArray[(ind++)%8] = analogRead(V_BATPIN);
@@ -243,8 +238,9 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
     if (armed) {LEDPIN_ON}
   }
 
+  if (abs(angle[ROLL])>180 || abs(angle[PITCH])>180) smallAngle18 = 0; else smallAngle18 = 1; //more than 18 deg detection
   if ( currentTime > calibratedAccTime ) {
-    if (abs(angle[ROLL])>150 || abs(angle[PITCH])>150) { //more than 15 deg detection
+    if (smallAngle18 == 0) {
       calibratedACC = 0; //the multi uses ACC and is not calibrated or is too much inclinated
       LEDPIN_SWITCH
       calibratedAccTime = currentTime + 500000;
@@ -295,6 +291,11 @@ void setup() {
   #if defined(GPS)
     GPS_SERIAL.begin(GPS_BAUD);
   #endif
+  #if defined(LCD_ETPP)
+    i2c_ETPP_init();
+    i2c_ETPP_set_cursor(0,0);LCDprintChar("MultiWii");
+    i2c_ETPP_set_cursor(0,1);LCDprintChar("Ready to Fly!");
+  #endif
 }
 
 // ******** Main Loop *********
@@ -308,34 +309,36 @@ void loop () {
   static int16_t delta1[3],delta2[3];
   static int16_t errorGyroI[3] = {0,0,0};
   static int16_t errorAngleI[2] = {0,0};
-  static uint8_t camCycle = 0;
-  static uint8_t camState = 0;
-  static uint32_t camTime = 0;
+
   static uint32_t rcTime  = 0;
   static int16_t initialThrottleHold;
   static int16_t errorAltitudeI = 0;
   int16_t AltPID = 0;
   static int16_t lastVelError = 0;
-  static float AltHold = 0.0;
+  static int32_t AltHold;
  
   #if defined(SPEKTRUM)
-    if (spekFrameComplete) computeRC();
+    if (rcFrameComplete) computeRC();
   #endif
   
   if (currentTime > rcTime ) { // 50Hz
     rcTime = currentTime + 20000;
     #if !defined(SPEKTRUM)
-//      computeRC();
+      computeRC();
     #endif
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level
+        #ifdef LOG_VALUES
+         failsafes_count = 1; //only toggle on, no actual count                                               // keep log of # of failsafe conditions
+        #endif
         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
         rcData[THROTTLE] = FAILSAVE_THR0TTLE;
         if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
           armed = 0;   //This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
           okToArm = 0; //to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
         }
+        failsafeEvents++;
       }
       failsafeCnt++;
     #endif
@@ -358,7 +361,6 @@ void loop () {
       } else if (activate[BOXARM] > 0) {
         if ((rcOptions & activate[BOXARM]) && okToArm ) armed = 1;
         else if (armed) armed = 0;
-       
         rcDelayCommand = 0;
       } else if ( (rcData[YAW] < MINCHECK || rcData[ROLL] < MINCHECK)  && armed == 1) {
         if (rcDelayCommand == 20) armed = 0; // rcDelayCommand = 20 => 20x20ms = 0.4s = time to wait for a specific RC command to be acknowledged
@@ -381,13 +383,13 @@ void loop () {
         if (rcDelayCommand == 20) calibratingA=400;
         rcDelayCommand++;
       } else if (rcData[PITCH] > MAXCHECK) {
-         accTrim[PITCH]++;writeParams();
+         accTrim[PITCH]+=2;writeParams();
       } else if (rcData[PITCH] < MINCHECK) {
-         accTrim[PITCH]--;writeParams();
+         accTrim[PITCH]-=2;writeParams();
       } else if (rcData[ROLL] > MAXCHECK) {
-         accTrim[ROLL]++;writeParams();
+         accTrim[ROLL]+=2;writeParams();
       } else if (rcData[ROLL] < MINCHECK) {
-         accTrim[ROLL]--;writeParams();
+         accTrim[ROLL]-=2;writeParams();
       } else {
         rcDelayCommand = 0;
       }
@@ -398,7 +400,7 @@ void loop () {
       if (cycleTime < cycleTimeMin) cycleTimeMin = cycleTime; // remember lowscore
     }
    #endif
-         
+
     rcOptions = (rcData[AUX1]<1300)   + (1300<rcData[AUX1] && rcData[AUX1]<1700)*2  + (rcData[AUX1]>1700)*4
                +(rcData[AUX2]<1300)*8 + (1300<rcData[AUX2] && rcData[AUX2]<1700)*16 + (rcData[AUX2]>1700)*32;
     
@@ -435,8 +437,10 @@ void loop () {
       } else magMode = 0;
     }
     #if defined(GPS)
-      if (rcOptions & activate[BOXGPS]) {GPSMode = 1;}
-      else GPSMode = 0;
+      if (rcOptions & activate[BOXGPSHOME]) {GPSModeHome = 1;}
+      else GPSModeHome = 0;
+      if (rcOptions & activate[BOXGPSHOLD]) {GPSModeHold = 1;}
+      else GPSModeHold = 0;
     #endif
   }
   if (MAG)  Mag_getADC();
@@ -445,17 +449,15 @@ void loop () {
   computeIMU();
   // Measure loop rate just afer reading the sensors
   currentTime = micros();
-  currentTime16 = currentTime;
-  cycleTime = currentTime16 - previousTime;
-  previousTime = currentTime16;
+  cycleTime = currentTime - previousTime;
+  previousTime = currentTime;
 
   if(MAG) {
     if (abs(rcCommand[YAW]) <70 && magMode) {
       int16_t dif = heading - magHold;
       if (dif <= - 180) dif += 360;
       if (dif >= + 180) dif -= 360;
-      if ( (abs(angle[ROLL])<200) && (abs(angle[PITCH])<200) ) //20 deg
-        rcCommand[YAW] -= dif*P8[PIDMAG]/30; 
+      if ( smallAngle18 ) rcCommand[YAW] -= dif*P8[PIDMAG]/30;  //18 deg
     } else magHold = heading;
   }
 
@@ -466,17 +468,17 @@ void loop () {
         errorAltitudeI = 0;
       }
       //**** Alt. Set Point stabilization PID ****
-      error = constrain((AltHold - EstAlt)*10, -100, 100); //  +/-10m,  1 decimeter accuracy
+      error = constrain( AltHold - EstAlt, -1000, 1000); //  +/-10m,  1 decimeter accuracy
       errorAltitudeI += error;
-      errorAltitudeI = constrain(errorAltitudeI,-5000,5000);
+      errorAltitudeI = constrain(errorAltitudeI,-30000,30000);
       
       PTerm = P8[PIDALT]*error/100;                     // 16 bits is ok here
-      ITerm = (int32_t)I8[PIDALT]*errorAltitudeI/4000;  // 
+      ITerm = (int32_t)I8[PIDALT]*errorAltitudeI/40000;
       
       AltPID = PTerm + ITerm ;
 
       //**** Velocity stabilization PD ****        
-      error = constrain(EstVelocity*2000.0f, -30000.0f, 30000.0f);
+      error = constrain(EstVelocity*2, -30000, 30000);
       delta = error - lastVelError;
       lastVelError = error;
 
@@ -490,24 +492,24 @@ void loop () {
   //**** PITCH & ROLL & YAW PID ****    
   for(axis=0;axis<3;axis++) {
     if (accMode == 1 && axis<2 ) { //LEVEL MODE
-      errorAngle = constrain(2*rcCommand[axis],-700,+700) - angle[axis] + accTrim[axis]; //16 bits is ok here
+      // 50 degrees max inclination
+      errorAngle = constrain(2*rcCommand[axis],-500,+500) - angle[axis] + accTrim[axis]; //16 bits is ok here
       #ifdef LEVEL_PDF
         PTerm      = -(int32_t)angle[axis]*P8[PIDLEVEL]/100 ;
       #else  
         PTerm      = (int32_t)errorAngle*P8[PIDLEVEL]/100 ;                         //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
       #endif
 
-      errorAngleI[axis] += errorAngle;                                              //16 bits is ok here
-      errorAngleI[axis]  = constrain(errorAngleI[axis],-10000,+10000); //WindUp     //16 bits is ok here
-      ITerm              = (int32_t)errorAngleI[axis]*I8[PIDLEVEL]/4000;            //32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
+      errorAngleI[axis]  = constrain(errorAngleI[axis]+errorAngle,-10000,+10000); //WindUp     //16 bits is ok here
+      ITerm              = ((int32_t)errorAngleI[axis]*I8[PIDLEVEL])>>12;            //32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
     } else { //ACRO MODE or YAW axis
       if (abs(rcCommand[axis])<350) error =          rcCommand[axis]*10*8/P8[axis] - gyroData[axis]; //16 bits is needed for calculation: 350*10*8 = 28000      16 bits is ok for result if P8>2 (P>0.2)
                                else error = (int32_t)rcCommand[axis]*10*8/P8[axis] - gyroData[axis]; //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
       PTerm = rcCommand[axis];
-
-      if (abs(errorGyroI[axis]) <16000) errorGyroI[axis] += error; //WindUp         //16 bits is ok here
+      
+      errorGyroI[axis]  = constrain(errorGyroI[axis]+error,-16000,+16000); //WindUp //16 bits is ok here
       if (abs(gyroData[axis])>640) errorGyroI[axis] = 0;
-      ITerm = (int32_t)errorGyroI[axis]*I8[axis]/1000/8;                            //32 bits is needed for calculation: 16000*I8  16 bits is ok for result
+      ITerm = (errorGyroI[axis]/125*I8[axis])>>6;                                   //16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
     }
     if (abs(gyroData[axis])<160) PTerm -=          gyroData[axis]*dynP8[axis]/10/8; //16 bits is needed for calculation   160*200 = 32000         16 bits is ok for result
                             else PTerm -= (int32_t)gyroData[axis]*dynP8[axis]/10/8; //32 bits is needed for calculation   
@@ -517,54 +519,31 @@ void loop () {
     deltaSum       = delta1[axis]+delta2[axis]+delta;
     delta2[axis]   = delta1[axis];
     delta1[axis]   = delta;
-    if (abs(deltaSum)<640) DTerm = (deltaSum)*dynD8[axis]/3/8;                      //16 bits is needed for calculation 640*50 = 32000           16 bits is ok for result 
-                      else DTerm = (int32_t)(deltaSum)*dynD8[axis]/3/8;             //32 bits is needed for calculation
+ 
+    if (abs(deltaSum)<640) DTerm = (deltaSum*dynD8[axis])>>5;                      //16 bits is needed for calculation 640*50 = 32000           16 bits is ok for result 
+                      else DTerm = ((int32_t)deltaSum*dynD8[axis])>>5;             //32 bits is needed for calculation
                       
     axisPID[axis] =  PTerm + ITerm - DTerm;
   }
 
-  #if defined(CAMTRIG)
-    if (camCycle==1) {
-      if (camState == 0) {
-        servo[3] = CAM_SERVO_HIGH;
-        camState = 1;
-        camTime = millis();
-      } else if (camState == 1) {
-       if ( (millis() - camTime) > CAM_TIME_HIGH ) {
-         servo[3] = CAM_SERVO_LOW;
-         camState = 2;
-         camTime = millis();
-       }
-      } else { //camState ==2
-       if ( (millis() - camTime) > CAM_TIME_LOW ) {
-         camState = 0;
-         camCycle = 0;
-       }
-      }
-    }
-    if (rcOptions & activate[BOXCAMTRIG]) camCycle=1;
-  #endif
-
   mixTable();
   writeServos();
   writeMotors();
-  #if defined(LOG_VALUES) || (POWERMETER == 1)
-    logMotorsPower();
-  #endif
 
   //GPS
   #if defined(GPS)
-    while (GPS_SERIAL.available())
+    while (GPS_SERIAL.available()) {
       if (GPS_newFrame(GPS_SERIAL.read())) {
+        if (GPS_update == 1) GPS_update = 0; else GPS_update = 1;
         if (GPS_fix == 1) {
           if (GPS_fix_home == 0) {
             GPS_fix_home = 1;
             GPS_latitude_home = GPS_latitude;
             GPS_longitude_home = GPS_longitude;
           }
-          GPS_distance(GPS_latitude_home,GPS_longitude_home,GPS_latitude,GPS_longitude, &distanceToHome, &directionToHome);
+          GPS_distance(GPS_latitude_home,GPS_longitude_home,GPS_latitude,GPS_longitude, &GPS_distanceToHome, &GPS_directionToHome);
         }
       }
+    }
   #endif
 }
-

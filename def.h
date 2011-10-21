@@ -124,6 +124,15 @@
   #define ITG3200_ADDRESS 0XD0
 #endif
 
+#if defined(SIRIUS600)
+  #define BMA180
+  #define BMP085
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = Y; accADC[YAW]  = Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = -Y;  magADC[PITCH] = X; magADC[YAW]  = Z;}
+  #define BMA180_ADDRESS 0x80
+#endif
+
 
 #if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(ADCACC)
   #define ACC 1
@@ -201,9 +210,9 @@
   #define PITCHPIN                   5
   #define YAWPIN                     6
   #define AUX1PIN                    7
-  #define AUX2PIN                    7   //unused just for compatibility with MEGA
-  #define CAM1PIN                    7   //unused just for compatibility with MEGA
-  #define CAM2PIN                    7   //unused just for compatibility with MEGA
+  #define AUX2PIN                    0 // optional PIN 8 or PIN 12
+  #define CAM1PIN                    1 // unused 
+  #define CAM2PIN                    3 // unused 
   #define ISR_UART                   ISR(USART_UDRE_vect)
   #define V_BATPIN                   A3    // Analog PIN 3
   #define PSENSORPIN                 A2    // Analog PIN 2
@@ -262,6 +271,20 @@
   #define PSENSORPIN                 A2    // Analog PIN 2
 #endif
 
+#if defined(RCAUXPIN8)
+  #define BUZZERPIN_PINMODE          ;
+  #define BUZZERPIN_ON               ;
+  #define BUZZERPIN_OFF              ;
+  #define RCAUXPIN
+#endif
+#if defined(RCAUXPIN12)
+  #define POWERPIN_PINMODE           ;
+  #define POWERPIN_ON                ;
+  #define POWERPIN_OFF               ;
+  #define RCAUXPIN
+#endif
+
+
 #if defined(POWERMETER)
   #ifndef VBAT
 	#error "to use powermeter, you must also define and configure VBAT"
@@ -300,4 +323,3 @@
 #elif defined(OCTOFLATX)
   #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
 #endif
-
