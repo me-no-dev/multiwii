@@ -129,7 +129,7 @@ void rxInt() {
     spekTime=micros();
     spekTimeInterval = spekTime - spekTimeLast;
     spekTimeLast = spekTime; 
-    if (spekTimeInterval > 10000) spekFramePosition = 0;
+    if (spekTimeInterval > 5000) spekFramePosition = 0;
     spekFrame[spekFramePosition] = SPEK_DATA_REG;
     if (spekFramePosition == SPEK_FRAME_SIZE - 1) {
       spekFrameComplete = 1;
@@ -169,10 +169,15 @@ uint16_t readRawRC(uint8_t chan) {
   #endif
   #if defined(SPEKTRUM)
     static byte spekRcChannelMap[SPEK_MAX_CHANNEL] = {1,2,3,0,4,5,6};
-    if (chan > SPEK_MAX_CHANNEL) {
+    if (chan >= SPEK_MAX_CHANNEL) {
       data = 1500;
     } else {
-      data = 988 + spekChannelData[spekRcChannelMap[chan]];     // Assumes 1024 mode
+      #if (SPEKTRUM == 1024)
+        data = 988 + spekChannelData[spekRcChannelMap[chan]];          // 1024 mode
+      #endif
+      #if (SPEKTRUM == 2048)
+        data = 988 + (spekChannelData[spekRcChannelMap[chan]] >> 1);   // 2048 mode
+      #endif
     }
   #endif
   return data; // We return the value correctly copied when the IRQ's where disabled

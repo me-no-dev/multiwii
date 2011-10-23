@@ -100,12 +100,19 @@ static int16_t lookupRX[7]; //  lookup table for expo & RC rate
 #if defined (SPEKTRUM)
   #define SPEK_MAX_CHANNEL 7
   #define SPEK_FRAME_SIZE 16 
-  #define SPEK_CHAN_SHIFT  2       // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
-  #define SPEK_CHAN_MASK   0x03    // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
+  #if (SPEKTRUM == 1024)
+    #define SPEK_CHAN_SHIFT  2       // Assumes 10 bit frames, that is 1024 mode.
+    #define SPEK_CHAN_MASK   0x03    // Assumes 10 bit frames, that is 1024 mode.
+  #endif
+  #if (SPEKTRUM == 2048)
+    #define SPEK_CHAN_SHIFT  3       // Assumes 11 bit frames, that is 2048 mode.
+    #define SPEK_CHAN_MASK   0x07    // Assumes 11 bit frames, that is 2048 mode.
+  #endif
   volatile byte          spekFramePosition, spekFrameComplete, spekFrame[SPEK_FRAME_SIZE];
   volatile unsigned long spekTimeLast, spekTimeInterval;
   unsigned long          spekChannelData[SPEK_MAX_CHANNEL];
 #endif
+
 
 // **************
 // gyro+acc IMU
