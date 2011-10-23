@@ -157,7 +157,7 @@ uint16_t readRawRC(uint8_t chan) {
     if (spekFrameComplete) {
       for (byte b = 3; b < SPEK_FRAME_SIZE; b += 2) {
         byte spekChannel = 0x0F & (spekFrame[b - 1] >> SPEK_CHAN_SHIFT);  
-        if (spekChannel <= SPEK_MAX_CHANNEL) spekChannelData[spekChannel] = (long(spekFrame[b - 1] & SPEK_CHAN_MASK) << 8) + spekFrame[b];
+        if (spekChannel < SPEK_MAX_CHANNEL) spekChannelData[spekChannel] = (long(spekFrame[b - 1] & SPEK_CHAN_MASK) << 8) + spekFrame[b];
       }
       spekFrameComplete = 0;    
     }
