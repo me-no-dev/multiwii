@@ -150,6 +150,14 @@
 //#define SPEKTRUM 1024
 //#define SPEKTRUM 2048
 
+/* EXPERIMENTAL !!
+
+	you must enable this if you plan to use SPEKTRUM or BTSERIAL.
+	this disables the RCcompute function on main program loop
+	*/
+	
+#define NOCOMPUTERC
+
 
 /* EXPERIMENTAL !!
    contribution from Captain IxI and Zaggo
@@ -171,6 +179,16 @@
 #define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
 #define FAILSAVE_THR0TTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
 
+/* EXPERIMENTAL !!
+   contribution from Luis Correia
+   see http://www.multiwii.com/forum/viewtopic.php?f=18&t=828 and
+   http://arduinopt.info/w/
+   
+   It uses a Bluetooth Serial module as the input for controlling the device via an Android application
+   As with the SPEKTRUM option, is not possible to use the configuration tool on a mini or promini.
+      
+   */
+#define BTSERIAL
 
 /* The following lines apply only for a pitch/roll tilt stabilization system
    On promini board, it is not compatible with config with 6 motors or more

@@ -323,7 +323,7 @@ void loop () {
   
   if (currentTime > rcTime ) { // 50Hz
     rcTime = currentTime + 20000;
-    #if !defined(SPEKTRUM)
+    #if !defined(NOCOMPUTERC)
       computeRC();
     #endif
     // Failsafe routine - added by MIS

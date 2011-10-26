@@ -141,6 +141,16 @@ void serialCom() {
     case 'E': //GUI to arduino MAG calibration request
       calibratingM=1;
       break;
+	#if defined(BTSERIAL)  
+    case 'Z': //receive stuff from Serial port as a remote
+	      rcData[THROTTLE] = (Serial.read() * 4) + 1000;
+	      rcData[ROLL]     = (Serial.read() * 4) + 1000;
+	      rcData[PITCH]    = (Serial.read() * 4) + 1000;
+	      rcData[YAW]      = (Serial.read() * 4) + 1000;
+	      rcData[AUX1]     = (Serial.read() * 4) + 1000;
+	      Serial.write("Z");
+      break;
+	#endif
     }
   }
 }
