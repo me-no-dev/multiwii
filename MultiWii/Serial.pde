@@ -88,10 +88,12 @@ void serialCom() {
       serialize8(GPS_update);
       #if defined(POWERMETER)
         intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
-        intPowerTrigger1 = powerTrigger1 * PLEVELSCALE;
-      #endif    
-      serialize16(intPowerMeterSum);
-      serialize16(intPowerTrigger1);
+        intPowerTrigger1 = powerTrigger1 * PLEVELSCALE; 
+        serialize16(intPowerMeterSum);
+        serialize16(intPowerTrigger1);
+      #else
+        serialize16(0);serialize16(0);
+      #endif
       serialize8(vbat);
       serialize16(BaroAlt/10); // 4 variables are here for general monitoring purpose
       serialize16(0);              // debug2
@@ -118,14 +120,14 @@ void serialCom() {
       UartSendData();
       break;
     case 'W': //GUI write params to eeprom @ arduino
-      while (Serial.available()<32) {}
-      for(i=0;i<5;i++) {P8[i]= Serial.read(); I8[i]= Serial.read(); D8[i]= Serial.read();} //9
-      P8[PIDLEVEL] = Serial.read(); I8[PIDLEVEL] = Serial.read(); //11
-      P8[PIDMAG] = Serial.read();
-      rcRate8 = Serial.read(); rcExpo8 = Serial.read();
-      rollPitchRate = Serial.read(); yawRate = Serial.read(); //16
-      dynThrPID = Serial.read();
-      for(i=0;i<8;i++) activate[i] = Serial.read(); //22
+      while (Serial.available()<33) {}
+      for(i=0;i<5;i++) {P8[i]= Serial.read(); I8[i]= Serial.read(); D8[i]= Serial.read();} //15
+      P8[PIDLEVEL] = Serial.read(); I8[PIDLEVEL] = Serial.read(); //17
+      P8[PIDMAG] = Serial.read(); //18
+      rcRate8 = Serial.read(); rcExpo8 = Serial.read(); //20
+      rollPitchRate = Serial.read(); yawRate = Serial.read(); //22
+      dynThrPID = Serial.read(); //23
+      for(i=0;i<8;i++) activate[i] = Serial.read(); //31
      #if defined(POWERMETER)
       powerTrigger1 = (Serial.read() + 256* Serial.read() ) / PLEVELSCALE; // we rely on writeParams() to compute corresponding pAlarm value
      #else

@@ -83,7 +83,6 @@ static lcd_param_t lcd_param[] = {
 #ifdef LOG_VALUES
 , {"Failsafe    ",    &failsafeEvents,&__FS} 
 , {"i2c errors",       &i2c_errors_count,          &__L} 
-, {"failsafe errors",  &failsafes_count,           &__L} 
 #endif
 };
 #define PARAMMAX (sizeof(lcd_param)/sizeof(lcd_param_t) - 1)
@@ -313,7 +312,7 @@ void lcd_telemetry() {
     }
     #ifdef LOG_VALUES
       // set mark, if we had i2c errors
-      if (i2c_errors_count || failsafes_count) line1[6] = 'I';
+      if (i2c_errors_count || failsafesEvents) line1[6] = 'I';
     #endif
     LCDsetLine(1);LCDprintChar(line1);
     LCDsetLine(2); //position on line 2 of LCD
@@ -378,7 +377,7 @@ void lcd_telemetry() {
       if (abs(accSmooth[1]) < ACCLIMIT) { LCD_BAR(4,(ACCLIMIT+accSmooth[1])*50/ACCLIMIT) } else LCDprintChar("...."); LCDprint(' ');
       if (abs(accSmooth[2] - acc_1G) < ACCLIMIT) { LCD_BAR(4,(ACCLIMIT+accSmooth[2]-acc_1G)*50/ACCLIMIT) } else LCDprintChar("....");
       break;
-    case 'E': // No E button.  Displays with auto telemetry only
+    case 'Z': // No Z button.  Displays with auto telemetry only
       strcpy(line1,"Failsafe -----  ");  
       /*            0123456789012345   */
       strcpy(line2,"                ");

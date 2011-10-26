@@ -19,9 +19,9 @@
 //#define Y6
 //#define HEX6
 //#define HEX6X
-//#define OCTOX8 //beta
-//#define OCTOFLATP //beta
-//#define OCTOFLATX //beta
+//#define OCTOX8
+//#define OCTOFLATP
+//#define OCTOFLATX
 //#define FLYING_WING //experimental
 
 #define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
@@ -38,6 +38,9 @@
 
 //****** advanced users settings   *************
 
+/* This option should be uncommented if ACC Z is accurate enough when motors are running*/
+//#define TRUSTED_ACCZ
+
 /* PIN A0 and A1 instead of PIN D5 & D6 for 6 motors config and promini config
    This mod allow the use of a standard receiver on a pro mini
    (no need to use a PPM sum receiver)
@@ -49,10 +52,6 @@
 */
 //#define RCAUXPIN8
 //#define RCAUXPIN12
-
-/* This option is here if you want to use the old level code from the verison 1.7
-   It's just to have some feedback. This will be removed in the future */
-//#define STAB_OLD_17
 
 /* GPS
    only available on MEGA boards (this might be possible on 328 based boards in the future)
@@ -73,33 +72,6 @@
    Must be greater than zero, comment if you dont want a deadband on roll, pitch and yaw */
 //#define DEADBAND 6
 
-/* Failsave settings - added by MIS
-   Failsafe check pulse on THROTTLE channel. If the pulse is OFF (on only THROTTLE or on all channels) the failsafe procedure is initiated.
-   After FAILSAVE_DELAY time of pulse absence, the level mode is on (if ACC or nunchuk is avaliable), PITCH, ROLL and YAW is centered
-   and THROTTLE is set to FAILSAVE_THR0TTLE value. You must set this value to descending about 1m/s or so for best results. 
-   This value is depended from your configuration, AUW and some other params. 
-   Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
-   If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
-   If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
-#define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
-#define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
-#define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
-#define FAILSAVE_THR0TTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
-
-
-/* The following lines apply only for a pitch/roll tilt stabilization system
-   On promini board, it is not compatible with config with 6 motors or more
-   Uncomment the first line to activate it */
-//#define SERVO_TILT
-#define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
-#define TILT_PITCH_MAX    2000    //servo travel max, max value=2000
-#define TILT_PITCH_MIDDLE 1500    //servo neutral value
-#define TILT_PITCH_PROP   10      //servo proportional (tied to angle) ; can be negative to invert movement
-#define TILT_ROLL_MIN     1020
-#define TILT_ROLL_MAX     2000
-#define TILT_ROLL_MIDDLE  1500
-#define TILT_ROLL_PROP    10
-
 /* if you use a specific sensor board:
    please submit any correction to this list.
      Note from Alex: I only own some boards
@@ -112,12 +84,13 @@
 //#define FREEIMUv035_MS  // FreeIMU v0.3.5_MS                                                <- confirmed by Alex
 //#define FREEIMUv035_BMP // FreeIMU v0.3.5_BMP
 //#define PIPO            // 9DOF board from erazz
-#define QUADRINO        // full FC board 9DOF+baro board from witespy                       <- confirmed by Alex
+//#define QUADRINO        // full FC board 9DOF+baro board from witespy                       <- confirmed by Alex
 //#define ALLINONE        // full FC board or standalone 9DOF+baro board from CSG_EU
 //#define AEROQUADSHIELDv2
 //#define ATAVRSBIN1      // Atmel 9DOF (Contribution by EOSBandi). requires 3.3V power.
 //#define SIRIUS          // Sirius Navigator IMU                                             <- confirmed by Alex
 //#define SIRIUS600       // Sirius Navigator IMU  using the WMP for the gyro
+//#define CITRUSv1_0      // CITRUSv1 from qcrc.ca
 
 //if you use independent sensors
 //leave it commented it you already checked a specific board above
@@ -174,7 +147,8 @@
        2) Available now: Comment out the Spektrum definition, upload, plug in PC, configure; uncomment the Spektrum definition, upload, plug in RX, and fly.  Repeat as required to configure. 
    (Contribution by Danal)
 */
-//#define SPEKTRUM
+//#define SPEKTRUM 1024
+//#define SPEKTRUM 2048
 
 /* EXPERIMENTAL !!
    contribution from Captain IxI and Zaggo
@@ -182,6 +156,33 @@
    The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1).
    You have to invert the S-Bus-Serial Signal e.g. with a Hex-Inverter like IC SN74 LS 04 */
 //#define SBUS
+
+/* Failsave settings - added by MIS
+   Failsafe check pulse on THROTTLE channel. If the pulse is OFF (on only THROTTLE or on all channels) the failsafe procedure is initiated.
+   After FAILSAVE_DELAY time of pulse absence, the level mode is on (if ACC or nunchuk is avaliable), PITCH, ROLL and YAW is centered
+   and THROTTLE is set to FAILSAVE_THR0TTLE value. You must set this value to descending about 1m/s or so for best results. 
+   This value is depended from your configuration, AUW and some other params. 
+   Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
+   If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
+   If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
+#define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
+#define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
+#define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
+#define FAILSAVE_THR0TTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
+
+
+/* The following lines apply only for a pitch/roll tilt stabilization system
+   On promini board, it is not compatible with config with 6 motors or more
+   Uncomment the first line to activate it */
+//#define SERVO_TILT
+#define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
+#define TILT_PITCH_MAX    2000    //servo travel max, max value=2000
+#define TILT_PITCH_MIDDLE 1500    //servo neutral value
+#define TILT_PITCH_PROP   10      //servo proportional (tied to angle) ; can be negative to invert movement
+#define TILT_ROLL_MIN     1020
+#define TILT_ROLL_MAX     2000
+#define TILT_ROLL_MIDDLE  1500
+#define TILT_ROLL_PROP    10
 
 /* interleaving delay in micro seconds between 2 readings WMP/NK in a WMP+NK config
    if the ACC calibration time is very long (20 or 30s), try to increase this delay up to 4000
