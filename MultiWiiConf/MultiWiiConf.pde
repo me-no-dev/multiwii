@@ -650,10 +650,10 @@ public void WRITE() {
    s[p++] = byteRollPitchRate; 
    s[p++] = byteYawRate;
    s[p++] = byteDynThrPID; //24
-   for(int i=0;i<8;i++) s[p++] = activation[i]; //31
-   s[p++] = intPowerTrigger ;
-   s[p++] = intPowerTrigger >>8 &0xff; //33
-   for(int i =0;i<33;i++)    g_serial.write(char(s[i]));
+   for(int i=0;i<8;i++) s[p++] = activation[i]; //32
+   s[p++] = intPowerTrigger;
+   s[p++] = intPowerTrigger >>8 &0xff; //34
+   for(int i =0;i<34;i++)    g_serial.write(char(s[i]));
 }
 
 public void CALIB_ACC() {
