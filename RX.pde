@@ -9,12 +9,17 @@ volatile uint16_t rcValue[8] = {1502,1502,1502,1502,1502,1502,1502,1502}; // int
 #else
   static uint8_t rcChannel[8]  = {ROLLPIN, PITCHPIN, YAWPIN, THROTTLEPIN, AUX1PIN,AUX2PIN,CAM1PIN,CAM2PIN};
 #endif
-
 #if defined(SPEKTRUM)
   #define SPEK_MAX_CHANNEL 7
   #define SPEK_FRAME_SIZE 16
-  #define SPEK_CHAN_SHIFT  2       // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
-  #define SPEK_CHAN_MASK   0x03    // Assumes 10 bit frames, that is 1024 mode.  Change for 2048
+  #if (SPEKTRUM == 1024)
+    #define SPEK_CHAN_SHIFT  2       // Assumes 10 bit frames, that is 1024 mode.
+    #define SPEK_CHAN_MASK   0x03    // Assumes 10 bit frames, that is 1024 mode.
+  #endif
+  #if (SPEKTRUM == 2048)
+    #define SPEK_CHAN_SHIFT  3       // Assumes 11 bit frames, that is 2048 mode.
+    #define SPEK_CHAN_MASK   0x07    // Assumes 11 bit frames, that is 2048 mode.
+  #endif
   volatile byte spekFrame[SPEK_FRAME_SIZE];
 #endif
 
@@ -174,7 +179,7 @@ void rxInt() {
     spekTime=micros();
     spekTimeInterval = spekTime - spekTimeLast;
     spekTimeLast = spekTime;
-    if (spekTimeInterval > 10000) spekFramePosition = 0;
+    if (spekTimeInterval > 5000) spekFramePosition = 0;
     spekFrame[spekFramePosition] = SPEK_DATA_REG;
     if (spekFramePosition == SPEK_FRAME_SIZE - 1) {
       rcFrameComplete = 1;
@@ -199,17 +204,17 @@ void  readSBus(){
     sbus[sbusIndex++] = val;
     if(sbusIndex==25){
       sbusIndex=0;
-      rcValue[0] = ((sbus[1]|sbus[2]<< 8) & 0x07FF)/2+976; // Perhaps you may change the term "/2+976" -> center will be 1486
-      rcValue[1] = ((sbus[2]>>3|sbus[3]<<5) & 0x07FF)/2+976; 
-      rcValue[2] = ((sbus[3]>>6|sbus[4]<<2|sbus[5]<<10) & 0x07FF)/2+976; 
-      rcValue[3] = ((sbus[5]>>1|sbus[6]<<7) & 0x07FF)/2+976; 
-      rcValue[4] = ((sbus[6]>>4|sbus[7]<<4) & 0x07FF)/2+976; 
-      rcValue[5] = ((sbus[7]>>7|sbus[8]<<1|sbus[9]<<9) & 0x07FF)/2+976;
-      rcValue[6] = ((sbus[9]>>2|sbus[10]<<6) & 0x07FF)/2+976; 
-      rcValue[7] = ((sbus[10]>>5|sbus[11]<<3) & 0x07FF)/2+976; // & the other 8 + 2 channels if you need them
+      rcValue[0]  = ((sbus[1]|sbus[2]<< 8) & 0x07FF)/2+976; // Perhaps you may change the term "/2+976" -> center will be 1486
+      rcValue[1]  = ((sbus[2]>>3|sbus[3]<<5) & 0x07FF)/2+976; 
+      rcValue[2]  = ((sbus[3]>>6|sbus[4]<<2|sbus[5]<<10) & 0x07FF)/2+976; 
+      rcValue[3]  = ((sbus[5]>>1|sbus[6]<<7) & 0x07FF)/2+976; 
+      rcValue[4]  = ((sbus[6]>>4|sbus[7]<<4) & 0x07FF)/2+976; 
+      rcValue[5]  = ((sbus[7]>>7|sbus[8]<<1|sbus[9]<<9) & 0x07FF)/2+976;
+      rcValue[6]  = ((sbus[9]>>2|sbus[10]<<6) & 0x07FF)/2+976; 
+      rcValue[7]  = ((sbus[10]>>5|sbus[11]<<3) & 0x07FF)/2+976; // & the other 8 + 2 channels if you need them
       //The following lines: If you need more than 8 channels, max 16 analog + 2 digital. Must comment the not needed channels!
-      rcValue[8] = ((sbus[12]|sbus[13]<< 8) & 0x07FF)/2+976; 
-      rcValue[9] = ((sbus[13]>>3|sbus[14]<<5) & 0x07FF)/2+976; 
+      rcValue[8]  = ((sbus[12]|sbus[13]<< 8) & 0x07FF)/2+976; 
+      rcValue[9]  = ((sbus[13]>>3|sbus[14]<<5) & 0x07FF)/2+976; 
       rcValue[10] = ((sbus[14]>>6|sbus[15]<<2|sbus[16]<<10) & 0x07FF)/2+976; 
       rcValue[11] = ((sbus[16]>>1|sbus[17]<<7) & 0x07FF)/2+976; 
       rcValue[12] = ((sbus[17]>>4|sbus[18]<<4) & 0x07FF)/2+976; 
@@ -240,7 +245,7 @@ uint16_t readRawRC(uint8_t chan) {
     if (rcFrameComplete) {
       for (byte b = 3; b < SPEK_FRAME_SIZE; b += 2) {
         byte spekChannel = 0x0F & (spekFrame[b - 1] >> SPEK_CHAN_SHIFT);
-        if (spekChannel <= SPEK_MAX_CHANNEL) spekChannelData[spekChannel] = (long(spekFrame[b - 1] & SPEK_CHAN_MASK) << 8) + spekFrame[b];
+        if (spekChannel < SPEK_MAX_CHANNEL) spekChannelData[spekChannel] = (long(spekFrame[b - 1] & SPEK_CHAN_MASK) << 8) + spekFrame[b];
       }
       rcFrameComplete = 0;
     }
@@ -248,10 +253,15 @@ uint16_t readRawRC(uint8_t chan) {
   SREG = oldSREG; sei();// Let's enable the interrupts
   #if defined(SPEKTRUM)
     static byte spekRcChannelMap[SPEK_MAX_CHANNEL] = {1,2,3,0,4,5,6};
-    if (chan > SPEK_MAX_CHANNEL) {
+    if (chan >= SPEK_MAX_CHANNEL) {
       data = 1500;
     } else {
-      data = 988 + spekChannelData[spekRcChannelMap[chan]];     // Assumes 1024 mode
+      #if (SPEKTRUM == 1024)
+        data = 988 + spekChannelData[spekRcChannelMap[chan]];          // 1024 mode
+      #endif
+      #if (SPEKTRUM == 2048)
+        data = 988 + (spekChannelData[spekRcChannelMap[chan]] >> 1);   // 2048 mode
+      #endif
     }
   #endif
   return data; // We return the value correctly copied when the IRQ's where disabled

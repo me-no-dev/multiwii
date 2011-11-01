@@ -10,7 +10,7 @@ October  2011     V1.dev
 
 #include "config.h"
 #include "def.h"
-#define   VERSION  18
+#define   VERSION  19
 
 /*********** RC alias *****************/
 #define ROLL       0
@@ -71,7 +71,6 @@ static uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
 static uint16_t powerMax = 0;           // highest ever current
 static uint16_t powerAvg = 0;           // last known current
 static uint8_t i2c_errors_count = 0;    // count of wmp/nk resets
-static uint8_t failsafes_count = 0;     // count of failsafe occurrences
 
 // **********************
 // power meter
@@ -80,7 +79,7 @@ static uint8_t failsafes_count = 0;     // count of failsafe occurrences
 static uint32_t pMeter[PMOTOR_SUM + 1];  //we use [0:7] for eight motors,one extra for sum
 static uint8_t pMeterV;                  // dummy to satisfy the paramStruct logic in ConfigurationLoop()
 static uint32_t pAlarm;                  // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[6]
-static uint8_t powerTrigger1 = 0;        // trigger for alarm based on power consumption
+static uint8_t powerTrigger1 = 0;       // trigger for alarm based on power consumption
 
 // **********************
 // telemetry
@@ -254,7 +253,8 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   #ifdef LCD_TELEMETRY_AUTO
     if ( (telemetry_auto) && (micros() > telemetryAutoTime + LCD_TELEMETRY_AUTO) ) { // every 2 seconds
       telemetry++;
-      if ( (telemetry < 'A' ) || (telemetry > 'D' ) ) telemetry = 'A';
+      if (telemetry == 'E') telemetry = 'Z';
+      else if ( (telemetry < 'A' ) || (telemetry > 'D' ) ) telemetry = 'A';
       telemetryAutoTime = micros(); // why use micros() and not the variable currentTime ?
     }
   #endif  
@@ -323,15 +323,12 @@ void loop () {
   
   if (currentTime > rcTime ) { // 50Hz
     rcTime = currentTime + 20000;
-    #if !defined(SPEKTRUM)
+    #if (!defined(SPEKTRUM)||!defined(BTSERIAL))
       computeRC();
     #endif
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && armed==1) {                  // Stabilize, and set Throttle to specified level
-        #ifdef LOG_VALUES
-         failsafes_count = 1; //only toggle on, no actual count                                               // keep log of # of failsafe conditions
-        #endif
         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
         rcData[THROTTLE] = FAILSAVE_THR0TTLE;
         if (failsafeCnt > 5*(FAILSAVE_DELAY+FAILSAVE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
@@ -497,17 +494,19 @@ void loop () {
       #ifdef LEVEL_PDF
         PTerm      = -(int32_t)angle[axis]*P8[PIDLEVEL]/100 ;
       #else  
-        PTerm      = (int32_t)errorAngle*P8[PIDLEVEL]/100 ;                         //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
+        PTerm      = (int32_t)errorAngle*P8[PIDLEVEL]/100 ;                          //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
       #endif
 
-      errorAngleI[axis]  = constrain(errorAngleI[axis]+errorAngle,-10000,+10000); //WindUp     //16 bits is ok here
+      errorAngleI[axis]  = constrain(errorAngleI[axis]+errorAngle,-10000,+10000);    //WindUp     //16 bits is ok here
       ITerm              = ((int32_t)errorAngleI[axis]*I8[PIDLEVEL])>>12;            //32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
     } else { //ACRO MODE or YAW axis
-      if (abs(rcCommand[axis])<350) error =          rcCommand[axis]*10*8/P8[axis] - gyroData[axis]; //16 bits is needed for calculation: 350*10*8 = 28000      16 bits is ok for result if P8>2 (P>0.2)
-                               else error = (int32_t)rcCommand[axis]*10*8/P8[axis] - gyroData[axis]; //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
+      if (abs(rcCommand[axis])<350) error =          rcCommand[axis]*10*8/P8[axis] ; //16 bits is needed for calculation: 350*10*8 = 28000      16 bits is ok for result if P8>2 (P>0.2)
+                               else error = (int32_t)rcCommand[axis]*10*8/P8[axis] ; //32 bits is needed for calculation: 500*5*10*8 = 200000   16 bits is ok for result if P8>2 (P>0.2)
+      error -= gyroData[axis];
+
       PTerm = rcCommand[axis];
       
-      errorGyroI[axis]  = constrain(errorGyroI[axis]+error,-16000,+16000); //WindUp //16 bits is ok here
+      errorGyroI[axis]  = constrain(errorGyroI[axis]+error,-16000,+16000);          //WindUp //16 bits is ok here
       if (abs(gyroData[axis])>640) errorGyroI[axis] = 0;
       ITerm = (errorGyroI[axis]/125*I8[axis])>>6;                                   //16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
     }
@@ -520,8 +519,8 @@ void loop () {
     delta2[axis]   = delta1[axis];
     delta1[axis]   = delta;
  
-    if (abs(deltaSum)<640) DTerm = (deltaSum*dynD8[axis])>>5;                      //16 bits is needed for calculation 640*50 = 32000           16 bits is ok for result 
-                      else DTerm = ((int32_t)deltaSum*dynD8[axis])>>5;             //32 bits is needed for calculation
+    if (abs(deltaSum)<640) DTerm = (deltaSum*dynD8[axis])>>5;                       //16 bits is needed for calculation 640*50 = 32000           16 bits is ok for result 
+                      else DTerm = ((int32_t)deltaSum*dynD8[axis])>>5;              //32 bits is needed for calculation
                       
     axisPID[axis] =  PTerm + ITerm - DTerm;
   }
