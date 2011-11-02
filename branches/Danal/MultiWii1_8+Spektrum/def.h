@@ -34,6 +34,17 @@
   #undef INTERNAL_I2C_PULLUPS
 #endif
 
+#if defined(FREEIMUv03)
+  #define ITG3200
+  #define ADXL345 // this is actually an ADXL346 but that's just the same as ADXL345
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  -Y; accADC[PITCH]  = X; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X;  gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  -Y;  magADC[PITCH]  = X; magADC[YAW]  = Z;} 
+  #define ADXL345_ADDRESS 0xA6
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
 #if defined(FREEIMUv035) || defined(FREEIMUv035_MS) || defined(FREEIMUv035_BMP)
   #define ITG3200
   #define BMA180
@@ -47,17 +58,6 @@
   #elif defined(FREEIMUv035_BMP)
     #define BMP085
   #endif
-#endif
-
-#if defined(FREEIMUv03)
-  #define ITG3200
-  #define ADXL345 // this is actually an ADXL346 but that's just the same as ADXL345
-  #define HMC5883
-  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  -Y; accADC[PITCH]  = X; accADC[YAW]  = Z;}
-  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X;  gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
-  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  -Y;  magADC[PITCH]  = X; magADC[YAW]  = Z;} 
-  #define ADXL345_ADDRESS 0xA6
-  #undef INTERNAL_I2C_PULLUPS
 #endif
 
 #if defined(PIPO)
@@ -124,6 +124,28 @@
   #define ITG3200_ADDRESS 0XD0
 #endif
 
+#if defined(SIRIUS600)
+  #define BMA180
+  #define BMP085
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = Y; accADC[YAW]  = Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = -Y;  magADC[PITCH] = X; magADC[YAW]  = Z;}
+  #define BMA180_ADDRESS 0x80
+#endif
+
+#if defined(CITRUSv1_0)
+  #define ITG3200
+  #define ADXL345
+  #define BMP085
+  #define HMC5883
+  #define ACC_ORIENTATION(Y, X, Z)  {accADC[ROLL]  =  -X; accADC[PITCH]  = Y; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
+  #define MAG_ORIENTATION(Y, X, Z)  {magADC[ROLL]  = Y;  magADC[PITCH] = X; magADC[YAW]  = Z;}
+  #define ADXL345_ADDRESS  0xA6
+  #define ITG3200_ADDRESS 0XD0
+#endif
+
+
 #if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(ADCACC)
   #define ACC 1
 #else
@@ -188,7 +210,7 @@
   #define PPM_PIN_INTERRUPT          attachInterrupt(0, rxInt, RISING); //PIN 0
   #define SPEK_SERIAL_VECT           USART_RX_vect
   #define SPEK_BAUD_SET              UCSR0A  = (1<<U2X0); UBRR0H = ((F_CPU  / 4 / 115200 -1) / 2) >> 8; UBRR0L = ((F_CPU  / 4 / 115200 -1) / 2);
-  #define SPEK_SERIAL_INTERRUPT      UCSR0B |= (1<<RXEN0)|(1<<RXCIE0);     
+  #define SPEK_SERIAL_INTERRUPT      UCSR0B |= (1<<RXEN0)|(1<<RXCIE0);
   #define SPEK_DATA_REG              UDR0
   #define MOTOR_ORDER                9,10,11,3,6,5  //for a quad+: rear,right,left,front
   #define DIGITAL_CAM_PINMODE        pinMode(A2,OUTPUT);
@@ -200,9 +222,9 @@
   #define PITCHPIN                   5
   #define YAWPIN                     6
   #define AUX1PIN                    7
-  #define AUX2PIN                    7   //unused just for compatibility with MEGA
-  #define CAM1PIN                    7   //unused just for compatibility with MEGA
-  #define CAM2PIN                    7   //unused just for compatibility with MEGA
+  #define AUX2PIN                    0 // optional PIN 8 or PIN 12
+  #define CAM1PIN                    1 // unused 
+  #define CAM2PIN                    3 // unused 
   #define ISR_UART                   ISR(USART_UDRE_vect)
   #define V_BATPIN                   A3    // Analog PIN 3
   #define PSENSORPIN                 A2    // Analog PIN 2
@@ -239,10 +261,10 @@
   #define DIGITAL_BI_LEFT_HIGH       PORTH |= 1<<3;
   #define DIGITAL_BI_LEFT_LOW        PORTH &= ~(1<<3);
   #define PPM_PIN_INTERRUPT          attachInterrupt(4, rxInt, RISING);  //PIN 19, also used for Spektrum satellite option
-  #define SPEK_SERIAL_VECT           USART3_RX_vect
-  #define SPEK_BAUD_SET              UCSR3A  = (1<<U2X3); UBRR3H = ((F_CPU  / 4 / 115200 -1) / 2) >> 8; UBRR3L = ((F_CPU  / 4 / 115200 -1) / 2);
-  #define SPEK_SERIAL_INTERRUPT      UCSR3B |= (1<<RXEN3)|(1<<RXCIE3);  
-  #define SPEK_DATA_REG              UDR3
+  #define SPEK_SERIAL_VECT           USART1_RX_vect
+  #define SPEK_BAUD_SET              UCSR1A  = (1<<U2X1); UBRR1H = ((F_CPU  / 4 / 115200 -1) / 2) >> 8; UBRR1L = ((F_CPU  / 4 / 115200 -1) / 2);
+  #define SPEK_SERIAL_INTERRUPT      UCSR1B |= (1<<RXEN1)|(1<<RXCIE1);
+  #define SPEK_DATA_REG              UDR1
   #define MOTOR_ORDER                3,5,6,2,7,8,9,10   //for a quad+: rear,right,left,front   //+ for y6: 7:under right  8:under left
   #define DIGITAL_CAM_PINMODE        pinMode(33,OUTPUT); pinMode(46,OUTPUT); // 33 + 46
   #define DIGITAL_CAM_HIGH           PORTC |= 1<<4;PORTL |= 1<<3;
@@ -260,6 +282,20 @@
   #define V_BATPIN                   A0    // Analog PIN 3
   #define PSENSORPIN                 A2    // Analog PIN 2
 #endif
+
+#if defined(RCAUXPIN8)
+  #define BUZZERPIN_PINMODE          ;
+  #define BUZZERPIN_ON               ;
+  #define BUZZERPIN_OFF              ;
+  #define RCAUXPIN
+#endif
+#if defined(RCAUXPIN12)
+  #define POWERPIN_PINMODE           ;
+  #define POWERPIN_ON                ;
+  #define POWERPIN_OFF               ;
+  #define RCAUXPIN
+#endif
+
 
 #if defined(POWERMETER)
   #ifndef VBAT

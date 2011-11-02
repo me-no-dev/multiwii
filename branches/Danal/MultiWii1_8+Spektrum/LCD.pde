@@ -1,4 +1,3 @@
-
 // ************************************************************************************************************
 // LCD & display & monitoring
 // ************************************************************************************************************
@@ -43,6 +42,7 @@ static lcd_param_def_t __PM  = {&LPMM,  1, 1, 0};
 static lcd_param_def_t __PS  = {&LPMS,  1, 1, 0};
 static lcd_param_def_t __PT  = {&LTU8,  0, 1, 1};
 static lcd_param_def_t __VB  = {&LTU8,  1, 1, 0};
+static lcd_param_def_t __L   = {&LTU8,  0, 1, 0};
 static lcd_param_def_t __FS  = {&LTU8,  1, 1, 0};
 // Parameters
 static lcd_param_t lcd_param[] = {
@@ -80,7 +80,10 @@ static lcd_param_t lcd_param[] = {
 #ifdef VBAT
 , {"Battery Volt",    &vbat,          &__VB} 
 #endif
+#ifdef LOG_VALUES
 , {"Failsafe    ",    &failsafeEvents,&__FS} 
+, {"i2c errors",       &i2c_errors_count,          &__L} 
+#endif
 };
 #define PARAMMAX (sizeof(lcd_param)/sizeof(lcd_param_t) - 1)
 // ************************************************************************************************************
@@ -88,8 +91,6 @@ static lcd_param_t lcd_param[] = {
 // 1000000 / 9600  = 104 microseconds at 9600 baud.
 // we set it below to take some margin with the running interrupts
 #define BITDELAY 102
-
-
 void LCDprint(uint8_t i) {
   #if defined(LCD_TEXTSTAR)
     Serial.print( i , BYTE);
@@ -108,13 +109,8 @@ void LCDprint(uint8_t i) {
   #endif
 }
 
-
 void LCDprintChar(const char *s) {
-//  #if defined(LCD_ETPP) 
-//    i2c_ETPP_send_string(*s)
-//  #else
-    while (*s) LCDprint(*s++);
-//  #endif
+  while (*s) LCDprint(*s++);
 }
 
 void initLCD() {
@@ -124,13 +120,11 @@ void initLCD() {
     // http://cats-whisker.com/resources/documents/cw-lcd-02_datasheet.pdf
     // Modified by Luca Brizzi aka gtrick90 @ RCG
     LCDprint(0xFE);LCDprint(0x43);LCDprint(0x02); //cursor blink mode
-  #endif
-  #if defined(LCD_ETPP)
+  #elif defined(LCD_ETPP)
     // Eagle Tree Power Panel - I2C & Daylight Readable LCD
     // Contributed by Danal
     i2c_ETPP_init();
-  #endif
-  #if !defined(LCD_TEXTSTAR) && !defined(LCD_ETPP)
+  #else
     Serial.end();
     //init LCD
     PINMODE_LCD //TX PIN for LCD = Arduino RX PIN (more convenient to connect a servo plug on arduino pro mini)
@@ -195,6 +189,12 @@ static uint8_t lcdStickState[3];
 #define IsHigh(x) (lcdStickState[x] & 0x2)
 #define IsMid(x)  (!lcdStickState[x])
 
+/* keys to navigate the LCD menu (preset to TEXTSTAR key-depress codes)*/
+#define LCD_MENU_PREV 'a'
+#define LCD_MENU_NEXT 'c'
+#define LCD_VALUE_UP 'd'
+#define LCD_VALUE_DOWN 'b'
+
 void configurationLoop() {
   uint8_t i, p;
   uint8_t LCD=1;
@@ -213,8 +213,9 @@ void configurationLoop() {
       LCDsetLine(2);LCDprintChar(line2); //refresh line 2 of LCD
       refreshLCD = 0;
     }
+
     #if defined(LCD_TEXTSTAR)
-      key = ( Serial.available() ?  Serial.read() : 0 ); 
+      key = ( Serial.available() ?  Serial.read() : 0 );
     #endif
     for (i = ROLL; i < THROTTLE; i++) {uint16_t Tmp = readRawRC(i); lcdStickState[i] = (Tmp < MINCHECK) | ((Tmp > MAXCHECK) << 1);};
     if (IsLow(YAW) && IsHigh(PITCH)) LCD = 0;          // save and exit
@@ -234,6 +235,7 @@ void configurationLoop() {
     }
   } // while (LCD == 1)
   blinkLED(20,30,1);
+  
   LCDclear();
   if (LCD == 0) LCDprintChar("Saving Settings.."); else LCDprintChar("skipping Save.");
   if (LCD == 0) writeParams();
@@ -260,6 +262,7 @@ void lcd_telemetry() {
   #ifdef LCD_ETPP
     #define LCD_BAR(n,v) LCDbarGraph(n,v);
   #endif
+  
   uint16_t intPowerMeterSum;   
 
   switch (telemetry) { // output telemetry data, if one of four modes is set
@@ -272,19 +275,19 @@ void lcd_telemetry() {
       line1[11] = '0' + cycleTime / 100  - (cycleTime/1000)  * 10;
       line1[12] = '0' + cycleTime / 10   - (cycleTime/100)   * 10;
       line1[13] = '0' + cycleTime        - (cycleTime/10)    * 10;
-      #ifdef LOG_VALUES
-        line2[1] = '0' + cycleTimeMin / 10000;
-        line2[2] = '0' + cycleTimeMin / 1000 - (cycleTimeMin/10000) * 10;
-        line2[3] = '0' + cycleTimeMin / 100  - (cycleTimeMin/1000)  * 10;
-        line2[4] = '0' + cycleTimeMin / 10   - (cycleTimeMin/100)   * 10;
-        line2[5] = '0' + cycleTimeMin        - (cycleTimeMin/10)    * 10;
-        line2[8] = '0' + cycleTimeMax / 10000;
-        line2[9] = '0' + cycleTimeMax / 1000 - (cycleTimeMax/10000) * 10;
-        line2[10] = '0' + cycleTimeMax / 100  - (cycleTimeMax/1000)  * 10;
-        line2[11] = '0' + cycleTimeMax / 10   - (cycleTimeMax/100)   * 10;
-        line2[12] = '0' + cycleTimeMax        - (cycleTimeMax/10)    * 10;
-        LCDsetLine(2);LCDprintChar(line2);
-      #endif
+    #ifdef LOG_VALUES
+      line2[1] = '0' + cycleTimeMin / 10000;
+      line2[2] = '0' + cycleTimeMin / 1000 - (cycleTimeMin/10000) * 10;
+      line2[3] = '0' + cycleTimeMin / 100  - (cycleTimeMin/1000)  * 10;
+      line2[4] = '0' + cycleTimeMin / 10   - (cycleTimeMin/100)   * 10;
+      line2[5] = '0' + cycleTimeMin        - (cycleTimeMin/10)    * 10;
+      line2[8] = '0' + cycleTimeMax / 10000;
+      line2[9] = '0' + cycleTimeMax / 1000 - (cycleTimeMax/10000) * 10;
+      line2[10] = '0' + cycleTimeMax / 100  - (cycleTimeMax/1000)  * 10;
+      line2[11] = '0' + cycleTimeMax / 10   - (cycleTimeMax/100)   * 10;
+      line2[12] = '0' + cycleTimeMax        - (cycleTimeMax/10)    * 10;
+      LCDsetLine(2);LCDprintChar(line2);
+    #endif
       LCDsetLine(1);LCDprintChar(line1);
       break;
     case 'B': // button B on Textstar LCD -> Voltage, PowerSum and power alarm trigger value
@@ -303,19 +306,27 @@ void lcd_telemetry() {
       line1[12] = '0' + intPowerMeterSum        - (intPowerMeterSum/10)    * 10;
       //line2[13] = '0'+powerTrigger1/100; line2[14] = '0'+powerTrigger1/10-(powerTrigger1/100)*10; line2[15] = '0'+powerTrigger1-(powerTrigger1/10)*10;
     #endif
+    if (buzzerState) { // buzzer on? then add some blink for attention
+      //LCDprint(0x0c); //clear screen
+      line1[5] = '+'; line1[6] = '+'; line1[7] = '+';
+    }
+    #ifdef LOG_VALUES
+      // set mark, if we had i2c errors
+      if (i2c_errors_count || failsafesEvents) line1[6] = 'I';
+    #endif
     LCDsetLine(1);LCDprintChar(line1);
     LCDsetLine(2); //position on line 2 of LCD
     #ifdef VBAT
       LCD_BAR(7, (((vbat-VBATLEVEL1_3S)*100)/VBATREF) );
-      LCDprintChar("  ");
-    #endif    
+      LCDprint(' ');
+    #endif
     #ifdef POWERMETER  
       //     intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
       //   pAlarm = (uint32_t) powerTrigger1 * (uint32_t) PLEVELSCALE * (uint32_t) PLEVELDIV; // need to cast before multiplying
       if (powerTrigger1)
-        LCD_BAR(7, (intPowerMeterSum/powerTrigger1 *2) ); // bar graph powermeter (scale intPowerMeterSum/powerTrigger1 with *100/PLEVELSCALE)
+        LCD_BAR(8, (intPowerMeterSum/powerTrigger1 *2) ); // bar graph powermeter (scale intPowerMeterSum/powerTrigger1 with *100/PLEVELSCALE)
     #else
-      LCDprintChar("       ");
+      LCDprintChar("        ");
     #endif
       break;
     case 'A': // button A on Textstar LCD -> angles 
@@ -357,8 +368,8 @@ void lcd_telemetry() {
       LCDsetLine(2);LCDprintChar(line2); //refresh line 2 of LCD
       break;    
     case 'D': // button D on Textstar LCD -> sensors
-    #define GYROLIMIT 20 // threshold: for larger values replace bar with dots
-    #define ACCLIMIT 30 // threshold: for larger values replace bar with dots  
+    #define GYROLIMIT 30 // threshold: for larger values replace bar with dots
+    #define ACCLIMIT 30 // threshold: for larger values replace bar with dots     
       LCDsetLine(1);LCDprintChar("G "); //refresh line 1 of LCD
       if (abs(gyroData[0]) < GYROLIMIT) { LCD_BAR(4,(GYROLIMIT+gyroData[0])*50/GYROLIMIT) } else LCDprintChar("...."); LCDprint(' ');
       if (abs(gyroData[1]) < GYROLIMIT) { LCD_BAR(4,(GYROLIMIT+gyroData[1])*50/GYROLIMIT) } else LCDprintChar("...."); LCDprint(' ');
@@ -391,7 +402,7 @@ void lcd_telemetry() {
     void i2c_ETPP_init () {
       i2c_rep_start(0x76+0);      // ETPP i2c address: 0x3B in 7 bit form. Shift left one bit and concatenate i2c write command bit of zero = 0x76 in 8 bit form.
       i2c_write(0x00);            // ETPP command register
-      i2c_write(0x24);            // Function Set 001D0MSL D : data length for parallel interface only; M: 0 = 1x32 , 1 = 2x16; S: 0 = 1:18 multiplex drive mode, 1×32 or 2×16 character display, 1 = 1:9 multiplex drive mode, 1×16 character display; H: 0 = basic instruction set plus standard instruction set, 1 = basic instruction set plus extended instruction set
+      i2c_write(0x24);            // Function Set 001D0MSL D : data length for parallel interface only; M: 0 = 1x32 , 1 = 2x16; S: 0 = 1:18 multiplex drive mode, 1x32 or 2x16 character display, 1 = 1:9 multiplex drive mode, 1x16 character display; H: 0 = basic instruction set plus standard instruction set, 1 = basic instruction set plus extended instruction set
       i2c_write(0x0C);            // Display on   00001DCB D : 0 = Display Off, 1 = Display On; C : 0 = Underline Cursor Off, 1 = Underline Cursor On; B : 0 = Blinking Cursor Off, 1 = Blinking Cursor On
       i2c_write(0x06);            // Cursor Move  000001IS I : 0 = DDRAM or CGRAM address decrements by 1, cursor moves to the left, 1 = DDRAM or CGRAM address increments by 1, cursor moves to the right; S : 0 = display does not shift,  1 = display does shifts
       LCDclear();         
@@ -407,11 +418,7 @@ void lcd_telemetry() {
       i2c_write(0x40);            // ETPP data register
       i2c_write(c);
     }
-//    void i2c_ETPP_send_string (const char *s) {
-//      i2c_rep_start(0x76+0);      // I2C write direction
-//      i2c_write(0x40);            // ETPP data register
-//      while (*s) {byte c = *s++; if (c > 0x0f) c |=  0x80; i2c_write(c);}
-//    }
+
     void i2c_ETPP_set_cursor (byte addr) {  
       i2c_ETPP_send_cmd(0x80 | addr);    // High bit is "Set DDRAM" command, remaing bits are addr.  
     }
@@ -452,7 +459,6 @@ void LCDsetLine(byte line) {  // Line = 1 or 2
   #endif
 }
 
-
 #if defined(LCD_ETPP)
   static boolean charsInitialized;    // chars for servo signals are initialized
   void LCDbarGraph(byte num, int val) { // num chars in graph; percent as 1 to 100
@@ -488,4 +494,3 @@ void LCDsetLine(byte line) {  // Line = 1 or 2
     }
   }
 #endif
-

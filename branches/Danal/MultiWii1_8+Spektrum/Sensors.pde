@@ -134,6 +134,9 @@ void waitTransmissionI2C() {
 void checkStatusI2C() {
   if ( TW_STATUS  == 0xF8) { //TW_NO_INFO : this I2C error status indicates a wrong I2C communication.
     // WMP does not respond anymore => we do a hard reset. I did not find another way to solve it. It takes only 13ms to reset and init to WMP or WMP+NK
+    #ifdef LOG_VALUES
+      i2c_errors_count++;
+    #endif
     TWCR = 0;
     if (!GYRO) {
       POWERPIN_OFF //switch OFF WMP
@@ -150,8 +153,8 @@ void i2c_getSixRawADC(uint8_t add, uint8_t reg) {
   i2c_rep_start(add);
   i2c_write(reg);         // Start multiple read at the reg register
   i2c_rep_start(add +1);  // I2C read direction => I2C address + 1
-  for(uint8_t i = 0; i < 5; i++) {
-    rawADC[i]=i2c_readAck();}
+  for(uint8_t i = 0; i < 5; i++)
+    rawADC[i]=i2c_readAck();
   rawADC[5]= i2c_readNak();
 }
 
@@ -370,9 +373,8 @@ void Baro_update() {
     case 3: 
       i2c_BMP085_UP_Read(); 
       i2c_BMP085_Calculate(); 
-      BaroAlt = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 44330.0f;
-      bmp085_ctx.state = 0;
-      bmp085_ctx.deadline += 20000; 
+      BaroAlt = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 4433000.0f;
+      bmp085_ctx.state = 0; bmp085_ctx.deadline += 20000; 
       break;
   } 
 }
@@ -494,12 +496,13 @@ void Baro_update() {
     case 3: 
       i2c_MS561101BA_UP_Read();
       i2c_MS561101BA_Calculate();
-      BaroAlt = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 44330.0f;
+      BaroAlt = (1.0f - pow(pressure/101325.0f, 0.190295f)) * 4433000.0f;
       ms561101ba_ctx.state = 0; ms561101ba_ctx.deadline += 30000;
       break;
   } 
 }
 #endif
+
 
 // ************************************************************************************************************
 // I2C Accelerometer ADXL345 
@@ -547,19 +550,23 @@ void ACC_getADC () {
 //
 // 0x20    bw_tcs:   |                                           bw<3:0> |                        tcs<3:0> |
 //                   |                                             150Hz |                 !!Calibration!! |
-//
-// 0x35 offset_lsb1: |                                     offset_x<3:0> |        range<2:0> |    smp_skip |
-//                   |                                   !!Calibration!! |                2g |     IRQ 1/T |
 // ************************************************************************************************************
 #if defined(BMA180)
 void ACC_init () {
   delay(10);
   //default range 2G: 1G = 4096 unit.
-  i2c_writeReg(BMA180_ADDRESS,0x0D,1<<4); // register: ctrl_reg0  -- value: set bit ee_w to 1 to enable writing
+//  i2c_writeReg(BMA180_ADDRESS,0x0D,1<<4); // register: ctrl_reg0  -- value: set bit ee_w to 1 to enable writing
+//  delay(5);
   uint8_t control = i2c_readReg(BMA180_ADDRESS, 0x20);
   control = control & 0x0F; // register: bw_tcs reg: bits 4-7 to set bw -- value: set low pass filter to 10Hz (bits value = 0000xxxx)
-  delay(5);
-  i2c_writeReg(BMA180_ADDRESS, 0x20, control); 
+  control = control | 0x00; 
+  i2c_writeReg(BMA180_ADDRESS, 0x20, control);
+  delay(5); 
+  control = i2c_readReg(BMA180_ADDRESS, 0x30);
+  control = control & 0xFC; 
+  control = control | 0x02; 
+  i2c_writeReg(BMA180_ADDRESS, 0x30, control);
+  delay(5); 
   acc_1G = 512;
 }
 
@@ -748,8 +755,8 @@ void Mag_getADC() {
   static int16_t magZeroTempMin[3];
   static int16_t magZeroTempMax[3];
   uint8_t axis;
-  if ( (micros()-t )  < 100000 ) return; //each read is spaced by 100ms
-  t = micros();
+  if ( currentTime < t ) return; //each read is spaced by 100ms
+  t = currentTime + 100000;
   TWBR = ((16000000L / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
   Device_Mag_getADC();
   if (calibratingM == 1) {
@@ -899,6 +906,6 @@ void initSensors() {
   if (GYRO) Gyro_init();
   else WMP_init(250);
   if (BARO) Baro_init();
-  if (ACC) ACC_init();
+  if (ACC) {ACC_init();acc_25deg = acc_1G * 0.423;}
   if (MAG) Mag_init();
 }

@@ -14,29 +14,44 @@
 //#define BI
 //#define TRI
 //#define QUADP
-#define QUADX
+//#define QUADX
 //#define Y4
 //#define Y6
 //#define HEX6
 //#define HEX6X
-//#define OCTOX8 //beta
-//#define OCTOFLATP //beta
-//#define OCTOFLATX //beta
+//#define OCTOX8
+//#define OCTOFLATP
+//#define OCTOFLATX
 //#define FLYING_WING //experimental
 
-//#define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
-#define YAW_DIRECTION -1
+#define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
+//#define YAW_DIRECTION -1
 
 #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
 //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
-//#define PROMINI  //Arduino type
-#define MEGA
+#define PROMINI  //Arduino type
+//#define MEGA
 
 //enable internal I2C pull ups
 #define INTERNAL_I2C_PULLUPS
 
 //****** advanced users settings   *************
+
+/* This option should be uncommented if ACC Z is accurate enough when motors are running*/
+//#define TRUSTED_ACCZ
+
+/* PIN A0 and A1 instead of PIN D5 & D6 for 6 motors config and promini config
+   This mod allow the use of a standard receiver on a pro mini
+   (no need to use a PPM sum receiver)
+*/
+//#define A0_A1_PIN_HEX
+
+/* possibility to use PIN8 or PIN12 as the AUX2 RC input
+   it deactivates in this case the POWER PIN (pin 12) or the BUZZER PIN (pin 8)
+*/
+//#define RCAUXPIN8
+//#define RCAUXPIN12
 
 /* GPS
    only available on MEGA boards (this might be possible on 328 based boards in the future)
@@ -47,41 +62,15 @@
 //#define GPS
 //#define GPS_SERIAL Serial3 // should be Serial2 for flyduino v2
 //#define GPS_BAUD   4800
+//#define GPS_BAUD   9600
 
 /* Pseudo-derivative conrtroller for level mode (experimental)
-   Additional information: http://wbb.multiwii.com/viewtopic.php?f=8&t=503 */
+   Additional information: http://www.multiwii.com/forum/viewtopic.php?f=8&t=503 */
 //#define LEVEL_PDF
 
 /* introduce a deadband around the stick center
    Must be greater than zero, comment if you dont want a deadband on roll, pitch and yaw */
 //#define DEADBAND 6
-
-/* Failsave settings - added by MIS
-   Failsafe check pulse on THROTTLE channel. If the pulse is OFF (on only THROTTLE or on all channels) the failsafe procedure is initiated.
-   After FAILSAVE_DELAY time of pulse absence, the level mode is on (if ACC or nunchuk is avaliable), PITCH, ROLL and YAW is centered
-   and THROTTLE is set to FAILSAVE_THR0TTLE value. You must set this value to descending about 1m/s or so for best results. 
-   This value is depended from your configuration, AUW and some other params. 
-   Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
-   If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
-   If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
-#define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
-#define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
-#define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
-#define FAILSAVE_THR0TTLE  (MINTHROTTLE + 100)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
-
-
-/* The following lines apply only for a pitch/roll tilt stabilization system
-   On promini board, it is not compatible with config with 6 motors or more
-   Uncomment the first line to activate it */
-//#define SERVO_TILT
-#define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
-#define TILT_PITCH_MAX    2000    //servo travel max, max value=2000
-#define TILT_PITCH_MIDDLE 1500    //servo neutral value
-#define TILT_PITCH_PROP   10      //servo proportional (tied to angle) ; can be negative to invert movement
-#define TILT_ROLL_MIN     1020
-#define TILT_ROLL_MAX     2000
-#define TILT_ROLL_MIDDLE  1500
-#define TILT_ROLL_PROP    10
 
 /* if you use a specific sensor board:
    please submit any correction to this list.
@@ -98,8 +87,10 @@
 //#define QUADRINO        // full FC board 9DOF+baro board from witespy                       <- confirmed by Alex
 //#define ALLINONE        // full FC board or standalone 9DOF+baro board from CSG_EU
 //#define AEROQUADSHIELDv2
-//#define ATAVRSBIN1      // Atmel 9DOF (Contribution by EOSBandi). The board requires 3.3V power.
-
+//#define ATAVRSBIN1      // Atmel 9DOF (Contribution by EOSBandi). requires 3.3V power.
+//#define SIRIUS          // Sirius Navigator IMU                                             <- confirmed by Alex
+//#define SIRIUS600       // Sirius Navigator IMU  using the WMP for the gyro
+//#define CITRUSv1_0      // CITRUSv1 from qcrc.ca
 
 //if you use independent sensors
 //leave it commented it you already checked a specific board above
@@ -116,7 +107,7 @@
 
 /* I2C barometer */
 //#define BMP085
-//#define MS561101BA  //non tested
+//#define MS561101BA
 
 /* I2C magnetometer */
 //#define HMC5843
@@ -158,6 +149,54 @@
 */
 #define SPEKTRUM 1024
 //#define SPEKTRUM 2048
+
+/* EXPERIMENTAL !!
+   contribution from Captain IxI and Zaggo
+   cf http://www.multiwii.com/forum/viewtopic.php?f=7&t=289
+   The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1).
+   You have to invert the S-Bus-Serial Signal e.g. with a Hex-Inverter like IC SN74 LS 04 */
+//#define SBUS
+
+/* Failsave settings - added by MIS
+   Failsafe check pulse on THROTTLE channel. If the pulse is OFF (on only THROTTLE or on all channels) the failsafe procedure is initiated.
+   After FAILSAVE_DELAY time of pulse absence, the level mode is on (if ACC or nunchuk is avaliable), PITCH, ROLL and YAW is centered
+   and THROTTLE is set to FAILSAVE_THR0TTLE value. You must set this value to descending about 1m/s or so for best results. 
+   This value is depended from your configuration, AUW and some other params. 
+   Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
+   If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
+   If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
+#define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
+#define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
+#define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
+#define FAILSAVE_THR0TTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
+
+/* EXPERIMENTAL !!
+   contribution from Luis Correia
+   see http://www.multiwii.com/forum/viewtopic.php?f=18&t=828 and
+   http://arduinopt.info/w/
+   
+   It uses a Bluetooth Serial module as the input for controlling the device via an Android application
+   As with the SPEKTRUM option, is not possible to use the configuration tool on a mini or promini.
+      
+   */
+#define BTSERIAL
+
+#if defined(BTSERIAL) || defined(SPEKTRUM)
+	#define NOCOMPUTERC
+#endif	
+
+/* The following lines apply only for a pitch/roll tilt stabilization system
+   On promini board, it is not compatible with config with 6 motors or more
+   Uncomment the first line to activate it */
+//#define SERVO_TILT
+#define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
+#define TILT_PITCH_MAX    2000    //servo travel max, max value=2000
+#define TILT_PITCH_MIDDLE 1500    //servo neutral value
+#define TILT_PITCH_PROP   10      //servo proportional (tied to angle) ; can be negative to invert movement
+#define TILT_ROLL_MIN     1020
+#define TILT_ROLL_MAX     2000
+#define TILT_ROLL_MIDDLE  1500
+#define TILT_ROLL_PROP    10
 
 /* interleaving delay in micro seconds between 2 readings WMP/NK in a WMP+NK config
    if the ACC calibration time is very long (20 or 30s), try to increase this delay up to 4000
@@ -207,11 +246,6 @@
    Configure display as follows: 115K baud, and TTL levels for RXD and TXD, terminal mode
    NO rx / tx line reconfiguration, use natural pins */
 //#define LCD_TEXTSTAR
-/* keys to navigate the LCD menu (preset to TEXTSTAR key-depress codes)*/
-#define LCD_MENU_PREV 'a'
-#define LCD_MENU_NEXT 'c'
-#define LCD_VALUE_UP 'd'
-#define LCD_VALUE_DOWN 'b'
 
 /* motors will not spin when the throttle command is in low position
    this is an alternative method to stop immediately the motors */
