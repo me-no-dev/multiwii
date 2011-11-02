@@ -48,11 +48,13 @@ void writeAllMotors(int16_t mc) {   // Sends commands to all motors
 void logMotorsPower() {
   uint32_t amp;
   /* true cubic function; when divided by vbat_max=126 (12.6V) for 3 cell battery this gives maximum value of ~ 1000 */
-  const uint32_t amperes[16] =   {31, 246, 831, 1969, 3845, 6645, 10551, 15750, 22425, 30762, 40944, 53156, 67583, 84410, 103821, 126000 };
-
+  const uint32_t amperes[64] =   {0,4,13,31,60,104,165,246,350,481,640,831,1056,1319,1622,1969,2361,2803,3297,3845,4451,5118,5848,6645,
+	                             7510,8448,9461,10551,11723,12978,14319,15750,17273,18892,20608,22425,24346,26374,28512,30762,33127,35611,
+	                             38215,40944,43799,46785,49903,53156,56548,60081,63759,67583,71558,75685,79968,84410,89013,93781,98716,103821,
+	                             109099,114553,120186,126000 };
   if (vbat) { // by all means - must avoid division by zero 
     for (uint8_t i =0;i<NUMBER_MOTOR;i++) {
-      amp = amperes[(motor[i] - 1000)>>6] / vbat; // range mapped from [1000:2000] => [0:1000]; then break that up into 16 ranges; lookup amp
+      amp = amperes[(motor[i] - 1000)>>4] / vbat; // range mapped from [1000:2000] => [0:1000]; then break that up into 64 ranges; lookup amp
       #ifdef LOG_VALUES
          pMeter[i]+= amp; // sum up over time the mapped ESC input 
       #endif
@@ -73,6 +75,10 @@ void initOutput() {
     initializeServo();
   #elif (NUMBER_MOTOR == 6) && defined(PROMINI)
     initializeSoftPWM();
+    #if defined(A0_A1_PIN_HEX)
+      pinMode(5,INPUT);pinMode(6,INPUT);     // we reactivate the INPUT affectation for these two PINs
+      pinMode(A0,OUTPUT);pinMode(A1,OUTPUT);
+    #endif
   #endif
 }
 
@@ -184,14 +190,22 @@ void initializeSoftPWM() {
 ISR(TIMER0_COMPA_vect) {
   static uint8_t state = 0;
   if (state == 0) {
-    PORTD |= 1<<5; //digital PIN 5 high
+    #if not defined(A0_A1_PIN_HEX)
+      PORTD |= 1<<5; //digital PIN 5 high
+    #else
+      PORTC |= 1<<0;//PIN A0
+    #endif
     OCR0A+= atomicPWM_PIN5_highState; //250 x 4 microsecons = 1ms
     state = 1;
   } else if (state == 1) {
     OCR0A+= atomicPWM_PIN5_highState;
     state = 2;
   } else if (state == 2) {
-    PORTD &= ~(1<<5); //digital PIN 5 low
+    #if not defined(A0_A1_PIN_HEX)
+      PORTD &= ~(1<<5); //digital PIN 5 low
+    #else
+      PORTC &= ~(1<<0);
+    #endif 
     OCR0A+= atomicPWM_PIN5_lowState;
     state = 0;
   }
@@ -200,20 +214,33 @@ ISR(TIMER0_COMPA_vect) {
 ISR(TIMER0_COMPB_vect) { //the same with digital PIN 6 and OCR0B counter
   static uint8_t state = 0;
   if (state == 0) {
-    PORTD |= 1<<6;OCR0B+= atomicPWM_PIN6_highState;state = 1;
+    #if not defined(A0_A1_PIN_HEX)
+      PORTD |= 1<<6;
+    #else
+      PORTC |= 1<<1;//PIN A1
+    #endif
+    OCR0B+= atomicPWM_PIN6_highState;state = 1;
   } else if (state == 1) {
     OCR0B+= atomicPWM_PIN6_highState;state = 2;
   } else if (state == 2) {
-    PORTD &= ~(1<<6);OCR0B+= atomicPWM_PIN6_lowState;state = 0;
+    #if not defined(A0_A1_PIN_HEX)
+      PORTD &= ~(1<<6);
+    #else
+      PORTC &= ~(1<<1);
+    #endif
+    OCR0B+= atomicPWM_PIN6_lowState;state = 0;
   }
 }
 #endif
 
 
 void mixTable() {
-  int16_t maxMotor,a;
+  int16_t maxMotor;
   uint8_t i,axis;
-
+  static uint8_t camCycle = 0;
+  static uint8_t camState = 0;
+  static uint32_t camTime = 0;
+  
   #define PIDMIX(X,Y,Z) rcCommand[THROTTLE] + axisPID[ROLL]*X + axisPID[PITCH]*Y + YAW_DIRECTION * axisPID[YAW]*Z
 
   #if NUMBER_MOTOR > 3
@@ -323,6 +350,28 @@ void mixTable() {
     servo[2]  = constrain(1500 + axisPID[PITCH] + axisPID[ROLL], 1020, 2000); //RIGHT
   #endif
 
+  #if defined(CAMTRIG)
+    if (camCycle==1) {
+      if (camState == 0) {
+        servo[3] = CAM_SERVO_HIGH;
+        camState = 1;
+        camTime = millis();
+      } else if (camState == 1) {
+       if ( (millis() - camTime) > CAM_TIME_HIGH ) {
+         servo[3] = CAM_SERVO_LOW;
+         camState = 2;
+         camTime = millis();
+       }
+      } else { //camState ==2
+       if ( (millis() - camTime) > CAM_TIME_LOW ) {
+         camState = 0;
+         camCycle = 0;
+       }
+      }
+    }
+    if (rcOptions & activate[BOXCAMTRIG]) camCycle=1;
+  #endif
+
   maxMotor=motor[0];
   for(i=1;i< NUMBER_MOTOR;i++)
     if (motor[i]>maxMotor) maxMotor=motor[i];
@@ -339,5 +388,9 @@ void mixTable() {
     if (armed == 0)
       motor[i] = MINCOMMAND;
   }
+
+  #if defined(LOG_VALUES) || (POWERMETER == 1)
+    logMotorsPower();
+  #endif
 }
 
