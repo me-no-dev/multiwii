@@ -248,8 +248,8 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   }
   if (currentTime > serialTime) { // 50Hz
     serialCom();
-//original timing    serialTime = currentTime + 20000;
-    serialTime = currentTime + 2500;
+//    serialTime = currentTime + 20000;
+    serialTime = currentTime + 500;
   }
   #ifdef LCD_TELEMETRY_AUTO
     if ( (telemetry_auto) && (micros() > telemetryAutoTime + LCD_TELEMETRY_AUTO) ) { // every 2 seconds
@@ -324,7 +324,7 @@ void loop () {
   
   if (currentTime > rcTime ) { // 50Hz
     rcTime = currentTime + 20000;
-    #if (!defined(SPEKTRUM)||!defined(BTSERIAL))
+    #if !defined(SPEKTRUM)
       computeRC();
     #endif
     // Failsafe routine - added by MIS
