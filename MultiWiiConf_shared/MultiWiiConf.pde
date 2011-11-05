@@ -406,6 +406,7 @@ void draw() {
 
     servoSliderV1.setPosition(xMot+10,yMot+10);servoSliderV1.setCaptionLabel("LEFT");servoSliderV1.show(); 
     servoSliderV2.setPosition(xMot+90,yMot+10);servoSliderV2.setCaptionLabel("RIGHT");servoSliderV2.show(); 
+    motSliderV0.setPosition(xMot+50,yMot+30);motSliderV0.setHeight(90);motSliderV0.setCaptionLabel("M-d9");motSliderV0.show();
   } else if (multiType == 9) { //Y4
     ellipse(-size,  -size, size, size);ellipse(+size,  -size, size, size);ellipse(0,  +size, size+2, size+2);
     line(-size,-size, 0,0);line(+size,-size, 0,0);line(0,+size, 0,0);
