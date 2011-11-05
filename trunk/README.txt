@@ -6,7 +6,7 @@ Multiwii_shared and MultiWiiConf_shared can be modified by every contributors
 
 
 Some simple rules:
-   - do not commit something that does not compile
+   - do not commit something that does not compile / check with various config settings
    - try to respect the tabulations for readability
    - avoid float numbers
    - try to isolate your code if possible via #define statements
