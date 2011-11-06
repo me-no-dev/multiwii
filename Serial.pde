@@ -141,13 +141,15 @@ void serialCom() {
     case 'E': //GUI to arduino MAG calibration request
       calibratingM=1;
       break;
-    case 'K': //receive RC data from Bluetooth Serial adapter as a remote
-      rcSerial[THROTTLE] = (Serial.read() * 4) + 1100;
-      rcSerial[ROLL]     = (Serial.read() * 4) + 1100;
-      rcSerial[PITCH]    = (Serial.read() * 4) + 1100;
-      rcSerial[YAW]      = (Serial.read() * 4) + 1100;
-      rcSerial[AUX1]     = (Serial.read() * 4) + 1100;
+    #if defined(BTSERIAL)  
+    case 'K': //receive stuff from Serial port as a remote
+      rcData[THROTTLE] = (Serial.read() * 4) + 1000;
+      rcData[ROLL]     = (Serial.read() * 4) + 1000;
+      rcData[PITCH]    = (Serial.read() * 4) + 1000;
+      rcData[YAW]      = (Serial.read() * 4) + 1000;
+      rcData[AUX1]     = (Serial.read() * 4) + 1000;
       break;
+    #endif
     }
   }
 }
