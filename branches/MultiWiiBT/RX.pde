@@ -1,5 +1,4 @@
 volatile uint16_t rcValue[8] = {1502,1502,1502,1502,1502,1502,1502,1502}; // interval [1000;2000]
-volatile uint16_t rcSerial[8] = {1502,1502,1502,1000,1000,1000,1000,1000}; // interval [1000;2000]
 
 #if defined(SERIAL_SUM_PPM)
   static uint8_t rcChannel[8] = {SERIAL_SUM_PPM};
@@ -240,13 +239,7 @@ uint16_t readRawRC(uint8_t chan) {
   uint16_t data;
   uint8_t oldSREG;
   oldSREG = SREG; cli(); // Let's disable interrupts
-
-  #if !defined(BTSERIAL)
-    data = rcValue[rcChannel[chan]]; // Let's copy the data Atomically
-  #else
-    data = rcSerial[chan];
-  #endif
-
+  data = rcValue[rcChannel[chan]]; // Let's copy the data Atomically
   #if defined(SPEKTRUM)
     static uint32_t spekChannelData[SPEK_MAX_CHANNEL];
     if (rcFrameComplete) {

@@ -6,8 +6,8 @@
    This is the minimum value that allow motors to run at a idle speed  */
 //#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
 //#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
-#define MINTHROTTLE 1220
-//#define MINTHROTTLE 1150 
+//#define MINTHROTTLE 1220
+#define MINTHROTTLE 1150 
 
 /* The type of multicopter */
 //#define GIMBAL
