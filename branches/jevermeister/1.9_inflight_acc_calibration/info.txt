@@ -1,0 +1,14 @@
+1. Move left right stick to bottom right and left stick to top left to arm inflight calibration: beep beep
+
+2. then fly and trim it via tx until leveled
+
+3. disarm via switch while flying level: beep beep
+
+4. land as usual. Repeat step one: beep! 
+
+Done
+
+addendum
+to disarm calibration repeat step one : beep beep beep
+
+you need my custom speaker routine for the beeps
