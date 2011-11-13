@@ -1,4 +1,4 @@
-1. Move left right stick to bottom right and left stick to top left to arm inflight calibration: beep beep
+1. Move left stick to bottom left and right stick to top right to arm inflight calibration: beep beep
 
 2. then fly and trim it via tx until leveled
 
