@@ -171,7 +171,6 @@ static int16_t  GPS_directionToHome = 0;
 static uint8_t  GPS_update = 0;
 
 void annexCode() { //this code is excetuted at each loop and won't interfere with control loop if it lasts less than 650 microseconds
-  static uint32_t serialTime;
   static uint32_t buzzerTime,calibratedAccTime,telemetryTime,telemetryAutoTime,psensorTime;
   static uint8_t  buzzerFreq;         //delay between buzzer ring
   uint8_t axis,prop1,prop2;
@@ -331,10 +330,9 @@ if ( warn_failsafe >0 || warn_powermeter >0 || warn_vbat >0 || confirmation_flag
     } else
       calibratedACC = 1;
   }
-  if (currentTime > serialTime) { // 50Hz
-    serialCom();
-    serialTime = currentTime + 20000;
-  }
+
+  serialCom();
+
   #ifdef LCD_TELEMETRY_AUTO
     if ( (telemetry_auto) && (micros() > telemetryAutoTime + LCD_TELEMETRY_AUTO) ) { // every 2 seconds
       telemetry++;
@@ -566,7 +564,7 @@ if (AccAutoCalibration && armed == 1 && rcData[THROTTLE] > MINCHECK && (rcOption
       int16_t dif = heading - magHold;
       if (dif <= - 180) dif += 360;
       if (dif >= + 180) dif -= 360;
-      if ( smallAngle25 ) rcCommand[YAW] -= dif*P8[PIDMAG]/30;
+      if ( smallAngle25 ) rcCommand[YAW] -= dif*P8[PIDMAG]/30;  //18 deg
     } else magHold = heading;
   }
 
