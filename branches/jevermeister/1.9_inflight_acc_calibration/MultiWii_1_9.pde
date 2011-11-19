@@ -44,6 +44,10 @@ static uint16_t calibratingA = 0;  // the calibration is done is the main loop. 
 static uint16_t InflightcalibratingA = 0;
 static uint16_t AccAutoCalibrationMeasurementDone = 0;
 static uint16_t AccAutoCalibrationSavetoEEProm = 0;
+static int16_t accZero_saved[3]  = {0,0,0};
+static int16_t  accTrim_saved[2] = {0, 0};
+
+
 //=====================================================================        
 static uint8_t  calibratingM = 0;
 static uint16_t calibratingG;
@@ -75,7 +79,7 @@ static uint16_t cycleTimeMax = 0;       // highest ever cycle timen
 static uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
 static uint16_t powerMax = 0;           // highest ever current
 static uint16_t powerAvg = 0;           // last known current
-static uint8_t i2c_errors_count = 0;    // count of wmp/nk resets
+static int16_t  i2c_errors_count = 0;
 
 // **********************
 // Buzzer conditions
@@ -499,7 +503,6 @@ if (AccAutoCalibration && armed == 1 && rcData[THROTTLE] > MINCHECK && (rcOption
    confirmation_flag = 1;  
 }
 //=========================================================================================================================== 
-    
     
    #ifdef LOG_VALUES
     else if (armed) { // update min and max values here, so do not get cycle time of the motor arming (which is way higher than normal)
