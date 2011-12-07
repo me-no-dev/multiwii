@@ -16,7 +16,7 @@ ListBox commListbox;
 
 int CHECKBOXITEMS=10;
 int frame_size_read = 116+2*CHECKBOXITEMS;
-int frame_size_write = 28+2*CHECKBOXITEMS;
+int frame_size_write = 26+2*CHECKBOXITEMS;
 
 
 cGraph g_graph;
