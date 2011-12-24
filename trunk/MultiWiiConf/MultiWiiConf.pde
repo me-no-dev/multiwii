@@ -14,7 +14,7 @@ ControlP5 controlP5;
 Textlabel txtlblWhichcom,version; 
 ListBox commListbox;
 
-int CHECKBOXITEMS=10;
+int CHECKBOXITEMS=11;
 int PIDITEMS=8;
 int frame_size_read = 98+3*PIDITEMS+2*CHECKBOXITEMS;
 int frame_size_write = 8+3*PIDITEMS+2*CHECKBOXITEMS;
@@ -573,6 +573,7 @@ void draw() {
   //text("GPS HOLD",xBox-5,yBox+121); //not yet
   text("PASSTHRU",xBox-5,yBox+134);
   text("HEADFREE",xBox-5,yBox+147);
+  text("BEEPER",xBox-5,yBox+160);
   text("LOW",xBox+37,yBox+15);text("MID",xBox+57,yBox+15);text("HIGH",xBox+74,yBox+15);
   text("LOW",xBox+100,yBox+15);text("MID",xBox+123,yBox+15);text("HIGH",xBox+140,yBox+15);
 
