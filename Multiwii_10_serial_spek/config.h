@@ -14,11 +14,11 @@
 //#define BI
 //#define TRI
 //#define QUADP
-//#define QUADX
+#define QUADX
 //#define Y4
 //#define Y6
 //#define HEX6
-#define HEX6X
+//#define HEX6X
 //#define OCTOX8
 //#define OCTOFLATP
 //#define OCTOFLATX
@@ -232,7 +232,7 @@
 
 /* In order to save space, it's possibile to desactivate the LCD configuration functions
    comment this line only if you don't plan to used a LCD */
-//#define LCD_CONF
+#define LCD_CONF
 /* Use this to trigger telemetry without a TX */
 //#define LCD_CONF_DEBUG
 
@@ -240,9 +240,10 @@
 /* 1 = Alex' initial variant with 3 wires, using rx-pin for transmission @9600 baud fixed */
 /* 2 = TEXTSTAR lcd with 4 keys */
 /* 3 = Eagle Tree Power Panel LCD */
-//#define LCD_TYPE 1   // 3 wire serial
-//#define LCD_TYPE 2 // TEXTSTAR
-//#define LCD_TYPE 3 // Eagle Tree Power Panel LCD
+/* choice of LCD attached for configuration and telemetry, see notes below */
+//#define LCD_TYPE SERIAL3W    // Alex' initial variant with 3 wires, using rx-pin for transmission @9600 baud fixed
+//#define LCD_TYPE TEXTSTAR    // Cat's Whisker TEXTSTAR Module CW-LCD-02 (Which has 4 input keys for selecting menus)
+#define LCD_TYPE ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
 
 /* To use an Eagle Tree Power Panel LCD for configuration, uncomment this line
  White wire  to Ground
@@ -344,12 +345,12 @@
 /* The active page on the LCD does get updated automatically */
 /* Easy to use with Terminal application or Textstar LCD - the 4 buttons are preconfigured to send 'A', 'B', 'C', 'D' */
 /* The value represents the refresh interval in cpu time (micro seconds) */
-//#define LCD_TELEMETRY 100011
+#define LCD_TELEMETRY 100011
 /* to enable automatic hopping between 4 telemetry pages uncomment this. */
 /* This may be useful if your LCD has no buttons or the sending is broken */
 /* hopping is activated and deactivated in unarmed mode with throttle=low & roll=left & pitch=forward */
 /* The value represents the hopping interval in cpu time (micro seconds) */
-//#define LCD_TELEMETRY_AUTO 2000123
+#define LCD_TELEMETRY_AUTO 2000123
 /* on telemetry page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
 /* Example: 12.6V - VBATLEVEL1_3S  (for me = 126 - 102 = 24) */
