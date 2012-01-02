@@ -1,3 +1,4 @@
+#include "preconfig.h"
 /*******************************/
 /****CONFIGURABLE PARAMETERS****/
 /*******************************/
@@ -241,9 +242,9 @@
 /* 2 = TEXTSTAR lcd with 4 keys */
 /* 3 = Eagle Tree Power Panel LCD */
 /* choice of LCD attached for configuration and telemetry, see notes below */
-//#define LCD_TYPE SERIAL3W    // Alex' initial variant with 3 wires, using rx-pin for transmission @9600 baud fixed
-//#define LCD_TYPE TEXTSTAR    // Cat's Whisker TEXTSTAR Module CW-LCD-02 (Which has 4 input keys for selecting menus)
-#define LCD_TYPE ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
+//#define LCD_TYPE LCD_SERIAL3W    // Alex' initial variant with 3 wires, using rx-pin for transmission @9600 baud fixed
+//#define LCD_TYPE LCD_TEXTSTAR    // Cat's Whisker TEXTSTAR Module CW-LCD-02 (Which has 4 input keys for selecting menus)
+#define LCD_TYPE LCD_ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
 
 /* To use an Eagle Tree Power Panel LCD for configuration, uncomment this line
  White wire  to Ground
