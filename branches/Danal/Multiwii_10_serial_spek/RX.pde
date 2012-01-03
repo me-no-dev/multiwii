@@ -213,10 +213,10 @@ void  readSBus(){
     #define SPEK_CHAN_MASK   0x07    // Assumes 11 bit frames, that is 2048 mode.
     #define SPEK_DATA_SHIFT >> 1     // Assumes 11 bit frames, that is 2048 mode.
   #endif
-  volatile uint8_t spekFrameFlags;  
+//  volatile uint8_t spekFrameFlags;  
 void readSpektrum() {
   if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
-    if (SPEK_FRAME_SIZE == SerialAvailable(SPEK_SERIAL_PORT)) {  //Frame is complete. If not, we'll catch it next time we are called. 
+    if (SPEK_FRAME_SIZE <= SerialAvailable(SPEK_SERIAL_PORT)) {  //Frame is big enough to be complete. If not, we'll catch it next time we are called. 
       uint8_t oldSREG = SREG; cli();
       SerialRead(SPEK_SERIAL_PORT); SerialRead(SPEK_SERIAL_PORT);        //Eat the header bytes 
       for (uint8_t b = 2; b < SPEK_FRAME_SIZE; b += 2) {
