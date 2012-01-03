@@ -5,10 +5,10 @@
 
 /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller)
    This is the minimum value that allow motors to run at a idle speed  */
-#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
+//#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
 //#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
 //#define MINTHROTTLE 1220
-//#define MINTHROTTLE 1150 
+#define MINTHROTTLE 1150 
 
 /* The type of multicopter */
 //#define GIMBAL
@@ -351,18 +351,18 @@
 /* This may be useful if your LCD has no buttons or the sending is broken */
 /* hopping is activated and deactivated in unarmed mode with throttle=low & roll=left & pitch=forward */
 /* The value represents the hopping interval in cpu time (micro seconds) */
-#define LCD_TELEMETRY_AUTO 2000123
+#define LCD_TELEMETRY_AUTO 8000123
 /* on telemetry page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
 /* Example: 12.6V - VBATLEVEL1_3S  (for me = 126 - 102 = 24) */
 #define VBATREF 24 
 /* Use this to trigger telemetry without a TX */
-//#define LCD_TELEMETRY_DEBUG
+#define LCD_TELEMETRY_DEBUG
 
 /* to log values like max loop time and others to come */
 /* logging values are visible via LCD config */
 /* set to 2, if you want powerconsumption on a per motor basis (this uses the big array and is a memory hog, if POWERMETER <> 1) */
-//#define LOG_VALUES 1
+#define LOG_VALUES 1
 
 
 //****** end of advanced users settings *************

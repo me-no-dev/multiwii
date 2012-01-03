@@ -300,7 +300,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
   #ifdef LCD_TELEMETRY_AUTO
     if ( (telemetry_auto) && (! (++telemetryAutoTimer % LCD_TELEMETRY_AUTO_FREQ) )  ){
       telemetry++;
-      if ( (telemetry < 1 ) || (telemetry > 5 ) ) telemetry = 1;
+      if ( (telemetry < 1 ) || (telemetry > 6 ) ) telemetry = 6;
     }
   #endif  
   #ifdef LCD_TELEMETRY
@@ -347,7 +347,7 @@ void setup() {
     initLCD();
   #endif
   #ifdef LCD_TELEMETRY_DEBUG
-    telemetry_auto = 1;
+    telemetry_auto = 1; telemetry=6;
   #endif
   #ifdef LCD_CONF_DEBUG
     configurationLoop();

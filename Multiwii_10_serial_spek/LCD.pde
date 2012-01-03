@@ -1,3 +1,6 @@
+#include <wiring.c>  //Auto-included by the Arduino core... but we need it sooner. 
+volatile uint8_t spekFrameFlags;  
+volatile uint32_t spekInterval;
 // ************************************************************************************************************
 // LCD & display & monitoring
 // ************************************************************************************************************
@@ -373,10 +376,12 @@ void configurationLoop() {
      #define LCD_BAR(n,v) {LCDbarGraph(n,v); }
    #endif
 
+
+
 void lcd_telemetry() {
   uint16_t intPowerMeterSum;   
 
-  LCDclear();
+//  LCDclear();
   switch (telemetry) { // output telemetry data, if one of four modes is set
     case 3: // button C on Textstar LCD -> cycle time
       strcpy_P(line1,PSTR("Cycle    -----us")); //uin16_t cycleTime
@@ -506,6 +511,32 @@ void lcd_telemetry() {
       line2[13] = '0' + annex650_overrun_count / 100  - (annex650_overrun_count/1000)  * 10;
       line2[14] = '0' + annex650_overrun_count / 10   - (annex650_overrun_count/100)   * 10;
       line2[15] = '0' + annex650_overrun_count        - (annex650_overrun_count/10)    * 10;
+      LCDsetLine(1);LCDprintChar(line1);
+      LCDsetLine(2);LCDprintChar(line2);
+      break;
+    case 6: // No button.  Displays with auto telemetry only
+      strcpy_P(line1,PSTR("Roll Pitch Throt"));  
+                        // 0123456789012345
+      strcpy_P(line2,PSTR("---- ---- ----xx"));
+      line2[0] = '0' + rcData[ROLL] / 1000 - (rcData[ROLL]/10000) * 10;
+      line2[1] = '0' + rcData[ROLL] / 100  - (rcData[ROLL]/1000)  * 10;
+      line2[2] = '0' + rcData[ROLL] / 10   - (rcData[ROLL]/100)   * 10;
+      line2[3] = '0' + rcData[ROLL]        - (rcData[ROLL]/10)    * 10;
+//rcData[PITCH] = SerialAvailable(0); 
+      line2[5] = '0' + rcData[PITCH] / 1000 - (rcData[PITCH]/10000) * 10;
+      line2[6] = '0' + rcData[PITCH] / 100  - (rcData[PITCH]/1000)  * 10;
+      line2[7] = '0' + rcData[PITCH] / 10   - (rcData[PITCH]/100)   * 10;
+      line2[8] = '0' + rcData[PITCH]        - (rcData[PITCH]/10)    * 10;
+//rcData[THROTTLE] = int((timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond() ));  
+
+//rcData[THROTTLE] = spekInterval;
+//rcData[THROTTLE] = constrain(rcData[THROTTLE],0,9999);
+      line2[10] = '0' + rcData[THROTTLE] / 1000 - (rcData[THROTTLE]/10000) * 10;
+      line2[11] = '0' + rcData[THROTTLE] / 100  - (rcData[THROTTLE]/1000)  * 10;
+      line2[12] = '0' + rcData[THROTTLE] / 10   - (rcData[THROTTLE]/100)   * 10;
+      line2[13] = '0' + rcData[THROTTLE]        - (rcData[THROTTLE]/10)    * 10;
+      if (armed) line2[14] = 'A'; else line2[14] = 'a';
+      if (spekFrameFlags) line2[15] = 'F'; else line2[15] = 'f';
       LCDsetLine(1);LCDprintChar(line1);
       LCDsetLine(2);LCDprintChar(line2);
       break;
