@@ -178,7 +178,7 @@
 #define FAILSAFE                                  // Alex: comment this line if you want to deactivate the failsafe function
 #define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
 #define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
-#define FAILSAVE_THR0TTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
+#define FAILSAVE_THR0TTLE  (MINTHROTTLE + 150)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
 
 /* EXPERIMENTAL !!
   contribution from Luis Correia
@@ -351,18 +351,19 @@
 /* This may be useful if your LCD has no buttons or the sending is broken */
 /* hopping is activated and deactivated in unarmed mode with throttle=low & roll=left & pitch=forward */
 /* The value represents the hopping interval in cpu time (micro seconds) */
-#define LCD_TELEMETRY_AUTO 8000123
+#define LCD_TELEMETRY_AUTO 2000123
 /* on telemetry page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
 /* Example: 12.6V - VBATLEVEL1_3S  (for me = 126 - 102 = 24) */
 #define VBATREF 24 
 /* Use this to trigger telemetry without a TX */
-#define LCD_TELEMETRY_DEBUG
+//#define LCD_TELEMETRY_DEBUG  //This form rolls between all screens, LCD_TELEMETRY_AUTO must also be defined.
+//#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
 
 /* to log values like max loop time and others to come */
 /* logging values are visible via LCD config */
 /* set to 2, if you want powerconsumption on a per motor basis (this uses the big array and is a memory hog, if POWERMETER <> 1) */
-#define LOG_VALUES 1
+//#define LOG_VALUES 1
 
 
 //****** end of advanced users settings *************
