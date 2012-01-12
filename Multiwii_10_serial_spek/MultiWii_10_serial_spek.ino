@@ -13,7 +13,6 @@ December  2011     V1.dev
 #include <avr/pgmspace.h>
 #define   VERSION  19
 
-
 /*********** RC alias *****************/
 #define ROLL       0
 #define PITCH      1
@@ -174,10 +173,14 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
 
 void annexCode() { //this code is excetuted at each loop and won't interfere with control loop if it lasts less than 650 microseconds
   static uint32_t buzzerTime,calibratedAccTime;
+#if defined(LCD_TELEMETRY)
   static uint16_t telemetryTimer = 0, telemetryAutoTimer = 0, psensorTimer = 0;
+#endif
   static uint8_t  buzzerFreq;         //delay between buzzer ring
   uint8_t axis,prop1,prop2;
+#if defined(POWERMETER_HARD)
   uint16_t pMeterRaw;     //used for current reading
+#endif
 
   //PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
   if      (rcData[THROTTLE]<1500) prop2 = 100;
@@ -214,7 +217,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
     rcCommand[PITCH] = rcCommand_PITCH;
   }
 
-  #if (POWERMETER == 2)
+  #if defined(POWERMETER_HARD)
     if (! (++psensorTimer % PSENSORFREQ)) { 
      pMeterRaw =  analogRead(PSENSORPIN);
      powerValue = ( PSENSORNULL > pMeterRaw ? PSENSORNULL - pMeterRaw : pMeterRaw - PSENSORNULL); // do not use abs(), it would induce implicit cast to uint and overrun
@@ -346,11 +349,13 @@ void setup() {
   #if defined(GPS)
     SerialOpen(GPS_SERIAL,GPS_BAUD);
   #endif
-  #if (LCD_TYPE == 3) //ETPP)
+  #if defined(LCD_ETPP)
+    initLCD();
+  #elif defined(LCD_LCD03)
     initLCD();
   #endif
   #ifdef LCD_TELEMETRY_DEBUG
-    telemetry_auto = 1; 
+    telemetry_auto = 1;
   #endif
   #ifdef LCD_CONF_DEBUG
     configurationLoop();

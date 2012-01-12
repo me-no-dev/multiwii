@@ -333,17 +333,6 @@
 #endif
 
 
-#if defined(POWERMETER)
-  #ifndef VBAT
-	#error "to use powermeter, you must also define and configure VBAT"
-  #endif
-#endif
-#ifdef LCD_TELEMETRY_AUTO
-  #ifndef LCD_TELEMETRY
-     #error "to use automatic telemetry, you MUST also define and configure LCD_TELEMETRY"
-  #endif
-#endif
-
 #if defined(TRI)
   #define MULTITYPE 1
 #elif defined(QUADP)
@@ -371,3 +360,27 @@
 #elif defined(OCTOFLATX)
   #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
 #endif
+
+#if defined(POWERMETER_HARD) || defined(POWERMETER_SOFT)
+  #define POWERMETER
+#endif
+
+/**************************/
+/* Error Checking Section */
+/**************************/
+
+#if (defined(LCD_CONF) || defined(LCD_TELEMETRY)) && !(defined(LCD_SERIAL3W) || defined(LCD_TEXTSTAR) || defined(LCD_VT100) || defined(LCD_ETPP) || defined(LCD_LCD03))
+  #error "LCD_CONF or LCD_TELEMETRY defined, and choice of LCD not defined.  Uncomment one of LCD_SERIAL3W or LCD_TEXTSTAR or LCD_VT100 or LCD_ETPP or LCD_LCD03"
+#endif
+
+
+#if defined(POWERMETER) && !(defined(VBAT))
+  	#error "to use powermeter, you must also define and configure VBAT"
+#endif
+
+#if defined(LCD_TELEMETRY_AUTO) && !(defined(LCD_TELEMETRY))
+ 	#error "to use automatic telemetry, you MUST also define and configure LCD_TELEMETRY"
+#endif
+
+
+
