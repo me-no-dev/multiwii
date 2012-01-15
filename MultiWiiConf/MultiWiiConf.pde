@@ -11,11 +11,12 @@ import processing.opengl.*;
 
 Serial g_serial;
 ControlP5 controlP5;
-Textlabel txtlblWhichcom,version; 
+Textlabel txtlblWhichcom; 
 ListBox commListbox;
 
 int CHECKBOXITEMS=11;
 int PIDITEMS=8;
+int commListMax;
 int frame_size_read = 98+3*PIDITEMS+2*CHECKBOXITEMS;
 int frame_size_write = 8+3*PIDITEMS+2*CHECKBOXITEMS;
 
@@ -69,6 +70,7 @@ Button buttonI2cAccActive,buttonI2cBaroActive,buttonI2cMagnetoActive,buttonGPSAc
 color yellow_ = color(200, 200, 20), green_ = color(30, 120, 30), red_ = color(120, 30, 30);
 boolean graphEnable = false;boolean readEnable = false;boolean writeEnable = false;boolean calibrateEnable = false;
 
+int version,versionMisMatch;
 float gx,gy,gz,ax,ay,az,magx,magy,magz,baro,head,angx,angy,debug1,debug2,debug3,debug4;
 int GPS_distanceToHome, GPS_directionToHome;
 int  GPS_numSat,GPS_fix,GPS_update;
@@ -128,8 +130,9 @@ void setup() {
   for(int i=0;i<Serial.list().length;i++) {
     String pn = shortifyPortName(Serial.list()[i], 13);
     if (pn.length() >0 ) commListbox.addItem(pn,i); // addItem(name,value)
+    commListMax = i;
   }
-
+  commListbox.addItem("Close Comm",++commListMax); // addItem(name,value)
   // text label for which comm port selected
   txtlblWhichcom = controlP5.addTextlabel("txtlblWhichcom","No Port Selected",5,42); // textlabel(name,text,x,y)
     
@@ -218,6 +221,7 @@ void setup() {
     confD[i] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confD"+i,0,xParam+120,yParam+20+i*20,30,14));
     confD[i].setColorBackground(red_);confD[i].setMin(0);confD[i].setDirection(Controller.HORIZONTAL);confD[i].setDecimalPrecision(0);confD[i].setMultiplier(1);confD[i].setMax(50);}
   confD[6].hide();confI[7].hide();confD[7].hide();
+  confP[4].hide();confI[4].hide();confD[4].hide();
 
   rollPitchRate = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("rollPitchRate",0,xParam+160,yParam+30,30,14));rollPitchRate.setDecimalPrecision(2);rollPitchRate.setMultiplier(0.01);
   rollPitchRate.setDirection(Controller.HORIZONTAL);rollPitchRate.setMin(0);rollPitchRate.setMax(1);rollPitchRate.setColorBackground(red_);
@@ -288,7 +292,9 @@ void draw() {
  
   background(80);
   textFont(font15);
-  text("multiwii.com",0,16);text("v1.dev", 0, 32);
+  text("multiwii.com",0,16);
+  text("V",0,32);text(version, 10, 32);
+//  text("v1.dev", 0, 32);
   text("Cycle Time:",xGraph+220,yGraph-10);text(cycleTime,xGraph+320,yGraph-10);
 
   textFont(font12);
@@ -556,7 +562,7 @@ void draw() {
   text("RATE",xParam+160,yParam+15);
   text("ROLL",xParam+3,yParam+32);text("PITCH",xParam+3,yParam+52);text("YAW",xParam+3,yParam+72);
   text("ALT",xParam+3,yParam+92);
-  text("VEL",xParam+3,yParam+112);
+//  text("VEL",xParam+3,yParam+112);
   text("GPS",xParam+3,yParam+132);
   text("LEVEL",xParam+1,yParam+152);
   text("MAG",xParam+3,yParam+172); 
@@ -606,6 +612,7 @@ void draw() {
     buttonI2cAccActive.show();buttonI2cBaroActive.show();buttonI2cMagnetoActive.show();buttonGPSActive.show();
   }
   popMatrix();
+  if (versionMisMatch == 1) {textFont(font15);fill(#000000);text("GUI vs. Arduino: Version or Buffer size mismatch",180,420); return;}
 }
 
 void ACC_ROLL(boolean theFlag) {axGraph = theFlag;}
@@ -720,13 +727,22 @@ public void CALIB_MAG() {
 
 // initialize the serial port selected in the listBox
 void InitSerial(float portValue) {
-  String portPos = Serial.list()[int(portValue)];
-  txtlblWhichcom.setValue("COM = " + shortifyPortName(portPos, 8));
-  g_serial = new Serial(this, portPos, 115200);
-  init_com=1;
-  buttonSTART.setColorBackground(green_);buttonSTOP.setColorBackground(green_);commListbox.setColorBackground(green_);
-  graphEnable = true;
-  g_serial.buffer(frame_size_read+1);
+  if (portValue < commListMax) {
+    String portPos = Serial.list()[int(portValue)];
+    txtlblWhichcom.setValue("COM = " + shortifyPortName(portPos, 8));
+    g_serial = new Serial(this, portPos, 115200);
+    init_com=1;
+    buttonSTART.setColorBackground(green_);buttonSTOP.setColorBackground(green_);commListbox.setColorBackground(green_);
+    graphEnable = true;
+    g_serial.buffer(frame_size_read+1);
+  } else {
+    txtlblWhichcom.setValue("Comm Closed");
+    init_com=0;
+    buttonSTART.setColorBackground(red_);buttonSTOP.setColorBackground(red_);commListbox.setColorBackground(red_);
+    graphEnable = false;
+    init_com=0;
+    g_serial.stop();
+  }
 }
 
 int p;
@@ -744,9 +760,10 @@ void processSerialData() {
 
   if (g_serial.read() == 'M') {
     g_serial.readBytes(inBuf);
+    p=0;
+    version = read8(); //version is read even if buffer length doesn't check          //1
+    versionMisMatch = 0;
     if (inBuf[frame_size_read-1] == 'M') {  // Multiwii @ arduino send all data to GUI
-      p=0;
-      read8(); //version                                                              //1
       ax = read16();ay = read16();az = read16();
       gx = read16()/8;gy = read16()/8;gz = read16()/8;                                //13
       magx = read16()/3;magy = read16()/3;magz = read16()/3;                          //19
@@ -806,7 +823,10 @@ void processSerialData() {
       baroData.addVal(baro);headData.addVal(head);magxData.addVal(magx);magyData.addVal(magy);magzData.addVal(magz);
       debug1Data.addVal(debug1);debug2Data.addVal(debug2);debug3Data.addVal(debug3);debug4Data.addVal(debug4);
     }
-  } else g_serial.readStringUntil('M');
+  } else {
+    versionMisMatch = 1;
+    g_serial.readStringUntil('M');
+  }
 }
 
 
