@@ -39,7 +39,8 @@
 //#define LED_RING
 
 /* This option should be uncommented if ACC Z is accurate enough when motors are running*/
-//#define TRUSTED_ACCZ
+/* should now be ok with BMA020 and BMA180 ACC */
+#define TRUSTED_ACCZ
 
 /* PIN A0 and A1 instead of PIN D5 & D6 for 6 motors config and promini config
    This mod allow the use of a standard receiver on a pro mini
@@ -87,6 +88,7 @@
 //#define FREEIMUv035     // FreeIMU v0.3.5 no baro
 //#define FREEIMUv035_MS  // FreeIMU v0.3.5_MS                                                <- confirmed by Alex
 //#define FREEIMUv035_BMP // FreeIMU v0.3.5_BMP
+//#define FREEIMUv04      // FreeIMU v0.4 with MPU6050, HMC5883L, MS561101BA                  <- confirmed by Alex
 //#define PIPO            // 9DOF board from erazz
 //#define QUADRINO        // full FC board 9DOF+baro board from witespy  with BMP085 baro     <- confirmed by Alex
 //#define QUADRINO_ZOOM   // full FC board 9DOF+baro board from witespy  second edition       <- confirmed by Alex
@@ -137,6 +139,18 @@
 //#define ITG3200_LPF_42HZ
 //#define ITG3200_LPF_20HZ
 //#define ITG3200_LPF_10HZ      // Use this only in extreme cases, rather change motors and/or props
+
+/* MPU6050 Low pass filter setting. In case you cannot eliminate all vibrations to the Gyro, you can try
+   to decrease the LPF frequency, only one step per try. As soon as twitching gone, stick with that setting.
+   It will not help on feedback wobbles, so change only when copter is randomly twiching and all dampening and
+   balancing options ran out. Uncomment only one option!
+   IMPORTANT! Change low pass filter setting changes PID behaviour, so retune your PID's after changing LPF.*/
+//#define MPU6050_LPF_256HZ     // This is the default setting, no need to uncomment, just for reference
+//#define MPU6050_LPF_188HZ
+//#define MPU6050_LPF_98HZ
+//#define MPU6050_LPF_42HZ
+//#define MPU6050_LPF_20HZ
+//#define MPU6050_LPF_10HZ      // Use this only in extreme cases, rather change motors and/or props
 
 /* The following lines apply only for specific receiver with only one PPM sum signal, on digital PIN 2
    IF YOUR RECEIVER IS NOT CONCERNED, DON'T UNCOMMENT ANYTHING. Note this is mandatory for a Y6 setup on a promini
@@ -208,7 +222,7 @@
    after the resistor divisor we should get [0V;5V]->[0;1023] on analog V_BATPIN
    with R1=33k and R2=51k
    vbat = [0;1023]*16/VBATSCALE */
-//#define VBAT              // comment this line to suppress the vbat code
+#define VBAT              // comment this line to suppress the vbat code
 #define VBATSCALE     131 // change this value if readed Battery voltage is different than real voltage
 #define VBATLEVEL1_3S 107 // 10,7V
 #define VBATLEVEL2_3S 103 // 10,3V
@@ -232,9 +246,11 @@
 
 /* In order to save space, it's possibile to desactivate the LCD configuration functions
    comment this line only if you don't plan to used a LCD */
-//#define LCD_CONF
+#define LCD_CONF
 /* to include setting the aux switches for AUX1 and AUX2 via LCD */
-//#define LCD_CONF_AUX_12
+#define LCD_CONF_AUX_12
+/* to include setting the aux switches for AUX1, AUX2, AUX3 and AUX4 via LCD */
+//#define LCD_CONF_AUX_1234
 /* Use this to trigger LCD configuration without a TX - only for debugging - do NOT fly with this activated */
 //#define LCD_CONF_DEBUG
 
@@ -244,7 +260,7 @@
 //#define LCD_TEXTSTAR    // Cat's Whisker LCD_TEXTSTAR Module CW-LCD-02 (Which has 4 input keys for selecting menus)
 //#define LCD_VT100		  // vt100 compatible terminal emulation (blueterm, putty, etc.)
 /* i2c devices */
-//#define LCD_ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
+#define LCD_ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
 //#define LCD_LCD03       // LCD03, which is i2c
 
 /* keys to navigate the LCD menu (preset to LCD_TEXTSTAR key-depress codes)*/
@@ -336,8 +352,8 @@
 /*      4. configure, compile, upload, set alarm value in GUI or LCD */
 /*      3. enjoy true readings of mAh consumed */
 /* set POWERMETER to "soft" (1) or "hard" (2) depending on sensor you want to utilize */
-//#define POWERMETER 1
-//#define POWERMETER 2
+//#define POWERMETER_SOFT
+//#define POWERMETER_HARD
 /* the sum of all powermeters ranges from [0:60000 e4] theoretically. */
 /* the alarm level from eeprom is out of [0:255], so we multipy alarm level with PLEVELSCALE and with 1e4 before comparing */
 /* PLEVELSCALE is the step size you can use to set alarm */
@@ -361,27 +377,31 @@
 /* Buttons toggle request for page on/off */
 /* The active page on the LCD does get updated automatically */
 /* Easy to use with Terminal application or display like LCD - uses the 4 buttons are preconfigured to send 'A', 'B', 'C', 'D' */
-//#define LCD_TELEMETRY
-/* to enable automatic hopping between 4 telemetry pages uncomment this. */
+#define LCD_TELEMETRY
+/* to enable automatic hopping between a choice of telemetry pages uncomment this. */
 /* This may be useful if your LCD has no buttons or the sending is broken */
 /* hopping is activated and deactivated in unarmed mode with throttle=low & roll=left & pitch=forward */
-//#define LCD_TELEMETRY_AUTO
+/* set it to the sequence of telemetry pages you want to see */
+#define LCD_TELEMETRY_AUTO "12345267" // pages 1 to 7 in ascending order
+//#define LCD_TELEMETRY_AUTO  "2122324252627" // strong emphasis on page 2
 /* Use this to trigger telemetry without a TX - only for debugging - do NOT fly with this activated */
-//#define LCD_TELEMETRY_DEBUG
+//#define LCD_TELEMETRY_DEBUG  //This form rolls between all screens, LCD_TELEMETRY_AUTO must also be defined.
+//#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
 
 /* on telemetry page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
 /* Example: 12.6V - VBATLEVEL1_3S  (for me = 126 - 102 = 24) */
 #define VBATREF 24 
-/* Use this to trigger telemetry without a TX */
-//#define LCD_TELEMETRY_DEBUG  //This form rolls between all screens, LCD_TELEMETRY_AUTO must also be defined.
-//#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
 
 /* to log values like max loop time and others to come */
 /* logging values are visible via LCD config */
 /* set to 2, if you want powerconsumption on a per motor basis (this uses the big array and is a memory hog, if POWERMETER <> PM_SOFT) */
-//#define LOG_VALUES 1
+#define LOG_VALUES 1
 
+/* to add debugging code */
+/* not needed and not recommended for normal operation */
+/* will add extra code that may slow down the main loop or make copter non-flyable */
+//#define DEBUG
 
 //****** end of advanced users settings *************
 
@@ -395,9 +415,10 @@
 /* time base is main loop cycle time - a value of 6 means to trigger the action every 6th run through the main loop */
 /* example: with cycle time of approx 3ms, do action every 6*3ms=18ms */
 /* value must be [1; 65535] */
-#define LCD_TELEMETRY_FREQ 43       // to send telemetry data over serial 43 <=> 120ms <=> 8Hz
+#define LCD_TELEMETRY_FREQ 23       // to send telemetry data over serial 23 <=> 60ms <=> 16Hz (only sending interlaced, so 8Hz update rate)
 #define LCD_TELEMETRY_AUTO_FREQ 667 // to step to next telemetry page 667 <=> 2s
-#define PSENSORFREQ 6               //  to read hardware powermeter sensor 6 <=> 18ms
+#define PSENSORFREQ 6               // to read hardware powermeter sensor 6 <=> 18ms
+#define VBATFREQ PSENSORFREQ        // to read battery voltage - keep equal to PSENSORFREQ unless you know what you are doing
 /**************************************/
 /****END OF CONFIGURABLE PARAMETERS****/
 /**************************************/
