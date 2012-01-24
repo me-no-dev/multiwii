@@ -1,0 +1,8 @@
+guide to setup, read here
+http://manicdee.livejournal.com/97042.html
+
+
+makefile taken from Ardupilot project.
+No response from the dev team, so brutally ripped out and customized for my MultiWii projects
+
+Hamburger
