@@ -430,6 +430,16 @@
   #define RCAUXPIN
 #endif
 
+#if defined (HELI_90_DEG) || defined(HELI_120_CCPM)
+#define HELICOPTER
+#endif
+
+#if defined (AEROPLANE) || defined(HELICOPTER) && defined(PROMINI)
+  #define POWERPIN_PINMODE           ;
+  #define POWERPIN_ON                ;
+  #define POWERPIN_OFF               ;
+#endif
+
 
 #if defined(TRI)
   #define MULTITYPE 1
@@ -457,6 +467,14 @@
   #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
 #elif defined(OCTOFLATX)
   #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
+#elif defined(AEROPLANE)    
+  #define MULTITYPE 12      // Simple model 
+#elif defined (HELI_120_CCPM)   
+  #define MULTITYPE 13      // Simple model 
+#elif defined (HELI_90_DEG)   
+  #define MULTITYPE 14      // Simple model  
+#elif defined(VTAIL4)
+ #define MULTITYPE 15
 #endif
 
 #if defined(POWERMETER_HARD) || defined(POWERMETER_SOFT)

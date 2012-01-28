@@ -14,7 +14,7 @@
 //#define BI
 //#define TRI
 //#define QUADP
-#define QUADX
+//#define QUADX
 //#define Y4
 //#define Y6
 //#define HEX6
@@ -23,6 +23,18 @@
 //#define OCTOFLATP
 //#define OCTOFLATX
 //#define FLYING_WING //experimental
+
+//#define VTAIL4         // Ready to implement
+
+//*****************************************************//
+//**** !!!!   Warning     Early BETATSEST   !!!! ******//
+//*****************************************************//
+#define AEROPLANE	 // PatrikE Experimental 
+
+//#define HELI_120_CCPM	 // PatrikE Experimental 
+//#define HELI_90_DEG	 // PatrikE Experimental 
+#define CollectivePitch THROTTLE  //  ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4
+//*******************************************************
 
 #define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
 //#define YAW_DIRECTION -1
@@ -68,8 +80,9 @@
    the GPS must be configured to output NMEA sentences (which is generally the default conf for most GPS devices)
 */
 //#define GPS
-#define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
-#define GPS_BAUD   115200
+#define GPS_SERIAL 3 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
+//#define GPS_BAUD   115200
+#define GPS_BAUD   57600
 //#define GPS_BAUD   9600
 
 /* Pseudo-derivative conrtroller for level mode (experimental)
@@ -159,7 +172,7 @@
    IF YOUR RECEIVER IS NOT CONCERNED, DON'T UNCOMMENT ANYTHING. Note this is mandatory for a Y6 setup on a promini
    Select the right line depending on your radio brand. Feel free to modify the order in your PPM order is different */
 //#define SERIAL_SUM_PPM         PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4 //For Graupner/Spektrum
-//#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4 //For Robe/Hitec/Futaba
+#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4 //For Robe/Hitec/Futaba
 //#define SERIAL_SUM_PPM         PITCH,ROLL,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4 //For some Hitec/Sanwa/Others
 
 /* The following lines apply only for Spektrum Satellite Receiver
@@ -309,6 +322,7 @@
 #define CAM_TIME_HIGH 1000   // the duration of HIGH state servo expressed in ms
 #define CAM_TIME_LOW 1000    // the duration of LOW state servo expressed in ms
 
+/* you can change the Heli Tail servo travel here */
 /* you can change the tricopter servo travel here */
 #define TRI_YAW_CONSTRAINT_MIN 1020
 #define TRI_YAW_CONSTRAINT_MAX 2000

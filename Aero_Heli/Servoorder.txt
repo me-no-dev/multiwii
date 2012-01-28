@@ -1,0 +1,37 @@
+
+/****************************************/
+/************  PROMINI  *****************/
+/****************************************/
+
+Using motor[x] overwrites servo with 490Hz
+For servo[3] POWERPIN D12 is disabled with a PRO MINI!!!!!
+Power your 5V sensors some other way!
+
+Servo		Pin	
+servo[0] =	A0
+servo[1] =	A1
+servo[2] =	A2
+servo[3] =	D12
+servo[4] =	D3	= motor[4]
+servo[5] =	D11	= motor[3]
+servo[6] =	D10	= motor[1]
+servo[7] =	D9	= motor[0]
+
+
+
+/****************************************/
+/*************  MEGA  *******************/
+/****************************************/
+
+Using motor[x] overwrites servo with 490Hz
+Servo		Pin	
+servo[0] =	D34/44
+servo[1] =	D35/45
+servo[2] =	D33/46
+servo[3] =	D37
+servo[4] =	D6	= motor[4]
+servo[5] =	D2	= motor[3]
+servo[6] =	D5	= motor[1]
+servo[7] =	D3	= motor[0]
+
+/****************************************/

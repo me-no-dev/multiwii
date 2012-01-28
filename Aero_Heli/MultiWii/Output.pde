@@ -1,5 +1,6 @@
 
-#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)
+
+#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)|| defined(AEROPLANE)|| defined(HELICOPTER)
   #define SERVO
 #endif
 
@@ -11,6 +12,12 @@
   #define NUMBER_MOTOR 1
   #define PRI_SERVO_FROM   1 // use servo from 1 to 2
   #define PRI_SERVO_TO     2
+  
+#elif defined(AEROPLANE)|| defined(HELICOPTER)
+  #define NUMBER_MOTOR 0
+  // Use all acvailable servos - NUMBER_MOTOR
+  #define ALL_SERVOS
+  
 #elif defined(BI)
   #define NUMBER_MOTOR 2
   #define PRI_SERVO_FROM   5 // use servo from 5 to 6
@@ -19,13 +26,16 @@
   #define NUMBER_MOTOR 3
   #define PRI_SERVO_FROM   5 // use only servo 5
   #define PRI_SERVO_TO     5
-#elif defined(QUADP) || defined(QUADX) || defined(Y4)
+#elif defined(QUADP) || defined(QUADX) || defined(Y4)|| defined(VTAIL4)
   #define NUMBER_MOTOR 4
 #elif defined(Y6) || defined(HEX6) || defined(HEX6X)
   #define NUMBER_MOTOR 6
 #elif defined(OCTOX8) || defined(OCTOFLATP) || defined(OCTOFLATX)
   #define NUMBER_MOTOR 8
 #endif
+
+
+// Servo tilt and Cam trigger
 
 #if defined(SERVO_TILT) && defined(CAMTRIG)
   #define SEC_SERVO_FROM   1 // use servo from 1 to 3
@@ -45,12 +55,22 @@
     #define SEC_SERVO_FROM   3 // use servo 3
     #define SEC_SERVO_TO     3
   #endif
+  #if defined(ALL_SERVOS)
+  // Use all acvailable servos - NUMBER_MOTOR
+  #define SEC_SERVO_FROM   1
+  #define SEC_SERVO_TO     8 - NUMBER_MOTOR  
+  #endif  
 #endif
 
 
 uint8_t PWM_PIN[8] = {MOTOR_ORDER};
 // so we need a servo pin array
-volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,125};
+#if defined(AEROPLANE)|| defined(HELICOPTER)
+// To prevent motor to start at reset. atomicServo[7]=5 or 249 if reverseed servo
+   volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,5};
+#else
+   volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,125};
+#endif
 
 //for HEX Y6 and HEX6/HEX6X flat and for promini
 volatile uint8_t atomicPWM_PIN5_lowState;
@@ -474,7 +494,8 @@ void mixTable() {
     motor[0] = PIDMIX( 0,+4/3, 0); //REAR
     motor[1] = PIDMIX(-1,-2/3, 0); //RIGHT
     motor[2] = PIDMIX(+1,-2/3, 0); //LEFT
-    servo[4] = constrain(TRI_YAW_MIDDLE + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+    //servo[4] = constrain(TRI_YAW_MIDDLE + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+    servo[4] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
   #endif
   #ifdef QUADP
     motor[0] = PIDMIX( 0,+1,-1); //REAR
@@ -548,7 +569,120 @@ void mixTable() {
     motor[6] = PIDMIX(-1/2,+1  ,-1); //REAR_R
     motor[7] = PIDMIX(+1  ,+1/2,-1); //MIDREAR_L 
   #endif
+ 
+ /************************************************************************************************************/ 
+ // PatrikE Experimentals
+ /************************************************************************************************************/ 
+  #ifdef VTAIL4
+    motor[0] = PIDMIX(+0,+1, -1/2);   //REAR_R 
+    motor[1] = PIDMIX(-1, -1, +2/10); //FRONT_R 
+    motor[2] = PIDMIX(+0,+1, +1/2);   //REAR_L 
+    motor[3] = PIDMIX(+1, -1, -2/10); //FRONT_L
+  #endif   
+ 
+ /************************************************************************************************************/  
+#if defined(AEROPLANE)|| defined(HELICOPTER)
+   if (armed==0){
+     for(i=0; i<7; i++){ servo[i]=MIDRC;}
+     servo[7]=constrain( 900, 1020, 2000); // Set throttle to min
+ }
+   #endif
+  #ifdef AEROPLANE    
+ /************************************************************************************************************/  
+ if (armed){
+   if(passThruMode){  
+ // Direct passthru from RX 
+ // 3000-rcData[AXIS] Will reverse servos
+    servo[3]  = constrain( 3000-rcData[ROLL], 1020, 2000);     //   Wing 1
+    servo[4]  = constrain( rcData[ROLL], 1020, 2000);          //   Wing 2 o
+    //servo[4]  = constrain( rcData[AUX3], 1020, 2000);          //   Ex. Flaps or gear 
+    servo[5]  = constrain( rcData[YAW] , 1020, 2000);          //   Rudder
+    servo[6]  = constrain( rcData[PITCH], 1020, 2000);         //   Elevator
+    
+    // Optional pins to use for throttle 
+    
+    // servo[x] 0,1 & 2 is free to use. (Gimball)
+    // Optional pins to use for throttle 
+    
+    /*  servo[7] is programmed with safty features to avoid motorstarts when ardu reset..   */
+    /*  All other servos go to center at reset..  Half throttle can be dangerus    */
+    /*  Only use servo[7] as motorcontrol if motor is used in the setup            */
+    servo[7]  = constrain(   rcData[THROTTLE] , 1020, 2000); 	//   50hz ESC or servo
+ 
+  }else{
+   // use sensors to correct (gyro only or gyro+acc according to AUX configuration
+   // invert the sign before axisPID to reverse servos GyroResponse
+    servo[3]  = constrain(1500 - (axisPID[ROLL]  + (angle[ROLL]  /16)) , 1020, 2000); //   Right Ail 
+    servo[4]  = constrain(1500 + (axisPID[ROLL]  - (angle[ROLL]  /16)) , 1020, 2000); //   Left Ail  
+  //servo[4]  = constrain( rcData[AUX3], 1020, 2000);                                   //   Ex. Flaps or gear
+    servo[5]  = constrain(1500 + (axisPID[YAW] ), 1020, 2000);                        //   Rudder
+    servo[6]  = constrain(1500 + (axisPID[PITCH] + (angle[PITCH] /16)) , 1020, 2000); //   Adjust servolimits here
+        
+    // servo[x] 0,1 & 2 is free to use. (Gimball)
+    // Optional pins to use for throttle 
+    
+    /*  servo[7] is programmed with safty features to avoid motorstarts when ardu reset..   */
+    /*  All other servos go to center at reset..  Half throttle can be dangerus    */
+    /*  Only use servo[7] as motorcontrol if motor is used in the setup            */
+    servo[7]  = constrain(   rcData[THROTTLE] , 1020, 2000); 	//   50hz ESC or servo
+    } 
+  }
+   #endif
+ 
+ /************************************************************************************************************/   
+ #ifdef HELICOPTER 
+ // Common for Helicopters
+ int HeliRoll= (axisPID[ROLL]  +(angle[ROLL]  /16));
+ int HeliNick= (axisPID[PITCH] +(angle[PITCH] /16));
+ 
+ if(passThruMode){ // Pass Rcdata direct to mixer
+       HeliRoll=  rcCommand[ROLL] ;
+       HeliNick=  rcCommand[PITCH];    
+     }
+ #endif
+ 
+#ifdef HELI_120_CCPM           
+   
+if (armed){   
+   /*                     3000-rcData[AXIS] Will reverse servos     */
+    servo[3]  = constrain(     rcData[CollectivePitch] - HeliNick, 1020, 2000);                  //    NICK  servo
+    servo[4]  = constrain(     rcData[CollectivePitch] + HeliNick*0.5 + HeliRoll , 1020, 2000);	 //    LEFT servo
+    servo[6]  = constrain(3000-rcData[CollectivePitch]  - HeliNick*0.5 + HeliRoll , 1020, 2000); //    RIGHT  servo   
+   
+    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //   YAW  
 
+    // servo[x] 0,1 & 2 is free to use. (Gimball)
+    // Optional pins to use for throttle 
+    
+    /*  servo[7] is programmed with safty features to avoid motorstarts when ardu reset..   */
+    /*  All other servos go to center at reset..  Half throttle can be dangerus    */
+    /*  Only use servo[7] as motorcontrol if motor is used in the setup            */
+    servo[7]  = constrain(         rcData[THROTTLE] , 1020, 2000); 	//   50hz ESC or servo
+}
+   #endif
+ 
+ /************************************************************************************************************/   
+   #ifdef HELI_90_DEG     
+if (armed){   
+   /*                     3000-rcData[AXIS] Will reverse servos     */
+    servo[3]  = constrain(1500 + HeliNick   , 1020, 2000);               //     NICK  servo
+    servo[4]  = constrain(1500 + HeliRoll   , 1020, 2000);               //     ROLL servo
+    servo[6]  = constrain(3000 - rcData[CollectivePitch] , 1020, 2000);  //     COLLECTIVE  servo 
+    servo[5]  = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //   YAW    
+    
+    // servo[x] 0,1 & 2 is free to use. (Gimball)
+    // Optional pins to use for throttle 
+    
+    /*  servo[7] is programmed with safty features to avoid motorstarts when ardu reset..   */
+    /*  All other servos go to center at reset..  Half throttle can be dangerus    */
+    /*  Only use servo[7] as motorcontrol if motor is used in the setup            */
+    servo[7]  = constrain(    rcData[THROTTLE] , 1020, 2000); 	//   50hz ESC or servo
+}
+   #endif
+  
+ /************************************************************************************************************/ 
+ // End of PatrikE Experimentals
+ /************************************************************************************************************/ 
   #ifdef SERVO_TILT
     if ((rcOptions1 & activate1[BOXCAMSTAB]) || (rcOptions2 & activate2[BOXCAMSTAB])) {
       servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] /16 + rcData[AUX3]-1500 , TILT_PITCH_MIN, TILT_PITCH_MAX);

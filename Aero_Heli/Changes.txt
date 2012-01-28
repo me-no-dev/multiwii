@@ -1,0 +1,73 @@
+Based on MultiWii_dev_20120121
+Changes:....
+
+Added
+VTAIL4.		Quad Xmode with rear engines as a vtail.
+
+
+/******************************************************/
+/****Importent notes...********************************/
+/******************************************************/
+
+All servos but engine centers when unarmed.
+The servos and esc must be ARMED in same way as the multis.
+Pasthrumod can be used on all three models.
+
+For safetyreasons...
+If Engine is used it MUST be connected to servo[7].
+
+
+/******************************************************/
+/*** New Models: **************************************/
+/******************************************************/
+
+AEROPLANE:		
+2 Winngservos
+Elevator
+Rudder
+Throttle
+
+/*******************/
+
+Heli 90 degrees:		
+Pitch
+Roll
+Yaw
+throttle
+CollectiveP
+
+/*******************/
+
+Heli 120 degrees:	
+3 SwashServos
+Throttle
+Yaw
+
+/*******************/
+
+
+
+/******************************************************/
+/**** Setup *******************************************/
+/******************************************************/
+
+In config:
+// For heli
+#define CollectivePitch AUX2 	// Or what channel you use as collective.
+
+
+/* Same function to adjust tail on Helicopter */ 
+/* you can change the tricopter servo travel here */
+#define TRI_YAW_CONSTRAINT_MIN 1020
+#define TRI_YAW_CONSTRAINT_MAX 2000
+#define TRI_YAW_MIDDLE 1500 // tail servo center pos. - use this for initial trim; later trim midpoint via LCD
+
+/******************************************************/
+
+
+In Output:
+Adjust the mixes to suite your servosetup.
+
+
+
+// Patrik

@@ -439,7 +439,120 @@ void draw() {
     motSlider[5].setPosition(xMot+5,yMot+35);motSlider[5].setHeight(45);motSlider[5].setCaptionLabel("LEFT");motSlider[5].show(); 
   } else if (multiType == 11) { //OCTOX8
     noLights();text("OCTOCOPTER X8", -45,-50);camera();popMatrix();
-  } else {
+  } else if (multiType == 12) { //Aeroplane
+  float Span = size*1.3;  
+  float VingRoot = Span*0.25;  
+  // Wing
+    line(0,0,  Span,0);   line(Span,0, Span, VingRoot);       line(Span, VingRoot, 0,VingRoot); 
+    line(0,0,  -Span,0);   line(-Span,0, -Span, VingRoot);       line(-Span, VingRoot, 0,VingRoot);    
+  // Stab
+    line(-(size*0.4),size,  (size*0.4),size);   line(-(size*0.4),size+5,  (size*0.4),size+5); 
+    line(-(size*0.4),size,  -(size*0.4),size+5);      line((size*0.4),size,  (size*0.4),size+5);     
+  // Body  
+    line(-2,size,  -2,-size+5); line(2,size,  2,-size+5); line( -2,-size+5,  2,-size+5);    
+  // Fin 
+    line(0,size-3,0,  0,size,15); line(0,size,15,  0,size+5,15);line(0,size+5,15,  0,size+5,0);       
+    noLights();
+    textFont(font12);
+    text("AEROPLANE", -40,-50);camera();popMatrix();
+  
+    servoSliderH[3].setPosition(xMot,yMot-5) ;servoSliderH[3].setCaptionLabel("Wing 1");servoSliderH[3].show();
+    servoSliderH[4].setPosition(xMot,yMot+25);servoSliderH[4].setCaptionLabel("Wing 2");servoSliderH[4].show();
+    servoSliderH[5].setPosition(xMot,yMot+55);servoSliderH[5].setCaptionLabel("Rudd");servoSliderH[5].show();
+    servoSliderH[6].setPosition(xMot,yMot+85);servoSliderH[6].setCaptionLabel("Elev");servoSliderH[6].show();
+    servoSliderH[7].setPosition(xMot,yMot+115);servoSliderH[7].setCaptionLabel("Thro");servoSliderH[7].show();    
+    
+    motSlider[0].hide();motSlider[1].hide();motSlider[2].hide();motSlider[3].hide();motSlider[4].hide();motSlider[5].hide();
+    servoSliderH[1].hide();servoSliderH[2].hide();
+  }else if (multiType == 13) { //Heli 120 
+    
+// HeliGraphics    
+float scalesize=size*0.8;
+  // Rotor
+    ellipse(0, 0, 2*scalesize, 2*scalesize);
+  // Body  
+    line(0,1.5*scalesize,  -2,-0.5*scalesize); line(0,1.5*scalesize,  2,-0.5*scalesize); line( -2,-0.5*scalesize,  2,-0.5*scalesize);    
+  // Fin 
+  float finpos = scalesize * 1.3;
+  int HFin=5;
+  int LFin=10;  
+    line(0,finpos-3,0,  0,finpos+7,-LFin); line(0,finpos+7,-LFin,  0,finpos+10,-LFin);line(0,finpos+10,-LFin,  0,finpos+5,0); 
+    line(0,finpos-3,0,  0,finpos,HFin); line(0,finpos,HFin,  0,finpos+5,HFin);line(0,finpos+5,HFin,  0,finpos+5,0); 
+ 
+   // Stab
+    line(-(scalesize*0.3),scalesize,  (scalesize*0.3),scalesize);   line(-(scalesize*0.3),scalesize+3, (scalesize*0.3),scalesize+3); 
+    line(-(scalesize*0.3),scalesize, -(scalesize*0.3),scalesize+3); line((scalesize*0.3),scalesize,    (scalesize*0.3),scalesize+3);  
+ 
+      
+    noLights();
+    textFont(font12);
+    text("Heli 120 CCPM", -42,-50);camera();popMatrix();
+	
+ // Sliders
+ 
+   
+    servoSliderH[3].setPosition(xMot,yMot-5) ;servoSliderH[3].setCaptionLabel("Nick");servoSliderH[3].show();
+    servoSliderH[4].setPosition(xMot,yMot+25);servoSliderH[4].setCaptionLabel("Left");servoSliderH[4].show();
+    servoSliderH[5].setPosition(xMot,yMot+55);servoSliderH[5].setCaptionLabel("Yaw");servoSliderH[5].show();
+    servoSliderH[6].setPosition(xMot,yMot+85);servoSliderH[6].setCaptionLabel("Right");servoSliderH[6].show();
+    servoSliderH[7].setPosition(xMot,yMot+115);servoSliderH[7].setCaptionLabel("Thro");servoSliderH[7].show();  
+
+ 
+    motSlider[1].hide();motSlider[1].hide(); motSlider[3].hide();motSlider[4].hide();motSlider[5].hide();
+    servoSliderH[1].hide();servoSliderH[2].hide();
+
+  } else if (multiType == 14) { //Heli 90
+ 
+// HeliGraphics    
+float scalesize=size*0.8;
+  // Rotor
+    ellipse(0, 0, 2*scalesize, 2*scalesize);
+  // Body  
+    line(0,1.5*scalesize,  -2,-0.5*scalesize); line(0,1.5*scalesize,  2,-0.5*scalesize); line( -2,-0.5*scalesize,  2,-0.5*scalesize);    
+  // Fin 
+  float finpos = scalesize * 1.3;
+  int HFin=5;
+  int LFin=10;  
+    line(0,finpos-3,0,  0,finpos+7,-LFin); line(0,finpos+7,-LFin,  0,finpos+10,-LFin);line(0,finpos+10,-LFin,  0,finpos+5,0); 
+    line(0,finpos-3,0,  0,finpos,HFin); line(0,finpos,HFin,  0,finpos+5,HFin);line(0,finpos+5,HFin,  0,finpos+5,0); 
+ 
+   // Stab
+    line(-(scalesize*0.3),scalesize,  (scalesize*0.3),scalesize);   line(-(scalesize*0.3),scalesize+3, (scalesize*0.3),scalesize+3); 
+    line(-(scalesize*0.3),scalesize, -(scalesize*0.3),scalesize+3); line((scalesize*0.3),scalesize,    (scalesize*0.3),scalesize+3);  
+ 
+    noLights();
+    textFont(font12);
+    text("Heli 90", -16,-50);camera();popMatrix();
+	
+ // Sliders
+     servoSliderH[3].setPosition(xMot,yMot-5) ;servoSliderH[3].setCaptionLabel("NICK");servoSliderH[3].show();
+    servoSliderH[4].setPosition(xMot,yMot+25);servoSliderH[4].setCaptionLabel("ROLL");servoSliderH[4].show();
+    servoSliderH[5].setPosition(xMot,yMot+55);servoSliderH[5].setCaptionLabel("YAW");servoSliderH[5].show();
+    servoSliderH[6].setPosition(xMot,yMot+85);servoSliderH[6].setCaptionLabel("COLL");servoSliderH[6].show();
+    servoSliderH[7].setPosition(xMot,yMot+115);servoSliderH[7].setCaptionLabel("THRO");servoSliderH[7].show();  
+
+ 
+    motSlider[1].hide();motSlider[1].hide(); motSlider[3].hide();motSlider[4].hide();motSlider[5].hide();
+    servoSliderH[1].hide();servoSliderH[2].hide();
+
+  }  else if (multiType == 15) { //Vtail   
+    ellipse(-0.55*size,size,size,size); ellipse(+0.55*size,size,size,size);
+    line(-0.55*size,size,0,0);line(+0.55*size,size,0,0);    
+    ellipse(-size, -size, size, size);ellipse(+size, -size, size, size);
+    line(-size,-size, 0,0); line(+size,-size, 0,0);  
+    noLights();
+    textFont(font12);
+    text("Vtail", -10,-50);camera();popMatrix();
+    motSlider[0].setPosition(xMot+80,yMot+70 );motSlider[0].setHeight(60);motSlider[0].setCaptionLabel("REAR_R");motSlider[0].show();
+    motSlider[1].setPosition(xMot+100,yMot-15);motSlider[1].setHeight(60);motSlider[1].setCaptionLabel("RIGHT" );motSlider[1].show();
+    motSlider[2].setPosition(xMot+25,yMot+70 );motSlider[2].setHeight(60);motSlider[2].setCaptionLabel("REAR_L");motSlider[2].show();
+    motSlider[3].setPosition(xMot+2,yMot-15  );motSlider[3].setHeight(60);motSlider[3].setCaptionLabel("LEFT"  );motSlider[3].show(); 
+    
+    motSlider[4].hide();motSlider[5].hide();
+    servoSliderH[1].hide();servoSliderH[2].hide();servoSliderH[3].hide();servoSliderH[4].hide();
+    servoSliderV[0].hide();servoSliderV[1].hide();servoSliderV[2].hide();
+
+  }else {
     noLights();camera();popMatrix();
   }
   
