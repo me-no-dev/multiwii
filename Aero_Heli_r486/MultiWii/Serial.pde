@@ -140,6 +140,45 @@ void serialCom() {
       serialize8('O'); //49
       UartSendData();
       break;
+   /*************************************************************************************/
+   /*      RUSHDUINO OSD TO Arduino - contribution from JohnyGab (rushduino.com)        */
+   /*************************************************************************************/
+    case 'Y': 
+      //point=0;
+      serialize8('Y');
+      for(i=0;i<5;i++) 
+      {
+        serialize8(P8[i]);
+        serialize8(I8[i]);
+        serialize8(D8[i]);
+      }
+      serialize8(P8[PIDLEVEL]);
+      serialize8(I8[PIDLEVEL]);
+      serialize8(P8[PIDMAG]);
+      serialize8(rcRate8);
+      serialize8(rcExpo8);
+      serialize8(rollPitchRate);
+      serialize8(yawRate);
+      serialize8(dynThrPID);
+      serialize8('Y');
+      UartSendData();
+      break;
+    case 'Z':  // arduino to OSD data - contribution from JohnyGab (rushduino.com)
+      while (SerialAvailable(0)<23) {}
+      for(i=0;i<5;i++) 
+      {
+        P8[i]=SerialRead(0);
+        I8[i]=SerialRead(0);
+        D8[i]=SerialRead(0);
+      }
+      P8[PIDLEVEL] = SerialRead(0); I8[PIDLEVEL] = SerialRead(0); //17
+      P8[PIDMAG] = SerialRead(0); //18
+      rcRate8 = SerialRead(0); rcExpo8 = SerialRead(0); //20
+      rollPitchRate = SerialRead(0); yawRate = SerialRead(0); //22
+      dynThrPID = SerialRead(0); //23
+      writeParams();
+      break;
+   /*************************************************************************************/   
     case 'W': //GUI write params to eeprom @ arduino
       while (SerialAvailable(0)<(7+3*PIDITEMS+2*CHECKBOXITEMS)) {}
       for(i=0;i<PIDITEMS;i++) {P8[i]= SerialRead(0); I8[i]= SerialRead(0); D8[i]= SerialRead(0);}

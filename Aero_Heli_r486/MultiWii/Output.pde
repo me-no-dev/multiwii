@@ -1,5 +1,4 @@
 
-
 #if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)|| defined(AEROPLANE)|| defined(HELICOPTER)
   #define SERVO
 #endif
@@ -153,19 +152,15 @@ void writeMotors() { // [1000;2000] => [125;250]
       #endif
     #endif
     #if (NUMBER_MOTOR > 4)
-//      atomicPWM_PIN5_highState = ((motor[5]-1000)/4.08)+5;
-      atomicPWM_PIN5_highState = motor[5]/8;
+      atomicPWM_PIN5_highState = ((motor[5]-1000)/4.08)+5;
       atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
-//      atomicPWM_PIN6_highState = ((motor[4]-1000)/4.08)+5;
-      atomicPWM_PIN6_highState = motor[4]/8;
+      atomicPWM_PIN6_highState = ((motor[4]-1000)/4.08)+5;
       atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
     #endif
     #if (NUMBER_MOTOR > 6)
-//      atomicPWM_PINA2_highState = ((motor[6]-1000)/4.08)+5;
-      atomicPWM_PINA2_highState = motor[6]/8;
+      atomicPWM_PINA2_highState = ((motor[6]-1000)/4.08)+5;
       atomicPWM_PINA2_lowState = 255-atomicPWM_PINA2_highState;
-//      atomicPWM_PIN12_highState = ((motor[7]-1000)/4.08)+5;
-      atomicPWM_PIN12_highState = motor[7]/8;
+      atomicPWM_PIN12_highState = ((motor[7]-1000)/4.08)+5;
       atomicPWM_PIN12_lowState = 255-atomicPWM_PIN12_highState;
     #endif
   #endif
@@ -594,7 +589,7 @@ void mixTable() {
  // Direct passthru from RX 
  // 3000-rcData[AXIS] Will reverse servos
     servo[3]  = constrain( 3000-rcData[ROLL], 1020, 2000);     //   Wing 1
-    servo[4]  = constrain( rcData[ROLL], 1020, 2000);          //   Wing 2 o
+    servo[4]  = constrain( rcData[ROLL], 1020, 2000);          //   Wing 2
     //servo[4]  = constrain( rcData[AUX3], 1020, 2000);          //   Ex. Flaps or gear 
     servo[5]  = constrain( rcData[YAW] , 1020, 2000);          //   Rudder
     servo[6]  = constrain( rcData[PITCH], 1020, 2000);         //   Elevator
@@ -709,7 +704,9 @@ if (armed){
     servo[1] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP   * angle[ROLL]  /16 + rcCommand[ROLL], TILT_ROLL_MIN, TILT_ROLL_MAX);
   #endif
   #ifdef FLYING_WING
-   motor[0] = rcCommand[THROTTLE];
+   motor[0] = rcCommand[THROTTLE]; 	// 490hz ESC 
+  // if (armed){   servo[7]  = constrain(    rcData[THROTTLE] , 1020, 2000); }	//   50hz ESC or servo
+
     //if (passthroughMode) {// use raw stick values to drive output 
     // follow aux1 as being three way switch **NOTE: better to implement via check boxes in GUI 
     if(passThruMode) { // passthrough

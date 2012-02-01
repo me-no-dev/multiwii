@@ -68,5 +68,9 @@ In Output:
 Adjust the mixes to suite your servosetup.
 
 
+*********************************************************
+Added RUSHDUINO OSD TO Arduino - contribution from JohnyGab (rushduino.com)
+Added Y and Z to the serial file
+
 
 // Patrik
