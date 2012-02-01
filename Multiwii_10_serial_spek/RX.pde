@@ -235,7 +235,11 @@ void readSpektrum() {
       #endif
     } else { //Start flag is on, but not enough bytes = incomplete frame in buffer.  This could be OK, if we happened to be called in the middle of a frame.  Or not, if it has been a while since the start flag was set.
         uint32_t spekInterval = (timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond()) - spekTimeLast;
-        if (spekInterval > 2777) spekFrameFlags = 0;  
+        if (spekInterval > 2777) {
+          spekFrameFlags = 0;  
+          uint8_t d = SerialPeek(SPEK_SERIAL_PORT);
+          if (!armed && (d == 'M' || d == 'W')) {serialCom;} //Maybe GUI?
+        }
     }
   }
 }
