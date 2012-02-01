@@ -301,7 +301,10 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
       calibratedACC = 1;
   }
 
-  serialCom();
+  #if defined(SPEKTRUM) && defined(PROMINI)
+    serialCom();
+  #endif
+
 
   #if defined(POWERMETER)
     intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
