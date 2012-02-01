@@ -518,8 +518,8 @@ void loop () {
         InflightcalibratingA = 50;
         AccInflightCalibrationArmed = 0;  
       }  
-    // if ((rcOptions1 & activate1[BOXPASSTHRU]) || (rcOptions2 & activate2[BOXPASSTHRU])) ) {      //Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
-    if (((rcOptions1 & activate1[BOXPASSTHRU]) || (rcOptions2 & activate2[BOXPASSTHRU])) &&((rcOptions1 & activate1[BOXBEEPERON]) || (rcOptions2 & activate2[BOXBEEPERON]))  ) {      //Use the Passthru + BOXBEEPERON Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
+     if ((rcOptions1 & activate1[BOXPASSTHRU]) || (rcOptions2 & activate2[BOXPASSTHRU])) ) {      //Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
+    //if (((rcOptions1 & activate1[BOXPASSTHRU]) || (rcOptions2 & activate2[BOXPASSTHRU])) &&((rcOptions1 & activate1[BOXBEEPERON]) || (rcOptions2 & activate2[BOXBEEPERON]))  ) {      //Use the Passthru + BOXBEEPERON Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
         if (!AccInflightCalibrationArmed){
           AccInflightCalibrationArmed = 1;
           InflightcalibratingA = 50;
