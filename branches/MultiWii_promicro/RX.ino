@@ -64,7 +64,8 @@ void configureReceiver() {
     #if !defined(PROMICRO)
       PPM_PIN_INTERRUPT;
     #else
-      pinMode(1,INPUT); // enable pullup
+      pinMode(0,INPUT);
+      PORTD |= (1 << 2); // enable pullups
       EIMSK |= (1 << INT2); // ISR
       EICRA |= (1 << ISC21); // rising
     #endif
@@ -218,7 +219,7 @@ void configureReceiver() {
     void rxInt() {
   #else
     // because attachinterrupt dosent work on atmega32u4..
-    ISR(INT3_vect){
+    ISR(INT2_vect){
   #endif
     uint16_t now,diff;
     static uint16_t last = 0;
