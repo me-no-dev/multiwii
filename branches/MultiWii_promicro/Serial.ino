@@ -150,7 +150,7 @@ void serialCom() {
       UartSendData();
       break;
     case 'W': //GUI write params to eeprom @ arduino
-      // dosent work with promicro ATM... dont know why but it hangs with this while loop .. and sets just one byte without 
+      // dosent work with promicro ATM... it seems to recive just one byte
       #if not defined(PROMICRO)
         while (SerialAvailable(0)<(7+3*PIDITEMS+2*CHECKBOXITEMS)) {}
         for(i=0;i<PIDITEMS;i++){
@@ -177,11 +177,11 @@ void serialCom() {
        // just to see it recives 
        debug4 = 0; // shows the bytes available
        debug3 = 0;
-       while (SerialAvailable(0)<(7+3*PIDITEMS+2*CHECKBOXITEMS) && debug3<200){
+       while (SerialAvailable(0)<(7+3*PIDITEMS+2*CHECKBOXITEMS) && debug3<20000){
            debug3++;
            //serialize8('|');
        }
-       debug4 = SerialAvailable(0)
+       debug4 = SerialAvailable(0);
        //UartSendData();
      #endif
      
