@@ -114,7 +114,7 @@
 
 /* I2C accelerometer */
 //#define ADXL345
-#define BMA020
+//#define BMA020
 //#define BMA180
 //#define NUNCHACK  // if you want to use the nunckuk as a standalone I2C ACC without WMP
 //#define LIS3LV02

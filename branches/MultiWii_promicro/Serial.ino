@@ -6,6 +6,7 @@ static uint8_t buf[256];      // 256 is choosen to avoid modulo operations on 8 
 void serialize16(int16_t a) {buf[head++]  = a; buf[head++]  = a>>8&0xff;}
 void serialize8(uint8_t a)  {buf[head++]  = a;}
 
+
 #if not defined(PROMICRO)
 ISR_UART {
   UDR0 = buf[tail++];         // Transmit next byte in the ring
@@ -18,6 +19,7 @@ void UartSendData() {    // Data transmission acivated when the ring is not empt
     UCSR0B |= (1<<UDRIE0);      // Enable transmitter UDRE interrupt
   #endif
   #if defined(PROMICRO)
+    // Serial.read(buf,len) dosent exists
     USB_Send(USB_CDC_TX,buf,head);
     head = 0;
   #endif
@@ -27,15 +29,8 @@ void UartSendData() {    // Data transmission acivated when the ring is not empt
 void serialCom() {
   int16_t a;
   uint8_t i;
-  
-  #if not defined(PROMICRO)
   if (SerialAvailable(0)) {
     switch (SerialRead(0)) {
-  #endif
-  #if defined(PROMICRO)
-  if (Serial.available()) {
-    switch (Serial.read()) { 
-  #endif
     #ifdef BTSERIAL
     case 'K': //receive RC data from Bluetooth Serial adapter as a remote
         rcData[THROTTLE] = (SerialRead(0) * 4) + 1000;
@@ -155,18 +150,41 @@ void serialCom() {
       UartSendData();
       break;
     case 'W': //GUI write params to eeprom @ arduino
-      while (SerialAvailable(0)<(7+3*PIDITEMS+2*CHECKBOXITEMS)) {}
-      for(i=0;i<PIDITEMS;i++) {P8[i]= SerialRead(0); I8[i]= SerialRead(0); D8[i]= SerialRead(0);}
-      rcRate8 = SerialRead(0); rcExpo8 = SerialRead(0); //2
-      rollPitchRate = SerialRead(0); yawRate = SerialRead(0); //4
-      dynThrPID = SerialRead(0); //5
-      for(i=0;i<CHECKBOXITEMS;i++) {activate1[i] = SerialRead(0);activate2[i] = SerialRead(0);}
-     #if defined(POWERMETER)
-      powerTrigger1 = (SerialRead(0) + 256* SerialRead(0) ) / PLEVELSCALE; // we rely on writeParams() to compute corresponding pAlarm value
-     #else
-      SerialRead(0);SerialRead(0); //7 so we unload the two bytes
+      // dosent work with promicro ATM... dont know why but it hangs with this while loop .. and sets just one byte without 
+      #if not defined(PROMICRO)
+        while (SerialAvailable(0)<(7+3*PIDITEMS+2*CHECKBOXITEMS)) {}
+        for(i=0;i<PIDITEMS;i++){
+          P8[i]= SerialRead(0); 
+          I8[i]= SerialRead(0); 
+          D8[i]= SerialRead(0);
+        }
+        rcRate8 = SerialRead(0); 
+        rcExpo8 = SerialRead(0); //2
+        rollPitchRate = SerialRead(0); 
+        yawRate = SerialRead(0); //4
+        dynThrPID = SerialRead(0); //5
+        for(i=0;i<CHECKBOXITEMS;i++){
+          activate1[i] = SerialRead(0);
+          activate2[i] = SerialRead(0);
+        }
+       #if defined(POWERMETER)
+        powerTrigger1 = (SerialRead(0) + 256* SerialRead(0) ) / PLEVELSCALE; // we rely on writeParams() to compute corresponding pAlarm value
+       #else
+        SerialRead(0);SerialRead(0); //7 so we unload the two bytes
+       #endif
+        writeParams();
+     #else  
+       // just to see it recives 
+       debug4 = 0; // shows the bytes available
+       debug3 = 0;
+       while (SerialAvailable(0)<(7+3*PIDITEMS+2*CHECKBOXITEMS) && debug3<200){
+           debug3++;
+           //serialize8('|');
+       }
+       debug4 = SerialAvailable(0)
+       //UartSendData();
      #endif
-      writeParams();
+     
       break;
     case 'S': //GUI to arduino ACC calibration request
       calibratingA=400;
@@ -315,7 +333,14 @@ uint8_t SerialRead(uint8_t port) {
       if ((serialHeadRX[port] != serialTailRX[port])) serialTailRX[port] = (serialTailRX[port] + 1) % SERIAL_RX_BUFFER_SIZE;
     #endif
     #if defined(PROMICRO)
-      uint8_t c = USB_Recv(USB_CDC_RX);
+      uint8_t c;
+      if(port == 0){
+        // the direckt way without Serial... the usb serial stuff is uploaded anyway
+        c = USB_Recv(USB_CDC_RX);
+      }else{
+        c = serialBufferRX[serialTailRX[port]][port];
+        if ((serialHeadRX[port] != serialTailRX[port])) serialTailRX[port] = (serialTailRX[port] + 1) % SERIAL_RX_BUFFER_SIZE;        
+      }
     #endif    
     return c;
 }
@@ -345,7 +370,16 @@ uint8_t SerialRead(uint8_t port) {
 //}
 
 uint8_t SerialAvailable(uint8_t port) {
-  return (SERIAL_RX_BUFFER_SIZE + serialHeadRX[port] - serialTailRX[port]) % SERIAL_RX_BUFFER_SIZE;
+  #if not defined(PROMICRO)
+    return (SERIAL_RX_BUFFER_SIZE + serialHeadRX[port] - serialTailRX[port]) % SERIAL_RX_BUFFER_SIZE;
+  #endif
+  #if defined(PROMICRO)
+    if(port == 0){
+      return USB_Available(USB_CDC_RX);
+    }else{
+      return (SERIAL_RX_BUFFER_SIZE + serialHeadRX[port] - serialTailRX[port]) % SERIAL_RX_BUFFER_SIZE;
+    }
+  #endif
 }
 
 //void SerialAvailable(uint8_t port,uint8_t c){

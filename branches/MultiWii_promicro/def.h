@@ -117,16 +117,16 @@
 
 #endif
 #if defined(PROMICRO)
-  #define LEDPIN_PINMODE             //pinMode (13, OUTPUT);
+  #define LEDPIN_PINMODE             //
   #define LEDPIN_TOGGLE              PIND |= 1<<5;     //switch LEDPIN state (Port D5)
   #define LEDPIN_OFF                 PORTD &= ~(1<<5);
   #define LEDPIN_ON                  PORTD |= (1<<5);
   #define BUZZERPIN_PINMODE          pinMode (7, OUTPUT);
   #define BUZZERPIN_ON               PORTE |= 1<<6;
   #define BUZZERPIN_OFF              PORTE &= ~(1<<6);
-  #define POWERPIN_PINMODE           //pinMode (12, OUTPUT);
-  #define POWERPIN_ON                //PORTB |= 1<<4;
-  #define POWERPIN_OFF               //PORTB &= ~(1<<4); //switch OFF WMP, digital PIN 12
+  #define POWERPIN_PINMODE           //
+  #define POWERPIN_ON                //
+  #define POWERPIN_OFF               //
   #define I2C_PULLUPS_ENABLE         PORTD |= 1<<0; PORTD |= 1<<1;   // PIN 2&3 (SDA&SCL)
   #define I2C_PULLUPS_DISABLE        PORTD &= ~(1<<0); PORTD &= ~(1<<1);
   #define PINMODE_LCD                pinMode(0, OUTPUT);
@@ -135,8 +135,8 @@
   #define STABLEPIN_PINMODE          ;
   #define STABLEPIN_ON               ;
   #define STABLEPIN_OFF              ;
-  #define PPM_PIN_INTERRUPT          attachInterrupt(3, rxInt, RISING); //PIN TX
-  #define SPEK_SERIAL_VECT           USART_RX_vect
+  #define PPM_PIN_INTERRUPT          attachInterrupt(3, rxInt, RISING);// not used
+  #define SPEK_SERIAL_VECT           USART1_RX_vect
   #define SPEK_DATA_REG              UDR1
   #define USB_CDC_TX                 3
   #define USB_CDC_RX                 2
@@ -196,17 +196,13 @@
   #define SERVO_8_PIN_HIGH  PORTB |= 1<<5;
   #define SERVO_8_PIN_LOW   PORTB &= ~(1<<5);
 
-  //RX PIN assignment inside the port //for PORTB
-  #define THROTTLEPIN                16
-  #define ROLLPIN                    14
-  #define PITCHPIN                   15
-  #define YAWPIN                     8
-  
-  #define AUX1INT                    attachInterrupt(3, MicroAux1, RISING); //PIN TX
-  #define AUX2INT                    attachInterrupt(2, MicroAux2, RISING); //PIN RX
-  
-  #define AUX1PIN                    0 // unused
-  #define AUX2PIN                    0 // unused
+ 
+  #define THROTTLEPIN                2
+  #define ROLLPIN                    4
+  #define PITCHPIN                   5
+  #define YAWPIN                     6
+  #define AUX1PIN                    7 
+  #define AUX2PIN                    0 
   #define AUX3PIN                    1 // unused 
   #define AUX4PIN                    3 // unused 
   #define ISR_UART                   ISR(USART_UDRE_vect)
