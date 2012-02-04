@@ -1,3 +1,5 @@
+
+
 /*
 MultiWiiCopter by Alexandre Dubus
 www.multiwii.com
@@ -311,16 +313,8 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
     } else
       calibratedACC = 1;
   }
-  #if not defined(PROMICRO)
   serialCom();
-  #endif
-  #if defined(PROMICRO)
-  if (micros() > serialTime + 20000) { // 50Hz
-    serialCom();
-    serialTime = micros();
-  }
-  #endif
-
+  
   #if defined(POWERMETER)
     intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
     intPowerTrigger1 = powerTrigger1 * PLEVELSCALE; 
@@ -353,9 +347,6 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
 
 void setup() {
   SerialOpen(0,115200);
-  #if defined(PROMICRO)
-     Serial.begin(115200);
-  #endif
   LEDPIN_PINMODE;
   POWERPIN_PINMODE;
   BUZZERPIN_PINMODE;
@@ -389,7 +380,6 @@ void setup() {
   #ifdef LCD_CONF_DEBUG
     configurationLoop();
   #endif
-  
 }
 
 // ******** Main Loop *********

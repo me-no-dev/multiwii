@@ -41,11 +41,16 @@ void configureReceiver() {
       #endif
     #endif
     #if defined(PROMICRO)
-      PORTB   = (1<<1) | (1<<2) | (1<<3) | (1<<4); //enable internal pull ups on the PINs of PORTB 
-      PCMSK2 |= (1<<1) | (1<<2) | (1<<3) | (1<<4); // is it PCMSK2 ?
-      PCICR   = (1<<2) ; // bit 2 ? PCINT activated only for the port dealing with [D0-D7] PINs on port B
-      AUX1INT;
-      AUX2INT;
+      PORTB   = (1<<1) | (1<<2) | (1<<3) | (1<<4);
+      PCMSK0 |= (1<<1) | (1<<2) | (1<<3) | (1<<4); 
+      PCICR   = (1<<0) ; // bit 0 PCINT activated only for the port dealing with PINs on port B
+      // AUX1 and AUX2 on RX and TX pin
+      //attachinterrupt dosent works with atmega32u4 ATM.
+      pinMode(0,INPUT); // set to input
+      pinMode(1,INPUT);
+      PORTD |= (1 << 2) | (1 << 3); // enable pullups
+      EIMSK |= (1 << INT2) | (1 << INT3); // ISR
+      EICRA |= (1 << ISC20) | (1 << ISC30); // falling
     #endif
     #if defined(MEGA)
       // PCINT activated only for specific pin inside [A8-A15]
@@ -56,7 +61,13 @@ void configureReceiver() {
     #endif
   #endif
   #if defined(SERIAL_SUM_PPM)
-    PPM_PIN_INTERRUPT;
+    #if !defined(PROMICRO)
+      PPM_PIN_INTERRUPT;
+    #else
+      pinMode(1,INPUT); // enable pullup
+      EIMSK |= (1 << INT2); // ISR
+      EICRA |= (1 << ISC21); // rising
+    #endif
   #endif
   #if defined (SPEKTRUM)
     SerialOpen(1,115200);
@@ -67,7 +78,11 @@ void configureReceiver() {
 }
 
 #if !defined(SERIAL_SUM_PPM) && !defined(SPEKTRUM) && !defined(SBUS) && !defined(BTSERIAL)
-  ISR(PCINT2_vect) { //this ISR is common to every receiver channel, it is call everytime a change state occurs on a digital pin [D2-D7]
+  #if !defined(PROMICRO)
+    ISR(PCINT2_vect) { //this ISR is common to every receiver channel, it is call everytime a change state occurs on a digital pin [D2-D7]
+  #else
+    ISR(PCINT0_vect) { //this ISR is common to every receiver channel, it is call everytime a change state occurs on a digital pin [B1-B4]
+  #endif
     uint8_t mask;
     uint8_t pin;
     uint16_t cTime,dTime;
@@ -86,19 +101,18 @@ void configureReceiver() {
     mask = pin ^ PCintLast;   // doing a ^ between the current interruption and the last one indicates wich pin changed
     sei();                    // re enable other interrupts at this point, the rest of this interrupt is not so time critical and can be interrupted safely
     PCintLast = pin;          // we memorize the current state of all PINs [D0-D7]
-  
     cTime = micros();         // micros() return a uint32_t, but it is not usefull to keep the whole bits => we keep only 16 bits
     #if defined(PROMICRO)
-      if (mask & 1<<1)           //indicates the bit 1 of the arduino port [B1-B4], that is to say digital pin 15, if 1 => this pin has just changed
-        if (!(pin & 1<<1)) {     //indicates if the bit 1 of the arduino port [B1-B4] is not at a high state (so that we match here only descending PPM pulse)
+      if (mask & 1<<2)        //indicates the bit 1 of the arduino port [B1-B4], that is to say digital pin 15, if 1 => this pin has just changed
+        if (!(pin & 1<<2)) {     //indicates if the bit 1 of the arduino port [B1-B4] is not at a high state (so that we match here only descending PPM pulse)
           dTime = cTime-edgeTime[2]; if (900<dTime && dTime<2200) rcValue[2] = dTime; // just a verification: the value must be in the range [1000;2000] + some margin
         } else edgeTime[2] = cTime;    // if the bit 1 of the arduino port [B1-B4] is at a high state (ascending PPM pulse), we memorize the time
-      if (mask & 1<<2)   //same principle for other channels   // avoiding a for() is more than twice faster, and it's important to minimize execution time in ISR
-        if (!(pin & 1<<2)) {
+      if (mask & 1<<3)   //same principle for other channels   // avoiding a for() is more than twice faster, and it's important to minimize execution time in ISR
+        if (!(pin & 1<<3)) {
           dTime = cTime-edgeTime[4]; if (900<dTime && dTime<2200) rcValue[4] = dTime;
         } else edgeTime[4] = cTime;
-      if (mask & 1<<3)
-        if (!(pin & 1<<3)) {
+      if (mask & 1<<1)
+        if (!(pin & 1<<1)) {
           dTime = cTime-edgeTime[5]; if (900<dTime && dTime<2200) rcValue[5] = dTime;
         } else edgeTime[5] = cTime;
       if (mask & 1<<4)
@@ -177,18 +191,22 @@ void configureReceiver() {
 #endif
 
 #if defined(PROMICRO) && !defined(SPEKTRUM) && !defined(SBUS) && !defined(BTSERIAL) && !defined(SERIAL_SUM_PPM)
-  void MicroAux1(){
-    uint16_t now,diff;
+  // because attachinterrupt dosent work on atmega32u4..
+  ISR(INT2_vect){
+    static uint16_t now,diff;
     static uint16_t last = 0; 
     now = micros();  
     diff = now - last;
+    last = now;
     if(900<diff && diff<2200) rcValue[7] = diff;
   }
-  void MicroAux2(){
-    uint16_t now,diff;
-    static uint16_t last = 0; 
+ 
+  ISR(INT3_vect){
+    static uint16_t now,diff;
+    static uint16_t last = 0;
     now = micros();  
     diff = now - last;
+    last = now;
     if(900<diff && diff<2200) rcValue[0] = diff; 
   }
 #endif
@@ -196,25 +214,30 @@ void configureReceiver() {
 
 
 #if defined(SERIAL_SUM_PPM)
-void rxInt() {
-  uint16_t now,diff;
-  static uint16_t last = 0;
-  static uint8_t chan = 0;
-
-  now = micros();
-  diff = now - last;
-  last = now;
-  if(diff>3000) chan = 0;
-  else {
-    if(900<diff && diff<2200 && chan<8 ) {   //Only if the signal is between these values it is valid, otherwise the failsafe counter should move up
-      rcValue[chan] = diff;
-      #if defined(FAILSAFE)
-        if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // clear FailSafe counter - added by MIS  //incompatible to quadroppm
-      #endif
+#if !defined(PROMICRO)
+    void rxInt() {
+  #else
+    // because attachinterrupt dosent work on atmega32u4..
+    ISR(INT3_vect){
+  #endif
+    uint16_t now,diff;
+    static uint16_t last = 0;
+    static uint8_t chan = 0;
+  
+    now = micros();
+    diff = now - last;
+    last = now;
+    if(diff>3000) chan = 0;
+    else {
+      if(900<diff && diff<2200 && chan<8 ) {   //Only if the signal is between these values it is valid, otherwise the failsafe counter should move up
+        rcValue[chan] = diff;
+        #if defined(FAILSAFE)
+          if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // clear FailSafe counter - added by MIS  //incompatible to quadroppm
+        #endif
+      }
+      chan++;
     }
-    chan++;
   }
-}
 #endif
 
 #if defined(SPEKTRUM)
