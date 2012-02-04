@@ -116,7 +116,8 @@ void writeMotors() { // [1000;2000] => [125;250]
       OCR3A = motor[2]>>3; //  pin 5
     #endif
     #if (NUMBER_MOTOR > 3)
-      OCR4D = motor[3]>>3; //  pin 6
+      // i dont know why but this timer has high and low switched
+      OCR4D = 255-(motor[3]>>3); //  pin 6
     #endif    
     #if (NUMBER_MOTOR > 4)
       atomicPWM_PIN1_highState = ((motor[4]-1000)/4.08)+5;

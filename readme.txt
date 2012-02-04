@@ -1,12 +1,14 @@
 
 WMC with ProMicro support
 
-till now:
+based on r501
 
 - Output seem to work
+- vBat works
 - Sensors seem to work
-- USB communication with GUI partially works (Write PID and AUX settings dosent work)
+- USB communication with GUI works
 - RX input works
+- Spectrum Satelite with UART1 works
 
 NOTE
 dont mess with serial or USB registers if you dont have possibility to reflash the bootloader!
