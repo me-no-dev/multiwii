@@ -45,7 +45,7 @@ December  2011     V1.dev
 #define PIDITEMS 8
 
 static uint32_t currentTime = 0;
-static uint16_t previousTime = 0;
+static uint32_t previousTime = 0;
 static uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 static uint16_t calibratingA = 0;  // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 static uint8_t  calibratingM = 0;
@@ -167,6 +167,12 @@ static uint16_t GPS_distanceToHome;      // in meters
 static int16_t  GPS_directionToHome = 0; // in degrees
 static uint8_t  GPS_update = 0;          // it's a binary toogle to distinct a GPS position update
 static int16_t  GPS_angle[2];            // it's the angles that must be applied for GPS correction
+
+uint16_t ground_speed;     // m/sec*100
+uint16_t ground_course;    //degrees *10
+uint8_t  navigate=1 ;
+//uint8_t *varptr;
+
 
 void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   uint8_t i,r;
@@ -365,7 +371,7 @@ void setup() {
     for(uint8_t i=0;i<=PMOTOR_SUM;i++)
       pMeter[i]=0;
   #endif
-  #if defined(GPS)
+  #if defined(SERIAL_GPS)
     SerialOpen(GPS_SERIAL,GPS_BAUD);
   #endif
   #if defined(LCD_ETPP)
@@ -518,8 +524,7 @@ void loop () {
         InflightcalibratingA = 50;
         AccInflightCalibrationArmed = 0;  
       }  
-     if ((rcOptions1 & activate1[BOXPASSTHRU]) || (rcOptions2 & activate2[BOXPASSTHRU])) ) {      //Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
-    //if (((rcOptions1 & activate1[BOXPASSTHRU]) || (rcOptions2 & activate2[BOXPASSTHRU])) &&((rcOptions1 & activate1[BOXBEEPERON]) || (rcOptions2 & activate2[BOXBEEPERON]))  ) {      //Use the Passthru + BOXBEEPERON Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
+      if ((rcOptions1 & activate1[BOXPASSTHRU]) || (rcOptions2 & activate2[BOXPASSTHRU])) {      //Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
         if (!AccInflightCalibrationArmed){
           AccInflightCalibrationArmed = 1;
           InflightcalibratingA = 50;
@@ -546,7 +551,7 @@ void loop () {
     } else accMode = 0;  // modified by MIS for failsave support
 
     if ((rcOptions1 & activate1[BOXARM]) == 0 || (rcOptions2 & activate2[BOXARM]) == 0) okToArm = 1;
-    if (accMode == 1) STABLEPIN_ON else STABLEPIN_OFF;
+    if (accMode == 1) {STABLEPIN_ON;} else {STABLEPIN_OFF;}
 
     if(BARO) {
       if ((rcOptions1 & activate1[BOXBARO]) || (rcOptions2 & activate2[BOXBARO])) {
@@ -679,8 +684,59 @@ void loop () {
   mixTable();
   writeServos();
   writeMotors();
+  
+ #if defined(I2C_GPS)
+static uint8_t _i2c_gps_status;
 
-  #if defined(GPS)
+  _i2c_gps_status = i2c_readReg(I2C_GPS_ADDRESS,I2C_GPS_STATUS);                    //Get status register 
+  if (_i2c_gps_status & I2C_GPS_STATUS_3DFIX) {                                     //Check is we have a good 3d fix (numsats>5)
+     GPS_fix = 1;                                                                   //Set fix
+     GPS_numSat = (_i2c_gps_status & 0xf0) >> 4;                                    //Num of sats is stored the upmost 4 bits of status
+     if (!GPS_fix_home) {                                                           //if home is not set set home position to WP#0 and activate it
+        i2c_writeReg(I2C_GPS_ADDRESS,I2C_GPS_COMMAND,I2C_GPS_COMMAND_SET_WP);       //Store current position to WP#0 (this is used for RTH)
+        i2c_writeReg(I2C_GPS_ADDRESS,I2C_GPS_COMMAND,I2C_GPS_COMMAND_ACTIVATE_WP);  //Set WP#0 as the active WP
+        GPS_fix_home = 1;                                                           //Now we have a home   
+     }
+     if (_i2c_gps_status & I2C_GPS_STATUS_NEW_DATA) {                               //Check about new data
+        if (GPS_update) { GPS_update = 0;} else { GPS_update = 1;}                  //Fancy flash on GUI :D
+        //Read GPS data for distance and heading
+        i2c_rep_start(I2C_GPS_ADDRESS);
+        i2c_write(I2C_GPS_DISTANCE);                                               //Start read from here 2x2 bytes distance and direction
+        i2c_rep_start(I2C_GPS_ADDRESS+1);
+        uint8_t *varptr = (uint8_t *)&GPS_distanceToHome;
+        *varptr++ = i2c_readAck();
+        *varptr   = i2c_readAck();
+        varptr = (uint8_t *)&GPS_directionToHome;
+        *varptr++ = i2c_readAck();
+        *varptr   = i2c_readNak();
+      }
+
+if (navigate){
+uint8_t *varptr;
+varptr = (uint8_t *)&ground_speed;
+i2c_rep_start(I2C_GPS_ADDRESS);
+i2c_write(I2C_GPS_SPEED);                                               //0x07
+i2c_rep_start(I2C_GPS_ADDRESS+1);
+*varptr++ = i2c_readAck();
+*varptr   = i2c_readNak();
+
+varptr = (uint8_t *)&ground_course;
+i2c_rep_start(I2C_GPS_ADDRESS);
+i2c_write(I2C_GPS_COURSE);                                               //0x9C
+i2c_rep_start(I2C_GPS_ADDRESS+1);
+*varptr++ = i2c_readAck();
+*varptr   = i2c_readNak();
+}
+
+  } else {  //We don't have a fix zero out distance and bearing (for safety reasons)
+    GPS_distanceToHome = 0;
+    GPS_directionToHome = 0;
+    GPS_numSat = 0;
+  }  
+    
+#endif   
+
+  #if defined(SERIAL_GPS)
     while (SerialAvailable(GPS_SERIAL)) {
      if (GPS_newFrame(SerialRead(GPS_SERIAL))) {
         if (GPS_update == 1) GPS_update = 0; else GPS_update = 1;

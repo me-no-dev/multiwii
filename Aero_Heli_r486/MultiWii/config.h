@@ -22,9 +22,8 @@
 //#define OCTOX8
 //#define OCTOFLATP
 //#define OCTOFLATX
-//#define FLYING_WING //experimental  Uses servo 3&4
-
-//#define VTAIL4         // Ready to implement
+//#define FLYING_WING //experimental  Uses servo 3&4 in this ver.
+//#define VTAIL4      //experimental The mix may need to be modified.
 
 //*****************************************************//
 //**** !!!!   Warning     Early BETATSEST   !!!! ******//
@@ -81,7 +80,8 @@
    note: only the RX PIN is used, the GPS is not configured by multiwii
    the GPS must be configured to output NMEA sentences (which is generally the default conf for most GPS devices)
 */
-#define GPS
+//#define I2C_GPS      //I2C GPS and Navi modul : http://www.multiwii.com/forum/viewtopic.php?f=8&t=649&start=130#p7783
+//#define SERIAL_GPS
 #define GPS_SERIAL 3 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
 //#define GPS_BAUD   115200
 #define GPS_BAUD   57600
@@ -221,7 +221,8 @@
 /* The following lines apply only for a pitch/roll tilt stabilization system
    On promini board, it is not compatible with config with 6 motors or more
    Uncomment the first line to activate it */
-//#define SERVO_TILT
+//#define SERVO_TILT                //  Simple CameraGimbal By Bledy http://youtu.be/zKGr6iR54vM
+//#define SERVO_MIX_TILT            //special simple gimbal by mixing 2 servos By Bledi
 #define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
 #define TILT_PITCH_MAX    2000    //servo travel max, max value=2000
 #define TILT_PITCH_MIDDLE 1500    //servo neutral value
@@ -257,7 +258,12 @@
 
 /* this is the maximum value for the ESCs at full power
    this value can be increased up to 2000 */
+#if defined(AEROPLANE)|| defined(HELICOPTER)
+#define MAXTHROTTLE  2000
+#else
 #define MAXTHROTTLE 1850
+#endif
+
 
 /* This is the speed of the serial interface. 115200 kbit/s is the best option for a USB connection.*/
 #define SERIAL_COM_SPEED 115200
