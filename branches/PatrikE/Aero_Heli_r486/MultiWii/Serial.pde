@@ -62,6 +62,9 @@ void serialCom() {
     case '7':
     	if (telemetry==7) telemetry = 0; else { telemetry = 7; LCDclear(); }
     	break;
+    case '9':
+     	if (telemetry==9) telemetry = 0; else { telemetry = 9; LCDclear(); }
+     	break;
      #if defined(LOG_VALUES) && defined(DEBUG)
     case 'R':
     	//Reset logvalues

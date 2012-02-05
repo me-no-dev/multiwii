@@ -30,7 +30,7 @@ static eep_entry_t eep_entry[] = {
 , {&wing_left_mid,  sizeof(wing_left_mid)}
 , {&wing_right_mid, sizeof(wing_right_mid)}
 #endif
-#ifdef TRI
+#if defined(TRI)|| defined(HELICOPTER)
 , {&tri_yaw_middle,  sizeof(tri_yaw_middle)}
 #endif
 
@@ -90,7 +90,7 @@ void checkFirstTime() {
     wing_left_mid  = WING_LEFT_MID; 
     wing_right_mid = WING_RIGHT_MID; 
   #endif
-  #ifdef TRI
+  #if defined(TRI)|| defined(HELICOPTER)
     tri_yaw_middle = TRI_YAW_MIDDLE; 
   #endif
   writeParams();
