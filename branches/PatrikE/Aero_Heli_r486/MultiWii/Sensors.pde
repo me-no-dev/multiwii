@@ -916,10 +916,10 @@ void Mag_getADC() {
     // The first acquisition values will be subtracted from the second acquisition, and the net measurement will be placed into the data output registers
     delay(100);
       getADC();
-    delay(10);
-    magCal[ROLL]  =   1000.0 / magADC[ROLL];
-    magCal[PITCH] =   1000.0 / magADC[PITCH];
-    magCal[YAW]   = - 1000.0 / magADC[YAW];
+    delay(10);   
+    magCal[ROLL]  =  1000.0 / abs(magADC[ROLL]);
+    magCal[PITCH] =  1000.0 / abs(magADC[PITCH]);
+    magCal[YAW]   =  1000.0 / abs(magADC[YAW]);
 
     // leave test mode
     i2c_writeReg(MAG_ADDRESS ,0x00 ,0x70 ); //Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
