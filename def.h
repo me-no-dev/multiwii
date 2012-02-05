@@ -135,7 +135,7 @@
   #define STABLEPIN_PINMODE          ;
   #define STABLEPIN_ON               ;
   #define STABLEPIN_OFF              ;
-  #define PPM_PIN_INTERRUPT          attachInterrupt(3, rxInt, RISING);// not used
+  #define PPM_PIN_INTERRUPT          //attachInterrupt(3, rxInt, RISING);// not used
   #define SPEK_SERIAL_VECT           USART1_RX_vect
   #define SPEK_DATA_REG              UDR1
   #define USB_CDC_TX                 3

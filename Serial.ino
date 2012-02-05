@@ -6,16 +6,25 @@ static uint8_t buf[256];      // 256 is choosen to avoid modulo operations on 8 
 void serialize16(int16_t a) {buf[head++]  = a; buf[head++]  = a>>8&0xff;}
 void serialize8(uint8_t a)  {buf[head++]  = a;}
 
+#define SERIAL_RX_BUFFER_SIZE 64
+
+#if defined(PROMINI) 
+uint8_t serialBufferRX[SERIAL_RX_BUFFER_SIZE][1];
+volatile uint8_t serialHeadRX[1],serialTailRX[1];
+#endif
 #if defined(PROMICRO)
-  // USB buffer to recive arrays
-  static uint8_t usb_rx_buf[256];
-  static uint8_t usb_rx_head;
-  static uint8_t usb_rx_tail;
-  static uint8_t usb_use_buf = 0;
+uint8_t serialBufferRX[SERIAL_RX_BUFFER_SIZE][2];
+volatile uint8_t serialHeadRX[2],serialTailRX[2];
+uint8_t usb_use_buf = 0;
+#endif
+#if defined(MEGA)
+uint8_t serialBufferRX[SERIAL_RX_BUFFER_SIZE][4];
+volatile uint8_t serialHeadRX[4],serialTailRX[4];
 #endif
 
 
-#if not defined(PROMICRO)
+
+#if !defined(PROMICRO)
 ISR_UART {
   UDR0 = buf[tail++];         // Transmit next byte in the ring
   if ( tail == head )         // Check if all data is transmitted
@@ -23,10 +32,9 @@ ISR_UART {
 }
 #endif
 void UartSendData() {    // Data transmission acivated when the ring is not empty
-  #if not defined(PROMICRO)
+  #if !defined(PROMICRO)
     UCSR0B |= (1<<UDRIE0);      // Enable transmitter UDRE interrupt
-  #endif
-  #if defined(PROMICRO)
+  #else
     // Serial.read(buf,len) dosent exists
     USB_Send(USB_CDC_TX,buf,head);
     head = 0;
@@ -161,8 +169,8 @@ void serialCom() {
       // not the finest way .. but it works
       #if defined(PROMICRO)
         usb_use_buf = 1; // enable USB buffer
-        usb_rx_tail = 0; // reset tail and head
-        usb_rx_head = 0;     
+        serialHeadRX[0] = 0; // reset tail and head
+        serialTailRX[0] = 0;     
       #endif
       while (SerialAvailable(0)<(7+3*PIDITEMS+2*CHECKBOXITEMS)) {}
       for(i=0;i<PIDITEMS;i++){
@@ -199,20 +207,7 @@ void serialCom() {
   }
 }
 
-#define SERIAL_RX_BUFFER_SIZE 64
 
-#if defined(PROMINI) 
-uint8_t serialBufferRX[SERIAL_RX_BUFFER_SIZE][1];
-volatile uint8_t serialHeadRX[1],serialTailRX[1];
-#endif
-#if defined(PROMICRO)
-uint8_t serialBufferRX[SERIAL_RX_BUFFER_SIZE][2];
-volatile uint8_t serialHeadRX[2],serialTailRX[2];
-#endif
-#if defined(MEGA)
-uint8_t serialBufferRX[SERIAL_RX_BUFFER_SIZE][4];
-volatile uint8_t serialHeadRX[4],serialTailRX[4];
-#endif
 
 //#if defined(PROMINI) 
 //uint8_t serialBufferRX0[SERIAL_RX_BUFFER_SIZE];
@@ -231,7 +226,7 @@ void SerialOpen(uint8_t port, uint32_t baud) {
   uint8_t h = ((F_CPU  / 4 / baud -1) / 2) >> 8;
   uint8_t l = ((F_CPU  / 4 / baud -1) / 2);
   switch (port) {
-    #if not defined(PROMICRO)
+    #if !defined(PROMICRO)
     case 0: UCSR0A  = (1<<U2X0); UBRR0H = h; UBRR0L = l; UCSR0B |= (1<<RXEN0)|(1<<TXEN0)|(1<<RXCIE0); break;
     #endif
     #if defined(MEGA) || defined(PROMICRO)
@@ -246,7 +241,7 @@ void SerialOpen(uint8_t port, uint32_t baud) {
 
 void SerialEnd(uint8_t port) {
   switch (port) {
-    #if not defined(PROMICRO)
+    #if !defined(PROMICRO)
     case 0: UCSR0B &= ~((1<<RXEN0)|(1<<TXEN0)|(1<<RXCIE0)|(1<<UDRIE0)); break;
     #endif
     #if defined(MEGA) || defined(PROMICRO)
@@ -261,12 +256,9 @@ void SerialEnd(uint8_t port) {
 
 #if defined(PROMINI) && !(defined(SPEKTRUM))
 SIGNAL(USART_RX_vect){
-  #if not defined(PROMICRO)
   uint8_t d = UDR0;
   uint8_t i = (serialHeadRX[0] + 1) % SERIAL_RX_BUFFER_SIZE;
   if (i != serialTailRX[0]) {serialBufferRX[serialHeadRX[0]][0] = d; serialHeadRX[0] = i;}
-  #endif
-  
 }
 #endif
 #if defined(MEGA)
@@ -333,15 +325,14 @@ SIGNAL(USART3_RX_vect){
 
 
 uint8_t SerialRead(uint8_t port) {
-    #if not defined(PROMICRO)
+    #if !defined(PROMICRO)
       uint8_t c = serialBufferRX[serialTailRX[port]][port];
       if ((serialHeadRX[port] != serialTailRX[port])) serialTailRX[port] = (serialTailRX[port] + 1) % SERIAL_RX_BUFFER_SIZE;
-    #endif
-    #if defined(PROMICRO)
+    #else
       uint8_t c;
       if(port == 0){
-        if(usb_use_buf && usb_rx_tail<=usb_rx_head){
-          c = usb_rx_buf[usb_rx_tail++]; // if USB buffer is enabled we give the stored values
+        if(usb_use_buf && serialTailRX[0]<=serialHeadRX[0]){
+          c = serialBufferRX[0][serialTailRX[0]++]; // if USB buffer is enabled we give the stored values
         }else{
           // the direckt way without Serial... the usb serial stuff is uploaded anyway
           c = USB_Recv(USB_CDC_RX);
@@ -384,18 +375,15 @@ uint8_t SerialRead(uint8_t port) {
 
   
 uint8_t SerialAvailable(uint8_t port) {
-  #if not defined(PROMICRO)
+  #if !defined(PROMICRO)
     return (SERIAL_RX_BUFFER_SIZE + serialHeadRX[port] - serialTailRX[port]) % SERIAL_RX_BUFFER_SIZE;
-  #endif
-  #if defined(PROMICRO)
+  #else
     if(port == 0){
       if(usb_use_buf){
         if(USB_Available(USB_CDC_RX)){
-          usb_rx_buf[usb_rx_head++] = USB_Recv(USB_CDC_RX); // if USB buffer is enabled we store all readings to it
-          return usb_rx_head;
-        }else{
-          return 0;
+          serialBufferRX[0][serialHeadRX[0]++] = USB_Recv(USB_CDC_RX); // if USB buffer is enabled we store all readings to it 
         }
+        return serialHeadRX[0];
       }else{
         return USB_Available(USB_CDC_RX);
       }
