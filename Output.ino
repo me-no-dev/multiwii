@@ -51,6 +51,7 @@ uint8_t PWM_PIN[8] = {MOTOR_ORDER};
 // so we need a servo pin array
 volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,125};
 
+
 #if defined(PROMICRO) || defined(PROMINI)
   //for HEX Y6 and HEX6/HEX6X flat and for promini & promicro
   volatile uint16_t atomicPWM_PIN1_lowState;
@@ -106,29 +107,28 @@ void writeMotors() { // [1000;2000] => [125;250]
     #endif
   #endif
   #if defined(PROMICRO)
-    #if (NUMBER_MOTOR > 0)
-      OCR1A = motor[0]>>3; //  pin 9
+    #if (NUMBER_MOTOR > 0) // Timer 1 A & B [1000:2000] => [250:500]
+      OCR1A = motor[0]>>2; //  pin 9
     #endif
     #if (NUMBER_MOTOR > 1)
-      OCR1B = motor[1]>>3; //  pin 10
+      OCR1B = motor[1]>>2; //  pin 10
     #endif
-    #if (NUMBER_MOTOR > 2)
-      OCR3A = motor[2]>>3; //  pin 5
+    #if (NUMBER_MOTOR > 2) // Timer 4 A & D are Inverted so the range is [1000:2000] => [255:5]
+      OCR4A = 255-((motor[2]-1000)>>2); //  pin 5
     #endif
     #if (NUMBER_MOTOR > 3)
-      // i dont know why but this timer has high and low switched
-      OCR4D = 255-(motor[3]>>3); //  pin 6
+      OCR4D = 255-((motor[3]-1000)>>2); //  pin 6
     #endif    
     #if (NUMBER_MOTOR > 4)
-      atomicPWM_PIN1_highState = ((motor[4]-1000)/4.08)+5;
+      atomicPWM_PIN1_highState = ((motor[4]-1000)>>2)+2;
       atomicPWM_PIN1_lowState = 255-atomicPWM_PIN1_highState;
-      atomicPWM_PIN2_highState = ((motor[5]-1000)/4.08)+5;
+      atomicPWM_PIN2_highState = ((motor[5]-1000)>>2)+2;
       atomicPWM_PIN2_lowState = 255-atomicPWM_PIN2_highState;
     #endif
     #if (NUMBER_MOTOR > 6)
-      atomicPWM_PIN3_highState = ((motor[6]-1000)/4.08)+5;
+      atomicPWM_PIN3_highState = ((motor[6]-1000)>>2)+2;
       atomicPWM_PIN3_lowState = 255-atomicPWM_PIN3_highState;
-      atomicPWM_PIN4_highState = ((motor[7]-1000)/4.08)+5;
+      atomicPWM_PIN4_highState = ((motor[7]-1000)>>2)+2;
       atomicPWM_PIN4_lowState = 255-atomicPWM_PIN4_highState;
     #endif
   #endif
@@ -161,17 +161,17 @@ void writeMotors() { // [1000;2000] => [125;250]
         OCR2B = ((motor[3]>>2) - 250) + 2)
       #endif
     #endif
-    #if (NUMBER_MOTOR > 4)
-      atomicPWM_PIN1_highState = ((motor[5]-1000)/4.08)+5;
-      atomicPWM_PIN1_lowState = 255-atomicPWM_PIN1_highState;
-      atomicPWM_PIN2_highState = ((motor[4]-1000)/4.08)+5;
-      atomicPWM_PIN2_lowState = 255-atomicPWM_PIN2_highState;
+  #if (NUMBER_MOTOR > 4)
+      atomicPWM_PIN5_highState = ((motor[5]-1000)>>2)+2;
+      atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
+      atomicPWM_PIN6_highState = ((motor[4]-1000)>>2)+2;
+      atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
     #endif
     #if (NUMBER_MOTOR > 6)
-      atomicPWM_PIN3_highState = ((motor[6]-1000)/4.08)+5;
-      atomicPWM_PIN3_lowState = 255-atomicPWM_PIN3_highState;
-      atomicPWM_PIN4_highState = ((motor[7]-1000)/4.08)+5;
-      atomicPWM_PIN4_lowState = 255-atomicPWM_PIN4_highState;
+      atomicPWM_PINA2_highState = ((motor[6]-1000)>>2)+2;
+      atomicPWM_PINA2_lowState = 255-atomicPWM_PINA2_highState;
+      atomicPWM_PIN12_highState = ((motor[7]-1000)>>2)+2;
+      atomicPWM_PIN12_lowState = 255-atomicPWM_PIN12_highState;
     #endif
   #endif
 }
@@ -211,18 +211,23 @@ void initOutput() {
     for(uint8_t i=0;i<min(NUMBER_MOTOR,4);i++)
       pinMode(PWM_PIN[i],OUTPUT);
     #if (NUMBER_MOTOR > 0)
+      TCCR1A |= (1<<WGM11); // fast PWM mode
+      TCCR1A &= ~(1<<WGM10);
+      TCCR1B |= (1<<WGM13) | (1<<WGM12);
+      ICR1 |= 0x1FF; // resolution to 511
       TCCR1A |= _BV(COM1A1); // connect pin 9 to timer 1 channel A
     #endif
     #if (NUMBER_MOTOR > 1)
       TCCR1A |= _BV(COM1B1); // connect pin 10 to timer 1 channel B
     #endif
     #if (NUMBER_MOTOR > 2)
-      TCCR3A |= _BV(COM3A1); // connect pin 5 to timer 3 channel A
+      TCCR4E |= (1<<ENHC4); // enhanced PWM mode
+      TCCR4B |= TCCR4B & 0b11111000 | 0x7; // timer 4 to 488Hz
+      TCCR4D |= (1<<WGM40); // phase and frequency correct PWM mode
+      TCCR4A |= (1<<COM4A0)|(1<<PWM4A); // connect pin 5 to timer 4 channel A
     #endif
     #if (NUMBER_MOTOR > 3)
-      TCCR4C = 0x3FF; // TOP to 1023
-      TCCR4B = TCCR4B & 0b11111000 | 0x8; // set Timer 4 to 488Hz
-      TCCR4D |= _BV(COM4D1); // connect pin 6 to timer 4 channel D
+      TCCR4C |= (1<<COM4D0)|(1<<COM4D1)|(1<<PWM4D); // connect pin 6 to timer 4 channel D and reverse it
     #endif
   #endif
   #if defined(PROMINI)
@@ -255,7 +260,6 @@ void initOutput() {
     #endif
   #endif
 }
-
 
 
 
@@ -687,3 +691,4 @@ void mixTable() {
     }
   #endif
 }
+
