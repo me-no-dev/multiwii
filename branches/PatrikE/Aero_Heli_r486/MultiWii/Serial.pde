@@ -17,7 +17,6 @@ void UartSendData() {         // Data transmission acivated when the ring is not
 }
 
 void serialCom() {
-  int16_t a;
   uint8_t i;
   
   if (SerialAvailable(0)) {
@@ -95,7 +94,7 @@ void serialCom() {
       for(i=0;i<8;i++) serialize16(servo[i]);
       for(i=0;i<8;i++) serialize16(motor[i]);
       for(i=0;i<8;i++) serialize16(rcData[i]);
-      serialize8(nunchuk|ACC<<1|BARO<<2|MAG<<3|GPSPRESENT<<4);
+      serialize8(nunchuk|ACC<<1|BARO<<2|MAG<<3|GPS<<4);
       serialize8(accMode|baroMode<<1|magMode<<2|(GPSModeHome|GPSModeHold)<<3);
       #if defined(LOG_VALUES)
          serialize16(cycleTimeMax);
@@ -111,7 +110,10 @@ void serialCom() {
       serialize8(rollPitchRate);
       serialize8(yawRate);
       serialize8(dynThrPID);
-      for(i=0;i<CHECKBOXITEMS;i++) {serialize8(activate1[i]);serialize8(activate2[i]);}
+      for(i=0;i<CHECKBOXITEMS;i++) {
+    	  serialize8(activate1[i]);
+    	  serialize8(activate2[i] | ( ( (rcOptions1 & activate1[i]) || (rcOptions2 & activate2[i]) )<<7) ); // use highest bit to transport state in mwc
+      }
       serialize16(GPS_distanceToHome);
       serialize16(GPS_directionToHome);
       serialize8(GPS_numSat);
@@ -208,7 +210,7 @@ void serialCom() {
 
 #define SERIAL_RX_BUFFER_SIZE 64
 
-#if defined(PROMINI) 
+#if defined(PROMINI) || defined(MONGOOSE1_0)
 uint8_t serialBufferRX[SERIAL_RX_BUFFER_SIZE][1];
 volatile uint8_t serialHeadRX[1],serialTailRX[1];
 #endif
@@ -254,7 +256,7 @@ void SerialEnd(uint8_t port) {
   }
 }
 
-#if defined(PROMINI) && !(defined(SPEKTRUM))
+#if  (defined(PROMINI) || defined(MONGOOSE1_0)) && !(defined(SPEKTRUM))
 SIGNAL(USART_RX_vect){
   uint8_t d = UDR0;
   uint8_t i = (serialHeadRX[0] + 1) % SERIAL_RX_BUFFER_SIZE;
