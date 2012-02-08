@@ -152,15 +152,15 @@ void writeMotors() { // [1000;2000] => [125;250]
       OCR4D = pwm4_LBD;  //  pin 6
     #endif    
     #if (NUMBER_MOTOR > 4)
-      atomicPWM_PIN1_highState = ((motor[4]-1000)<<4)+400;
+      atomicPWM_PIN1_highState = ((motor[4]-1000)<<4)+200;
       atomicPWM_PIN1_lowState = 16383-atomicPWM_PIN1_highState;
-      atomicPWM_PIN2_highState = ((motor[5]-1000)<<4)+400;
+      atomicPWM_PIN2_highState = ((motor[5]-1000)<<4)+200;
       atomicPWM_PIN2_lowState = 16383-atomicPWM_PIN2_highState;
     #endif
     #if (NUMBER_MOTOR > 6)
-      atomicPWM_PIN3_highState = ((motor[6]-1000)<<4)+400;
+      atomicPWM_PIN3_highState = ((motor[6]-1000)<<4)+200;
       atomicPWM_PIN3_lowState = 16383-atomicPWM_PIN3_highState;
-      atomicPWM_PIN4_highState = ((motor[7]-1000)<<4)+400;
+      atomicPWM_PIN4_highState = ((motor[7]-1000)<<4)+200;
       atomicPWM_PIN4_lowState = 16383-atomicPWM_PIN4_highState;
     #endif
   #endif
