@@ -45,7 +45,7 @@ December  2011     V1.dev
 #define PIDITEMS 8
 
 static uint32_t currentTime = 0;
-static uint32_t previousTime = 0;
+static uint16_t previousTime = 0;
 static uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 static uint16_t calibratingA = 0;  // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 static uint8_t  calibratingM = 0;
@@ -88,9 +88,10 @@ static int16_t  annex650_overrun_count = 0;
 //Automatic ACC Offset Calibration
 // **********************
 static uint16_t InflightcalibratingA = 0;
-static int16_t AccInflightCalibrationArmed;
+static int16_t  AccInflightCalibrationArmed;
 static uint16_t AccInflightCalibrationMeasurementDone = 0;
 static uint16_t AccInflightCalibrationSavetoEEProm = 0;
+static uint16_t AccInflightCalibrationActive = 0;
 
 // **********************
 // power meter
@@ -168,10 +169,9 @@ static int16_t  GPS_directionToHome = 0; // in degrees
 static uint8_t  GPS_update = 0;          // it's a binary toogle to distinct a GPS position update
 static int16_t  GPS_angle[2];            // it's the angles that must be applied for GPS correction
 
-uint16_t ground_speed;     // m/sec*100
-uint16_t ground_course;    //degrees *10
-uint8_t  navigate=1 ;
-//uint8_t *varptr;
+uint16_t GPS_ground_speed = 0;     // m/sec*100
+uint16_t GPS_ground_course = 0;    //degrees *10
+uint16_t GPS_altitude = 0;         //altitude in dm
 
 
 void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
@@ -340,7 +340,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
     }
   #endif
   
-  #if defined(GPS)
+  #if GPS
     static uint32_t GPSLEDTime;
     if ( currentTime > GPSLEDTime && (GPS_fix_home == 1)) {
       GPSLEDTime = currentTime + 150000;
@@ -351,7 +351,7 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
 
 
 void setup() {
-  SerialOpen(0,115200);
+  SerialOpen(0,SERIAL_COM_SPEED);
   LEDPIN_PINMODE;
   POWERPIN_PINMODE;
   BUZZERPIN_PINMODE;
@@ -371,7 +371,7 @@ void setup() {
     for(uint8_t i=0;i<=PMOTOR_SUM;i++)
       pMeter[i]=0;
   #endif
-  #if defined(SERIAL_GPS)
+  #if defined(GPS_SERIAL)
     SerialOpen(GPS_SERIAL,GPS_BAUD);
   #endif
   #if defined(LCD_ETPP)
@@ -385,8 +385,6 @@ void setup() {
   #ifdef LCD_CONF_DEBUG
     configurationLoop();
   #endif
-  
-
 }
 
 // ******** Main Loop *********
@@ -525,12 +523,10 @@ void loop () {
         AccInflightCalibrationArmed = 0;  
       }  
       if ((rcOptions1 & activate1[BOXPASSTHRU]) || (rcOptions2 & activate2[BOXPASSTHRU])) {      //Use the Passthru Option to activate : Passthru = TRUE Meausrement started, Land and passtrhu = 0 measurement stored
-        if (!AccInflightCalibrationArmed){
-          AccInflightCalibrationArmed = 1;
+        if (!AccInflightCalibrationActive && !AccInflightCalibrationMeasurementDone){
           InflightcalibratingA = 50;
         }
       }else if(AccInflightCalibrationMeasurementDone && armed == 0){
-        AccInflightCalibrationArmed = 0;
         AccInflightCalibrationMeasurementDone = 0;
         AccInflightCalibrationSavetoEEProm = 1;
       }
@@ -553,7 +549,7 @@ void loop () {
     if ((rcOptions1 & activate1[BOXARM]) == 0 || (rcOptions2 & activate2[BOXARM]) == 0) okToArm = 1;
     if (accMode == 1) {STABLEPIN_ON;} else {STABLEPIN_OFF;}
 
-    if(BARO) {
+    #if BARO
       if ((rcOptions1 & activate1[BOXBARO]) || (rcOptions2 & activate2[BOXBARO])) {
         if (baroMode == 0) {
           baroMode = 1;
@@ -562,8 +558,8 @@ void loop () {
           errorAltitudeI = 0;
         }
       } else baroMode = 0;
-    }
-    if(MAG) {
+    #endif
+    #if MAG
       if ((rcOptions1 & activate1[BOXMAG]) || (rcOptions2 & activate2[BOXMAG])) {
         if (magMode == 0) {
           magMode = 1;
@@ -575,8 +571,8 @@ void loop () {
           headFreeMode = 1;
         }
       } else headFreeMode = 0;
-    }
-    #if defined(GPS)
+    #endif
+    #if GPS
       if ((rcOptions1 & activate1[BOXGPSHOME]) || (rcOptions2 & activate2[BOXGPSHOME])) {GPSModeHome = 1;}
       else GPSModeHome = 0;
       if ((rcOptions1 & activate1[BOXGPSHOLD]) || (rcOptions2 & activate2[BOXGPSHOLD])) {GPSModeHold = 1;}
@@ -592,16 +588,16 @@ void loop () {
   cycleTime = currentTime - previousTime;
   previousTime = currentTime;
 
-  if(MAG) {
+  #if MAG
     if (abs(rcCommand[YAW]) <70 && magMode) {
       int16_t dif = heading - magHold;
       if (dif <= - 180) dif += 360;
       if (dif >= + 180) dif -= 360;
       if ( smallAngle25 ) rcCommand[YAW] -= dif*P8[PIDMAG]/30;  //18 deg
     } else magHold = heading;
-  }
+  #endif
 
-  if(BARO) {
+  #if BARO
     if (baroMode) {
       if (abs(rcCommand[THROTTLE]-initialThrottleHold)>20) {
         AltHold = EstAlt;
@@ -628,9 +624,10 @@ void loop () {
 
       rcCommand[THROTTLE] = initialThrottleHold + constrain(AltPID ,-100,+100);
     }
-  }
+  #endif
+  
 
-  #if defined(GPS)
+  #if GPS
     if ( (GPSModeHome == 1)) {
       float radDiff = (GPS_directionToHome-heading) * 0.0174533f;
       GPS_angle[ROLL]  = constrain(P8[PIDGPS] * sin(radDiff) * GPS_distanceToHome / 10,-D8[PIDGPS]*10,+D8[PIDGPS]*10); // with P=5, 1 meter = 0.5deg inclination
@@ -651,7 +648,7 @@ void loop () {
       #else  
         PTerm      = (int32_t)errorAngle*P8[PIDLEVEL]/100 ;                          //32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
       #endif
-      PTerm = constrain(PTerm,-D8[PIDLEVEL],+D8[PIDLEVEL]);
+      PTerm = constrain(PTerm,-D8[PIDLEVEL]*5,+D8[PIDLEVEL]*5);
 
       errorAngleI[axis]  = constrain(errorAngleI[axis]+errorAngle,-10000,+10000);    //WindUp     //16 bits is ok here
       ITerm              = ((int32_t)errorAngleI[axis]*I8[PIDLEVEL])>>12;            //32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
@@ -684,59 +681,75 @@ void loop () {
   mixTable();
   writeServos();
   writeMotors();
+
+
+  #if defined(I2C_GPS)
+    static uint8_t _i2c_gps_status;
   
- #if defined(I2C_GPS)
-static uint8_t _i2c_gps_status;
+    //Do not use i2c_writereg, since writing a register does not work if an i2c_stop command is issued at the end
+    //Still investigating, however with separated i2c_repstart and i2c_write commands works... and did not caused i2c errors on a long term test.
+  
+    _i2c_gps_status = i2c_readReg(I2C_GPS_ADDRESS,I2C_GPS_STATUS);                    //Get status register 
+    if (_i2c_gps_status & I2C_GPS_STATUS_3DFIX) {                                     //Check is we have a good 3d fix (numsats>5)
+       GPS_fix = 1;                                                                   //Set fix
+       GPS_numSat = (_i2c_gps_status & 0xf0) >> 4;                                    //Num of sats is stored the upmost 4 bits of status
+       if (!GPS_fix_home) {        //if home is not set set home position to WP#0 and activate it
+          i2c_rep_start(I2C_GPS_ADDRESS);i2c_write(I2C_GPS_COMMAND);i2c_write(I2C_GPS_COMMAND_SET_WP);//Store current position to WP#0 (this is used for RTH)
+          i2c_rep_start(I2C_GPS_ADDRESS);i2c_write(I2C_GPS_COMMAND);i2c_write(I2C_GPS_COMMAND_ACTIVATE_WP);//Set WP#0 as the active WP
+          GPS_fix_home = 1;                                                           //Now we have a home   
+       }
+       if (_i2c_gps_status & I2C_GPS_STATUS_NEW_DATA) {                               //Check about new data
+          if (GPS_update) { GPS_update = 0;} else { GPS_update = 1;}                  //Fancy flash on GUI :D
+          //Read GPS data for distance and heading
+          i2c_rep_start(I2C_GPS_ADDRESS);
+          i2c_write(I2C_GPS_DISTANCE);                                               //Start read from here 2x2 bytes distance and direction
+          i2c_rep_start(I2C_GPS_ADDRESS+1);
+          uint8_t *varptr = (uint8_t *)&GPS_distanceToHome;
+          *varptr++ = i2c_readAck();
+          *varptr   = i2c_readAck();
+          varptr = (uint8_t *)&GPS_directionToHome;
+          *varptr++ = i2c_readAck();
+          *varptr   = i2c_readNak();
+        }
 
-  _i2c_gps_status = i2c_readReg(I2C_GPS_ADDRESS,I2C_GPS_STATUS);                    //Get status register 
-  if (_i2c_gps_status & I2C_GPS_STATUS_3DFIX) {                                     //Check is we have a good 3d fix (numsats>5)
-     GPS_fix = 1;                                                                   //Set fix
-     GPS_numSat = (_i2c_gps_status & 0xf0) >> 4;                                    //Num of sats is stored the upmost 4 bits of status
-     if (!GPS_fix_home) {                                                           //if home is not set set home position to WP#0 and activate it
-        i2c_writeReg(I2C_GPS_ADDRESS,I2C_GPS_COMMAND,I2C_GPS_COMMAND_SET_WP);       //Store current position to WP#0 (this is used for RTH)
-        i2c_writeReg(I2C_GPS_ADDRESS,I2C_GPS_COMMAND,I2C_GPS_COMMAND_ACTIVATE_WP);  //Set WP#0 as the active WP
-        GPS_fix_home = 1;                                                           //Now we have a home   
-     }
-     if (_i2c_gps_status & I2C_GPS_STATUS_NEW_DATA) {                               //Check about new data
-        if (GPS_update) { GPS_update = 0;} else { GPS_update = 1;}                  //Fancy flash on GUI :D
-        //Read GPS data for distance and heading
-        i2c_rep_start(I2C_GPS_ADDRESS);
-        i2c_write(I2C_GPS_DISTANCE);                                               //Start read from here 2x2 bytes distance and direction
-        i2c_rep_start(I2C_GPS_ADDRESS+1);
-        uint8_t *varptr = (uint8_t *)&GPS_distanceToHome;
-        *varptr++ = i2c_readAck();
-        *varptr   = i2c_readAck();
-        varptr = (uint8_t *)&GPS_directionToHome;
-        *varptr++ = i2c_readAck();
-        *varptr   = i2c_readNak();
-      }
-
-if (navigate){
 uint8_t *varptr;
-varptr = (uint8_t *)&ground_speed;
+//GPS_ground_speed
+varptr = (uint8_t *)&GPS_ground_speed;
 i2c_rep_start(I2C_GPS_ADDRESS);
-i2c_write(I2C_GPS_SPEED);                                               //0x07
+i2c_write(I2C_GPS_GROUND_SPEED );       //0x07
 i2c_rep_start(I2C_GPS_ADDRESS+1);
 *varptr++ = i2c_readAck();
 *varptr   = i2c_readNak();
 
-varptr = (uint8_t *)&ground_course;
+//GPS_ground_course
+varptr = (uint8_t *)&GPS_ground_course;
 i2c_rep_start(I2C_GPS_ADDRESS);
-i2c_write(I2C_GPS_COURSE);                                               //0x9C
+i2c_write(I2C_GPS_COURSE);             //0x9C
 i2c_rep_start(I2C_GPS_ADDRESS+1);
 *varptr++ = i2c_readAck();
 *varptr   = i2c_readNak();
-}
 
-  } else {  //We don't have a fix zero out distance and bearing (for safety reasons)
-    GPS_distanceToHome = 0;
-    GPS_directionToHome = 0;
-    GPS_numSat = 0;
-  }  
-    
-#endif   
+//GPS_altitude
+varptr = (uint8_t *)&GPS_altitude;
+i2c_rep_start(I2C_GPS_ADDRESS);
+i2c_write(I2C_GPS_ALTITUDE);             //0x09
+i2c_rep_start(I2C_GPS_ADDRESS+1);
+*varptr++ = i2c_readAck();
+*varptr   = i2c_readNak();
+  
+    } else {                                                                          //We don't have a fix zero out distance and bearing (for safety reasons)
+      GPS_distanceToHome = 0;
+      GPS_directionToHome = 0;
+      GPS_numSat = 0;
+    }  
 
-  #if defined(SERIAL_GPS)
+    if (rcData[AUX4]>1800) {
+      i2c_rep_start(I2C_GPS_ADDRESS);i2c_write(I2C_GPS_COMMAND);i2c_write(I2C_GPS_COMMAND_SET_WP);//Store current position to WP#0 (this is used for RTH)
+      i2c_rep_start(I2C_GPS_ADDRESS);i2c_write(I2C_GPS_COMMAND);i2c_write(I2C_GPS_COMMAND_ACTIVATE_WP);//Set WP#0 as the active WP
+    }
+  #endif     
+
+  #if defined(GPS_SERIAL)
     while (SerialAvailable(GPS_SERIAL)) {
      if (GPS_newFrame(SerialRead(GPS_SERIAL))) {
         if (GPS_update == 1) GPS_update = 0; else GPS_update = 1;

@@ -1,4 +1,4 @@
-#if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__)
+#if defined(__AVR_ATmega168__) || (defined(__AVR_ATmega328P__) && !defined(MONGOOSE1_0))
   #define PROMINI
 #endif
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega1281__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega2561__)
@@ -10,13 +10,27 @@
   #define LEDPIN_TOGGLE              PINB |= 1<<5;     //switch LEDPIN state (digital PIN 13)
   #define LEDPIN_OFF                 PORTB &= ~(1<<5);
   #define LEDPIN_ON                  PORTB |= (1<<5);
-  #define BUZZERPIN_PINMODE          pinMode (8, OUTPUT);
-  #define BUZZERPIN_ON               PORTB |= 1;
-  #define BUZZERPIN_OFF              PORTB &= ~1;
-  #define POWERPIN_PINMODE           pinMode (12, OUTPUT);
-  #define POWERPIN_ON                PORTB |= 1<<4;
-  #define POWERPIN_OFF               PORTB &= ~(1<<4); //switch OFF WMP, digital PIN 12
-  #define I2C_PULLUPS_ENABLE         PORTC |= 1<<4; PORTC |= 1<<5;   // PIN A4&A5 (SDA&SCL)
+  #if !defined(RCAUXPIN8)
+    #define BUZZERPIN_PINMODE          pinMode (8, OUTPUT);
+    #define BUZZERPIN_ON               PORTB |= 1;
+    #define BUZZERPIN_OFF              PORTB &= ~1;
+  #else
+    #define BUZZERPIN_PINMODE          ;
+    #define BUZZERPIN_ON               ;
+    #define BUZZERPIN_OFF              ;
+    #define RCAUXPIN
+  #endif
+  #if !defined(RCAUXPIN12)
+    #define POWERPIN_PINMODE           pinMode (12, OUTPUT);
+    #define POWERPIN_ON                PORTB |= 1<<4;
+    #define POWERPIN_OFF               PORTB &= ~(1<<4); //switch OFF WMP, digital PIN 12
+    #define I2C_PULLUPS_ENABLE         PORTC |= 1<<4; PORTC |= 1<<5;   // PIN A4&A5 (SDA&SCL)
+  #else
+    #define POWERPIN_PINMODE           ;
+    #define POWERPIN_ON                ;
+    #define POWERPIN_OFF               ;
+    #define RCAUXPIN
+  #endif
   #define I2C_PULLUPS_DISABLE        PORTC &= ~(1<<4); PORTC &= ~(1<<5);
   #define PINMODE_LCD                pinMode(0, OUTPUT);
   #define LCDPIN_OFF                 PORTD &= ~1;
@@ -193,6 +207,95 @@
   #define SERVO_8_PIN_LOW   PORTE &= ~(1<<5);
 #endif
 
+
+/******************************************************************/
+#if defined(MONGOOSE1_0)
+// http://www.fuzzydrone.org/    
+// http://www.multiwii.com/forum/viewtopic.php?f=6&t=627  
+
+  #define LEDPIN_PINMODE             pinMode (4, OUTPUT);
+  #define LEDPIN_TOGGLE              PIND |= 1<<4;     //switch LEDPIN state (digital PIN 13)
+  #define LEDPIN_OFF                 PORTD &= ~(1<<4);  
+  #define LEDPIN_ON                  PORTD |= (1<<4);     
+  #define I2C_PULLUPS_ENABLE         PORTC |= 1<<4; PORTC |= 1<<5; 
+  #define I2C_PULLUPS_DISABLE        PORTC &= ~(1<<4); PORTC &= ~(1<<5);  
+  #define PPM_PIN_INTERRUPT          attachInterrupt(0, rxInt, RISING); //PIN 0
+  #define SPEK_SERIAL_VECT           USART_RX_vect
+  #define SPEK_BAUD_SET              UCSR0A  = (1<<U2X0); UBRR0H = ((F_CPU  / 4 / 115200 -1) / 2) >> 8; UBRR0L = ((F_CPU  / 4 / 115200 -1) / 2);
+  #define SPEK_SERIAL_INTERRUPT      UCSR0B |= (1<<RXEN0)|(1<<RXCIE0);
+  #define SPEK_DATA_REG              UDR0
+  #define MOTOR_ORDER                11,10,9,3 //for a quad+: RRight ,FRight ,RLeft, FLeft, n, n
+  
+  // TILT_PITCH
+  #define SERVO_1_PINMODE   pinMode(A0,OUTPUT);
+  #define SERVO_1_PIN_HIGH  PORTC |= 1<<0;
+  #define SERVO_1_PIN_LOW   PORTC &= ~(1<<0);
+  
+  // TILT_ROLL
+  #define SERVO_2_PINMODE   pinMode(A1,OUTPUT);
+  #define SERVO_2_PIN_HIGH  PORTC |= 1<<1;
+  #define SERVO_2_PIN_LOW   PORTC &= ~(1<<1);
+  
+  // CAM TRIG
+  #define SERVO_3_PINMODE   pinMode(A2,OUTPUT);
+  #define SERVO_3_PIN_HIGH  PORTC |= 1<<2;
+  #define SERVO_3_PIN_LOW   PORTC &= ~(1<<2); 
+  
+  // Servo4 Unavalable
+  #define SERVO_4_PINMODE   ;// pinMode(12,OUTPUT);
+  #define SERVO_4_PIN_HIGH  ;// PORTB |= 1<<4;
+  #define SERVO_4_PIN_LOW   ;// PORTB &= ~(1<<4);
+    
+  /* Use Servos on motorpins */
+  // BI LEFT
+  #define SERVO_5_PINMODE   pinMode(3,OUTPUT);
+  #define SERVO_5_PIN_HIGH  PORTD|= 1<<3;
+  #define SERVO_5_PIN_LOW   PORTD &= ~(1<<3);
+  
+  // TRI REAR
+  #define SERVO_6_PINMODE   pinMode(11,OUTPUT);
+  #define SERVO_6_PIN_HIGH  PORTB |= 1<<3;
+  #define SERVO_6_PIN_LOW   PORTB &= ~(1<<3);
+  
+  // new motor pin 10
+  #define SERVO_7_PINMODE   pinMode(10,OUTPUT);
+  #define SERVO_7_PIN_HIGH  PORTB |= 1<<2;
+  #define SERVO_7_PIN_LOW   PORTB &= ~(1<<2);
+  
+  //new motor pin 9
+  #define SERVO_8_PINMODE   pinMode(9,OUTPUT);
+  #define SERVO_8_PIN_HIGH  PORTB |= 1<<1;
+  #define SERVO_8_PIN_LOW   PORTB &= ~(1<<1);
+
+/* Unavailable pins on MONGOOSE1_0 */
+  #define BUZZERPIN_PINMODE          ; // D8
+  #define BUZZERPIN_ON               ;
+  #define BUZZERPIN_OFF              ;
+  #define POWERPIN_PINMODE           ; // D12
+  #define POWERPIN_ON                ;
+  #define POWERPIN_OFF               ;
+  #define STABLEPIN_PINMODE          ; //
+  #define STABLEPIN_ON               ;
+  #define STABLEPIN_OFF              ; 
+  #define PINMODE_LCD                ; //
+  #define LCDPIN_OFF                 ;
+  #define LCDPIN_ON                  ; 
+  
+//RX PIN assignment inside the port //for PORTD
+  #define THROTTLEPIN                2
+  #define ROLLPIN                    4
+  #define PITCHPIN                   5
+  #define YAWPIN                     6
+  #define AUX1PIN                    7
+  #define AUX2PIN                    0 // optional PIN 8 or PIN 12
+  #define AUX3PIN                    1 // unused 
+  #define AUX4PIN                    3 // unused 
+  #define ISR_UART                   ISR(USART_UDRE_vect)
+  #define V_BATPIN                   A3    // Analog PIN 3
+  #define PSENSORPIN                 A2    // Analog PIN 2
+#endif
+
+/******************************************************************/
 
 //please submit any correction to this list.
 #if defined(FFIMUv1)
@@ -386,7 +489,21 @@
   #define ITG3200_ADDRESS 0XD2
 #endif
 
-#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(ADCACC) || defined(LSM303DLx_ACC) || defined(MPU6050)
+#if defined(MONGOOSE1_0)
+  #define ITG3200
+  #define ADXL345
+  #define BMP085
+  #define HMC5883
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  -X; gyroADC[PITCH] = -Y; gyroADC[YAW] = Z;}
+  #define ACC_ORIENTATION(Y, X, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = -Y; accADC[YAW]  = Z;}
+  #define MAG_ORIENTATION(Y, X, Z)  {magADC[ROLL]  = X;  magADC[PITCH] = -Y; magADC[YAW]  = Z;}
+  #define ADXL345_ADDRESS  0xA6
+  #define ITG3200_ADDRESS 0XD0
+  #define BMP085_ADDRESS 0xEE
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
+#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LSM303DLx_ACC) || defined(MPU6050)
   #define ACC 1
 #else
   #define ACC 0
@@ -410,81 +527,17 @@
   #define BARO 0
 #endif
 
-#if defined(SERIAL_GPS)||defined(I2C_GPS)
-  #define GPSPRESENT 1
-  #define GPS
+#if defined(GPS_SERIAL)  || defined(I2C_GPS)
+  #define GPS 1
 #else
-  #define GPSPRESENT 0
-#endif
-
-
-#if defined(I2C_GPS)
-#define I2C_GPS_ADDRESS                      0x40       
-/*************** I2C GSP register definitions *********************************/
-
-#define I2C_GPS_STATUS                            0x00 //(Read only)
-        #define I2C_GPS_STATUS_NEW_DATA       0x01
-        #define I2C_GPS_STATUS_2DFIX          0x02
-        #define I2C_GPS_STATUS_3DFIX          0x04
-        #define I2C_GPS_STATUS_WP_REACHED     0x08      //Active waypoint has been reached (not cleared until new waypoint is set)
-        #define I2C_GPS_STATUS_NUMSATS        0xF0
-
-#define I2C_GPS_COMMAND                           0x01 //(write only)
-        #define I2C_GPS_COMMAND_POSHOLD       0x01      //copy current position to internal target location register
-        #define I2C_GPS_COMMAND_RESUME        0x02      //copy last active WP to internal target location register
-        #define I2C_GPS_COMMAND_SET_WP        0x04      //copy current position to given WP
-        #define I2C_GPS_COMMAND_ACTIVATE_WP   0x08      //copy given WP position to internal target location register
-        #define I2C_GPS_COMMAND_WP            0xF0      //Waypoint number
-
-#define I2C_GPS_WP_REG                            0x06   //Waypoint register (Read only)
-        #define I2C_GPS_WP_REG_ACTIVE          0x0F      //Active Waypoint
-        #define I2C_GPS_WP_REG_PERVIOUS        0xF0      //pervious Waypoint
-        
-#define I2C_GPS_SPEED                             0x07   //GPS ground speed in m/s*100 (uint16_t)      (Read Only)
-#define I2C_GPS_ALTITUDE                          0x09   //GPS altitude in meters (uint16_t)           (Read Only)
-#define I2C_GPS_COURSE                            0x9C   //Moving in direction
-#define I2C_GPS_TIME                              0x0b   //UTC Time from GPS in hhmmss.sss * 100 (uint32_t)(unneccesary precision) (Read Only)
-#define I2C_GPS_DISTANCE                          0x0f   //Distance between current pos and internal target location register in meters (uint16_t) (Read Only)
-#define I2C_GPS_DIRECTION                         0x11   //direction towards interal target location reg from current position (+/- 180 degree)    (read Only)
-#define I2C_GPS_LOCATION                          0x13   //current position (8 bytes, lat and lon, 1 degree = 10 000 000                           (read only)
-#define I2C_GPS_WP0                               0x1B   //Waypoint 0 used for RTH location      (R/W)
-#define I2C_GPS_WP1                               0x23
-#define I2C_GPS_WP2                               0x2B
-#define I2C_GPS_WP3                               0x33
-#define I2C_GPS_WP4                               0x3B
-#define I2C_GPS_WP5                               0x43
-#define I2C_GPS_WP6                               0x4B
-#define I2C_GPS_WP7                               0x53
-#define I2C_GPS_WP8                               0x5B
-#define I2C_GPS_WP9                               0x63
-#define I2C_GPS_WP10                              0x6B
-#define I2C_GPS_WP11                              0x73
-#define I2C_GPS_WP12                              0x7B
-#define I2C_GPS_WP13                              0x83
-#define I2C_GPS_WP14                              0x8B
-#define I2C_GPS_WP15                              0x93
-
-#endif
-
-
-#if defined(RCAUXPIN8)
-  #define BUZZERPIN_PINMODE          ;
-  #define BUZZERPIN_ON               ;
-  #define BUZZERPIN_OFF              ;
-  #define RCAUXPIN
-#endif
-#if defined(RCAUXPIN12)
-  #define POWERPIN_PINMODE           ;
-  #define POWERPIN_ON                ;
-  #define POWERPIN_OFF               ;
-  #define RCAUXPIN
+  #define GPS 0
 #endif
 
 #if defined (HELI_90_DEG) || defined(HELI_120_CCPM)
 #define HELICOPTER
 #endif
 
-#if defined (AEROPLANE) || defined(HELICOPTER) && defined(PROMINI)
+#if defined (AIRPLANE) || defined(HELICOPTER) && defined(PROMINI)
   #define POWERPIN_PINMODE           ;
   #define POWERPIN_ON                ;
   #define POWERPIN_OFF               ;
@@ -517,8 +570,8 @@
   #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
 #elif defined(OCTOFLATX)
   #define MULTITYPE 11      //the GUI is the same for all 8 motor configs
-#elif defined(AEROPLANE)    
-  #define MULTITYPE 12      // Simple model 
+#elif defined(AIRPLANE)    
+  #define MULTITYPE 12       
 #elif defined (HELI_120_CCPM)   
   #define MULTITYPE 13      // Simple model 
 #elif defined (HELI_90_DEG)   
@@ -529,6 +582,118 @@
 
 #if defined(POWERMETER_HARD) || defined(POWERMETER_SOFT)
   #define POWERMETER
+#endif
+
+/* motor and servo numbers */
+
+#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(SERVO_MIX_TILT)|| defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)|| defined(AIRPLANE)|| defined(HELICOPTER)
+  #define SERVO
+#endif
+
+#if defined(GIMBAL)
+  #define NUMBER_MOTOR 0
+  #define PRI_SERVO_FROM   1 // use servo from 1 to 2
+  #define PRI_SERVO_TO     2
+#elif defined(FLYING_WING)
+  #define NUMBER_MOTOR 1
+  //#define PRI_SERVO_FROM   1 // use servo from 1 to 2
+  //#define PRI_SERVO_TO     2
+  #define ALL_SERVOS  
+#elif defined(AIRPLANE)|| defined(HELICOPTER)
+  #define NUMBER_MOTOR NUM_MOTRORS
+  // Use all acvailable servos - NUMBER_MOTOR
+  #define ALL_SERVOS
+  
+#elif defined(BI)
+  #define NUMBER_MOTOR 2
+  #define PRI_SERVO_FROM   5 // use servo from 5 to 6
+  #define PRI_SERVO_TO     6
+#elif defined(TRI)
+  #define NUMBER_MOTOR 3
+  #define PRI_SERVO_FROM   5 // use only servo 5
+  #define PRI_SERVO_TO     5
+#elif defined(QUADP) || defined(QUADX) || defined(Y4)|| defined(VTAIL4)
+  #define NUMBER_MOTOR 4
+#elif defined(Y6) || defined(HEX6) || defined(HEX6X)
+  #define NUMBER_MOTOR 6
+#elif defined(OCTOX8) || defined(OCTOFLATP) || defined(OCTOFLATX)
+  #define NUMBER_MOTOR 8
+#endif
+
+// Servo tilt and Cam trigger
+#if (defined(SERVO_TILT)|| defined(SERVO_MIX_TILT))&& defined(CAMTRIG)
+  #define SEC_SERVO_FROM   1 // use servo from 1 to 3
+  #define SEC_SERVO_TO     3
+#else
+  #if defined(SERVO_TILT)|| defined(SERVO_MIX_TILT)
+    // if A0 and A1 is taken by motors, we can use A2 and 12 for Servo tilt
+    #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && defined(PROMINI)
+      #define SEC_SERVO_FROM   3 // use servo from 3 to 4
+      #define SEC_SERVO_TO     4
+    #else
+      #define SEC_SERVO_FROM   1 // use servo from 1 to 2
+      #define SEC_SERVO_TO     2
+    #endif
+  #endif
+  #if defined(CAMTRIG)
+    #define SEC_SERVO_FROM   3 // use servo 3
+    #define SEC_SERVO_TO     3
+  #endif
+#if defined(ALL_SERVOS)
+  // Use all acvailable servos - NUMBER_MOTOR
+  #define SEC_SERVO_FROM   1
+  #define SEC_SERVO_TO     8 - NUMBER_MOTOR  
+  #endif  
+#endif
+
+
+#if defined(I2C_GPS)
+  #define I2C_GPS_ADDRESS                         0x40       
+  /*************** I2C GSP register definitions *********************************/
+  
+  #define I2C_GPS_STATUS                          0x00   //(Read only)
+          #define I2C_GPS_STATUS_NEW_DATA         0x01
+          #define I2C_GPS_STATUS_2DFIX            0x02
+          #define I2C_GPS_STATUS_3DFIX            0x04
+          #define I2C_GPS_STATUS_WP_REACHED       0x08      //Active waypoint has been reached (not cleared until new waypoint is set)
+          #define I2C_GPS_STATUS_NUMSATS          0xF0
+  
+  #define I2C_GPS_COMMAND                         0x01   //(write only)
+          #define I2C_GPS_COMMAND_POSHOLD         0x01      //copy current position to internal target location register
+          #define I2C_GPS_COMMAND_RESUME          0x02      //copy last active WP to internal target location register
+          #define I2C_GPS_COMMAND_SET_WP          0x04      //copy current position to given WP
+          #define I2C_GPS_COMMAND_ACTIVATE_WP     0x08      //copy given WP position to internal target location register
+          #define I2C_GPS_COMMAND_WP              0xF0      //Waypoint number
+  
+  #define I2C_GPS_WP_REG                          0x06   //Waypoint register (Read only)
+          #define I2C_GPS_WP_REG_ACTIVE           0x0F      //Active Waypoint
+          #define I2C_GPS_WP_REG_PERVIOUS         0xF0      //pervious Waypoint
+          
+  #define I2C_GPS_GROUND_SPEED                    0x07   //GPS ground speed in m/s*100 (uint16_t)      (Read Only)
+  #define I2C_GPS_ALTITUDE                        0x09   //GPS altitude in meters (uint16_t)           (Read Only)
+  #define I2C_GPS_COURSE                          0x9C   //GPS Course   //degrees *10                  (Read Only)  
+  #define I2C_GPS_TIME                            0x0b   //UTC Time from GPS in hhmmss.sss * 100 (uint32_t)(unneccesary precision) (Read Only)
+  #define I2C_GPS_DISTANCE                        0x0f   //Distance between current pos and internal target location register in meters (uint16_t) (Read Only)
+  #define I2C_GPS_DIRECTION                       0x11   //direction towards interal target location reg from current position (+/- 180 degree)    (read Only)
+  #define I2C_GPS_LOCATION                        0x13   //current position (8 bytes, lat and lon, 1 degree = 10 000 000                           (read only)
+  #define I2C_GPS_WP0                             0x1B   //Waypoint 0 used for RTH location      (R/W)
+  #define I2C_GPS_WP1                             0x23
+  #define I2C_GPS_WP2                             0x2B
+  #define I2C_GPS_WP3                             0x33
+  #define I2C_GPS_WP4                             0x3B
+  #define I2C_GPS_WP5                             0x43
+  #define I2C_GPS_WP6                             0x4B
+  #define I2C_GPS_WP7                             0x53
+  #define I2C_GPS_WP8                             0x5B
+  #define I2C_GPS_WP9                             0x63
+  #define I2C_GPS_WP10                            0x6B
+  #define I2C_GPS_WP11                            0x73
+  #define I2C_GPS_WP12                            0x7B
+  #define I2C_GPS_WP13                            0x83
+  #define I2C_GPS_WP14                            0x8B
+  #define I2C_GPS_WP15                            0x93
+  #define I2C_GPS_WP_NAV_PAR1                     0x9B   //Waypoint navigation parameter 1
+          #define I2C_GPS_WP_NAV_PAR1_REACH_LIMIT 0x0F      //lover 4 bit, waypoint reached distance
 #endif
 
 /**************************/
@@ -547,6 +712,3 @@
 #if defined(LCD_TELEMETRY_AUTO) && !(defined(LCD_TELEMETRY))
  	#error "to use automatic telemetry, you MUST also define and configure LCD_TELEMETRY"
 #endif
-
-
-

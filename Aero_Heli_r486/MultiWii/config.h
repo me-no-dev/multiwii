@@ -22,13 +22,13 @@
 //#define OCTOX8
 //#define OCTOFLATP
 //#define OCTOFLATX
-//#define FLYING_WING //experimental  Uses servo 3&4 in this ver.
-//#define VTAIL4      //experimental The mix may need to be modified.
+//#define FLYING_WING 
+//#define VTAIL4      //experimental The mix may need to be modified. Y4 Mix can be astertinpoint.
 
 //*****************************************************//
 //**** !!!!   Warning     Early BETATSEST   !!!! ******//
 //*****************************************************//
-#define AEROPLANE	 // PatrikE Experimental 
+#define AIRPLANE	 // PatrikE Experimental 
 
 #define NUM_MOTRORS 0        // Only for use with 490Hz ESC's 
 
@@ -74,18 +74,20 @@
    It's just to have some feedback. This will be removed in the future */
 //#define STAB_OLD_17
 
-/* GPS
+/* GPS using a SERIAL port
    only available on MEGA boards (this might be possible on 328 based boards in the future)
    if enabled, define here the Arduino Serial port number and the UART speed
    note: only the RX PIN is used, the GPS is not configured by multiwii
    the GPS must be configured to output NMEA sentences (which is generally the default conf for most GPS devices)
-*/
-//#define I2C_GPS      //I2C GPS and Navi modul : http://www.multiwii.com/forum/viewtopic.php?f=8&t=649&start=130#p7783
-//#define SERIAL_GPS
-#define GPS_SERIAL 3 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
-//#define GPS_BAUD   115200
-#define GPS_BAUD   57600
-//#define GPS_BAUD   9600
+   uncomment the first line to select the GPS serial port of the arduino */
+//#define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
+#define GPS_BAUD   115200
+
+/* I2C GPS device made with an independant arduino + GPS device
+   including some navigation functions
+   contribution from EOSBandi
+   http://code.google.com/p/i2c-gps-nav/ */
+#define I2C_GPS
 
 /* Pseudo-derivative conrtroller for level mode (experimental)
    Additional information: http://www.multiwii.com/forum/viewtopic.php?f=8&t=503 */
@@ -118,6 +120,7 @@
 //#define MINIWII         // Jussi's MiniWii Flight Controller
 //#define CITRUSv1_0      // CITRUSv1 from qcrc.ca
 //#define DROTEK_IMU10DOF
+//#define MONGOOSE1_0     // mongoose 1.0    http://www.fuzzydrone.org/                      <- verified by matbogdan
 
 
 //if you use independent sensors
@@ -127,6 +130,7 @@
 //#define L3G4200D
 
 /* I2C accelerometer */
+//#define MMA745
 //#define ADXL345
 //#define BMA020
 //#define BMA180
@@ -219,7 +223,6 @@
 //#define BTSERIAL
 
 /* The following lines apply only for a pitch/roll tilt stabilization system
-   On promini board, it is not compatible with config with 6 motors or more
    Uncomment the first line to activate it */
 //#define SERVO_TILT                //  Simple CameraGimbal By Bledy http://youtu.be/zKGr6iR54vM
 //#define SERVO_MIX_TILT            //special simple gimbal by mixing 2 servos By Bledi
@@ -258,7 +261,7 @@
 
 /* this is the maximum value for the ESCs at full power
    this value can be increased up to 2000 */
-#if defined(AEROPLANE)|| defined(HELICOPTER)
+#if defined(AIRPLANE)|| defined(HELICOPTER)
 #define MAXTHROTTLE  2000
 #else
 #define MAXTHROTTLE 1850

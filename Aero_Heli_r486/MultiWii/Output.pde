@@ -1,69 +1,6 @@
-
-#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(SERVO_MIX_TILT)|| defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)|| defined(AEROPLANE)|| defined(HELICOPTER)
-  #define SERVO
-#endif
-
-#if defined(GIMBAL)
-  #define NUMBER_MOTOR 0
-  #define PRI_SERVO_FROM   1 // use servo from 1 to 2
-  #define PRI_SERVO_TO     2
-#elif defined(FLYING_WING)
-  #define NUMBER_MOTOR 1
-  //#define PRI_SERVO_FROM   1 // use servo from 1 to 2
-  //#define PRI_SERVO_TO     2
-  #define ALL_SERVOS  
-#elif defined(AEROPLANE)|| defined(HELICOPTER)
-  #define NUMBER_MOTOR NUM_MOTRORS
-  // Use all acvailable servos - NUMBER_MOTOR
-  #define ALL_SERVOS
-  
-#elif defined(BI)
-  #define NUMBER_MOTOR 2
-  #define PRI_SERVO_FROM   5 // use servo from 5 to 6
-  #define PRI_SERVO_TO     6
-#elif defined(TRI)
-  #define NUMBER_MOTOR 3
-  #define PRI_SERVO_FROM   5 // use only servo 5
-  #define PRI_SERVO_TO     5
-#elif defined(QUADP) || defined(QUADX) || defined(Y4)|| defined(VTAIL4)
-  #define NUMBER_MOTOR 4
-#elif defined(Y6) || defined(HEX6) || defined(HEX6X)
-  #define NUMBER_MOTOR 6
-#elif defined(OCTOX8) || defined(OCTOFLATP) || defined(OCTOFLATX)
-  #define NUMBER_MOTOR 8
-#endif
-
-
-// Servo tilt and Cam trigger
-#if (defined(SERVO_TILT)|| defined(SERVO_MIX_TILT))&& defined(CAMTRIG)
-  #define SEC_SERVO_FROM   1 // use servo from 1 to 3
-  #define SEC_SERVO_TO     3
-#else
-  #if defined(SERVO_TILT)|| defined(SERVO_MIX_TILT)
-    // if A0 and A1 is taken by motors, we can use A2 and 12 for Servo tilt
-    #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && defined(PROMINI)
-      #define SEC_SERVO_FROM   3 // use servo from 3 to 4
-      #define SEC_SERVO_TO     4    
-    #else
-      #define SEC_SERVO_FROM   1 // use servo from 1 to 2
-      #define SEC_SERVO_TO     2
-    #endif
-  #endif
-  #if defined(CAMTRIG)
-    #define SEC_SERVO_FROM   3 // use servo 3
-    #define SEC_SERVO_TO     3
-  #endif
-  #if defined(ALL_SERVOS)
-  // Use all acvailable servos - NUMBER_MOTOR
-  #define SEC_SERVO_FROM   1
-  #define SEC_SERVO_TO     8 - NUMBER_MOTOR  
-  #endif  
-#endif
-
-
 uint8_t PWM_PIN[8] = {MOTOR_ORDER};
 // so we need a servo pin array
-#if defined(AEROPLANE)|| defined(HELICOPTER)
+#if defined(AIRPLANE)|| defined(HELICOPTER)
 // To prevent motor to start at reset. atomicServo[7]=5 or 249 if reverseed servo
    volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,5};
 #else
@@ -121,7 +58,7 @@ void writeMotors() { // [1000;2000] => [125;250]
       OCR2A = motor[7]>>3; //  pin 10
     #endif
   #endif
-  #if defined(PROMINI)
+   #if defined(PROMINI) || defined(MONGOOSE1_0)
     #if (NUMBER_MOTOR > 0)
       #ifndef EXT_MOTOR_RANGE 
         OCR1A = motor[0]>>3; //  pin 9
@@ -151,15 +88,15 @@ void writeMotors() { // [1000;2000] => [125;250]
       #endif
     #endif
     #if (NUMBER_MOTOR > 4)
-      atomicPWM_PIN5_highState = ((motor[5]-1000)/4.08)+5;
+      atomicPWM_PIN5_highState = ((motor[5]-1000)>>2)+2;
       atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
-      atomicPWM_PIN6_highState = ((motor[4]-1000)/4.08)+5;
+      atomicPWM_PIN6_highState = ((motor[4]-1000)>>2)+2;
       atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
     #endif
     #if (NUMBER_MOTOR > 6)
-      atomicPWM_PINA2_highState = ((motor[6]-1000)/4.08)+5;
+      atomicPWM_PINA2_highState = ((motor[6]-1000)>>2)+2;
       atomicPWM_PINA2_lowState = 255-atomicPWM_PINA2_highState;
-      atomicPWM_PIN12_highState = ((motor[7]-1000)/4.08)+5;
+      atomicPWM_PIN12_highState = ((motor[7]-1000)>>2)+2;
       atomicPWM_PIN12_lowState = 255-atomicPWM_PIN12_highState;
     #endif
   #endif
@@ -196,7 +133,7 @@ void initOutput() {
       TCCR2A |= _BV(COM2A1); // connect pin 10 to timer 2 channel A
     #endif
   #endif
-  #if defined(PROMINI)
+   #if defined(PROMINI) || defined(MONGOOSE1_0)
     for(uint8_t i=0;i<min(NUMBER_MOTOR,4);i++)
       pinMode(PWM_PIN[i],OUTPUT);
     #if (NUMBER_MOTOR > 0)
@@ -218,13 +155,13 @@ void initOutput() {
   #if defined(SERVO)
     initializeServo();
   #endif
-  #if (NUMBER_MOTOR == 6) && defined(PROMINI)
+  #if (NUMBER_MOTOR == 6) && (defined(PROMINI) || defined(MONGOOSE1_0))
     initializeSoftPWM();
     #if defined(A0_A1_PIN_HEX)
       pinMode(5,INPUT);pinMode(6,INPUT);     // we reactivate the INPUT affectation for these two PINs
       pinMode(A0,OUTPUT);pinMode(A1,OUTPUT);
     #endif
-  #elif (NUMBER_MOTOR == 8) && defined(PROMINI)
+  #elif (NUMBER_MOTOR == 8) && (defined(PROMINI) || defined(MONGOOSE1_0))
     initializeSoftPWM();
     #if defined(A0_A1_PIN_HEX)
       pinMode(5,INPUT);pinMode(6,INPUT);     // we reactivate the INPUT affectation for these two PINs
@@ -264,7 +201,7 @@ void initializeServo() {
   TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
   
   // timer 0B for hex with servo tilt
-  #if (NUMBER_MOTOR == 6) && defined(PROMINI)
+  #if (NUMBER_MOTOR == 6) && (defined(PROMINI) || defined(MONGOOSE1_0))
     TIMSK0 |= (1<<OCIE0B); 
   #endif
 }
@@ -386,7 +323,7 @@ ISR(TIMER0_COMPA_vect) {
 }
 #endif
 
-#if (NUMBER_MOTOR > 4) && defined(PROMINI)
+#if (NUMBER_MOTOR > 4) && (defined(PROMINI) || defined(MONGOOSE1_0))
   void initializeSoftPWM() {
     // if there are servos its alredy done
     #if (NUMBER_MOTOR == 6) && not defined(SERVO)
@@ -467,11 +404,8 @@ ISR(TIMER0_COMPA_vect) {
 
 void mixTable() {
   int16_t maxMotor;
-  uint8_t i,axis;
-  static uint8_t camCycle = 0;
-  static uint8_t camState = 0;
-  static uint32_t camTime = 0;
-  
+  uint8_t i;
+
   #define PIDMIX(X,Y,Z) rcCommand[THROTTLE] + axisPID[ROLL]*X + axisPID[PITCH]*Y + YAW_DIRECTION * axisPID[YAW]*Z
 
   #if NUMBER_MOTOR > 3
@@ -574,13 +508,13 @@ void mixTable() {
   #endif   
  
  /************************************************************************************************************/  
-#if defined(AEROPLANE)|| defined(HELICOPTER)
+#if defined(AIRPLANE)|| defined(HELICOPTER)
    if (armed==0){
      //for(i=0; i<7; i++){ servo[i]=MIDRC;}
      servo[7]=constrain( 900, 1020, 2000); // Set throttle to min
  }
    #endif
-  #ifdef AEROPLANE    
+  #ifdef AIRPLANE    
  /************************************************************************************************************/  
         
     // servo[x] 0,1 & 2 is free to use. (Gimball)
@@ -672,19 +606,21 @@ if (armed){
  // End of PatrikE Experimentals
  /************************************************************************************************************/ 
   #ifdef SERVO_TILT
+    #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && (defined(PROMINI) || defined(MONGOOSE1_0))
+      #define S_PITCH servo[0]
+      #define S_ROLL  servo[1]
+    #else
+      #define S_PITCH servo[2]
+      #define S_ROLL  servo[3]
+    #endif
+    S_PITCH = TILT_PITCH_MIDDLE + rcData[AUX3]-1500;
+    S_ROLL  = TILT_ROLL_MIDDLE  + rcData[AUX4]-1500;
     if ((rcOptions1 & activate1[BOXCAMSTAB]) || (rcOptions2 & activate2[BOXCAMSTAB])) {
-      servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] /16 + rcData[AUX3]-1500 , TILT_PITCH_MIN, TILT_PITCH_MAX);
-      servo[1] = constrain(TILT_ROLL_MIDDLE  + TILT_ROLL_PROP  * angle[ROLL]  /16 + rcData[AUX4]-1500, TILT_ROLL_MIN, TILT_ROLL_MAX);
-    } else {
-      // to use it with A0_A1_PIN_HEX
-      #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && defined(PROMINI)
-        servo[2] = constrain(TILT_PITCH_MIDDLE  + rcData[AUX3]-1500 , TILT_PITCH_MIN, TILT_PITCH_MAX);
-        servo[3] = constrain(TILT_ROLL_MIDDLE   + rcData[AUX4]-1500,  TILT_ROLL_MIN, TILT_ROLL_MAX);     
-      #else
-        servo[0] = constrain(TILT_PITCH_MIDDLE  + rcData[AUX3]-1500 , TILT_PITCH_MIN, TILT_PITCH_MAX);
-        servo[1] = constrain(TILT_ROLL_MIDDLE   + rcData[AUX4]-1500,  TILT_ROLL_MIN, TILT_ROLL_MAX);
-      #endif
+      S_PITCH += TILT_PITCH_PROP * angle[PITCH] /16 ;
+      S_ROLL  += TILT_ROLL_PROP  * angle[ROLL]  /16 ;
     }
+    S_PITCH = constrain(S_PITCH, TILT_PITCH_MIN, TILT_PITCH_MAX);
+    S_ROLL  = constrain(S_ROLL , TILT_ROLL_MIN, TILT_ROLL_MAX  );   
   #endif
   
   
@@ -716,20 +652,21 @@ if (armed){
     servo[1] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP   * angle[ROLL]  /16 + rcCommand[ROLL], TILT_ROLL_MIN, TILT_ROLL_MAX);
   #endif
   #ifdef FLYING_WING
-   motor[0] = rcCommand[THROTTLE]; 	// 490hz ESC 
-  // if (armed){   servo[7]  = constrain(    rcData[THROTTLE] , 1020, 2000); }	//   50hz ESC or servo
-
-    //if (passthroughMode) {// use raw stick values to drive output 
-    // follow aux1 as being three way switch **NOTE: better to implement via check boxes in GUI 
-    if(passThruMode) { // passthrough
-       servo[3]  = constrain(WING_LEFT_MID  + PITCH_DIRECTION_L * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL]-MIDRC), WING_LEFT_MIN,  WING_LEFT_MAX); //LEFT
-       servo[4]  = constrain(WING_RIGHT_MID + PITCH_DIRECTION_R * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL]-MIDRC), WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
+    motor[0] = rcCommand[THROTTLE]; 	// 490hz ESC 
+    if (passThruMode) {// do not use sensors for correction, simple 2 channel mixing
+       servo[0]  = wing_left_mid  + PITCH_DIRECTION_L * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL]-MIDRC);
+       servo[1]  = wing_right_mid + PITCH_DIRECTION_R * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL]-MIDRC);
     } else { // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
-       servo[3]  = constrain(WING_LEFT_MID  + PITCH_DIRECTION_L * axisPID[PITCH]        + ROLL_DIRECTION_L * axisPID[ROLL], WING_LEFT_MIN,  WING_LEFT_MAX); //LEFT
-       servo[4]  = constrain(WING_RIGHT_MID + PITCH_DIRECTION_R * axisPID[PITCH]        + ROLL_DIRECTION_R * axisPID[ROLL], WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
+       servo[0]  = wing_left_mid  + PITCH_DIRECTION_L * axisPID[PITCH]        + ROLL_DIRECTION_L * axisPID[ROLL];
+       servo[1]  = wing_right_mid + PITCH_DIRECTION_R * axisPID[PITCH]        + ROLL_DIRECTION_R * axisPID[ROLL];
     }
+    servo[0]  = constrain(servo[0], WING_LEFT_MIN,  WING_LEFT_MAX );
+    servo[1]  = constrain(servo[1], WING_RIGHT_MIN, WING_RIGHT_MAX);
   #endif
   #if defined(CAMTRIG)
+    static uint8_t camCycle = 0;
+    static uint8_t camState = 0;
+    static uint32_t camTime = 0;
     if (camCycle==1) {
       if (camState == 0) {
         servo[2] = CAM_SERVO_HIGH;
@@ -782,7 +719,7 @@ if (armed){
                                      44507,46890,49358,51910,54549,57276,60093,63000};
   
     if (vbat) { // by all means - must avoid division by zero 
-      for (uint8_t i =0;i<NUMBER_MOTOR;i++) {
+      for (i =0;i<NUMBER_MOTOR;i++) {
         amp = amperes[ ((motor[i] - 1000)>>4) ] / vbat; // range mapped from [1000:2000] => [0:1000]; then break that up into 64 ranges; lookup amp
   	  #if (LOG_VALUES == 2)
            pMeter[i]+= amp; // sum up over time the mapped ESC input 
