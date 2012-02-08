@@ -177,14 +177,14 @@
   #define SERVO_4_PIN_LOW   PORTD &= ~(1<<4);
   
   // BI LEFT
-  #define SERVO_5_PINMODE   pinMode(6,OUTPUT);
-  #define SERVO_5_PIN_HIGH  PORTD|= 1<<7;
-  #define SERVO_5_PIN_LOW   PORTD &= ~(1<<7);
+  #define SERVO_5_PINMODE   pinMode(5,OUTPUT);
+  #define SERVO_5_PIN_HIGH  PORTC|= 1<<6;
+  #define SERVO_5_PIN_LOW   PORTC &= ~(1<<6);
   
   // TRI REAR
-  #define SERVO_6_PINMODE   pinMode(5,OUTPUT);
-  #define SERVO_6_PIN_HIGH  PORTC |= 1<<6;
-  #define SERVO_6_PIN_LOW   PORTC &= ~(1<<6);
+  #define SERVO_6_PINMODE   pinMode(6,OUTPUT);
+  #define SERVO_6_PIN_HIGH  PORTD |= 1<<7;
+  #define SERVO_6_PIN_LOW   PORTD &= ~(1<<7);
   
   // new motor pin 10
   #define SERVO_7_PINMODE   pinMode(10,OUTPUT);
