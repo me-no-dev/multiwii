@@ -243,7 +243,7 @@ void initOutput() {
     for(uint8_t i=0;i<NUMBER_MOTOR;i++)
       pinMode(PWM_PIN[i],OUTPUT);
     #if (NUMBER_MOTOR > 0)
-      TCCR1A |= (1<<WGM11); // phase and frequency correct mode
+      TCCR1A |= (1<<WGM11); // phase correct mode
       TCCR1A &= ~(1<<WGM10);
       TCCR1B |= (1<<WGM13);
       TCCR1B &= ~(1<<CS11); // no prescaler
@@ -335,9 +335,8 @@ void initializeServo() {
       TIMSK0 |= (1<<OCIE0B); 
     #endif
   #else
-    TCCR3A &= ~(1<<WGM30); // fast pwm mode
+    TCCR3A &= ~(1<<WGM30); // normal counting mode
     TCCR3B &= ~(1<<CS31); // no prescaler
-    ICR3 |= 0x3FFF; // top 16383
     TIMSK3 |= (1<<OCIE3A); // Enable CTC interrupt 
     #if (NUMBER_MOTOR > 4)
       TIMSK3 |= (1<<OCIE3B); // Enable CTC interrupt 
@@ -508,9 +507,8 @@ ISR(SERVO_ISR) {
     #else
       // if there are servos its alredy done
       #if !defined(SERVO)
-        TCCR3A &= ~(1<<WGM30); // fast pwm mode
+        TCCR3A &= ~(1<<WGM30); // normal counting mode
         TCCR3B &= ~(1<<CS31); // no prescaler
-        ICR3 |= 0x3FFF; // top 16383
         TIMSK3 |= (1<<OCIE3B); // Enable CTC interrupt 
         #if (NUMBER_MOTOR > 6)
           TIMSK3 |= (1<<OCIE3C); // Enable CTC interrupt
