@@ -204,10 +204,7 @@ void SerialEnd(uint8_t port) {
 #if defined(PROMINI)
 SIGNAL(USART_RX_vect){
   uint8_t d = UDR0;
-  uint8_t i = (serialHeadRX[0] + 1) % SERIAL_RX_BUFFER_SIZE;
-  if (i != serialTailRX[0]) {serialBufferRX[serialHeadRX[0]][0] = d; serialHeadRX[0] = i;}
   #if defined(SPEKTRUM)
-    sei();
     if (!spekFrameFlags) {  
       uint32_t spekTimeNow = (timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond()); //Move timer0_overflow_count into registers so we don't touch a volatile twice
       uint32_t spekInterval = spekTimeNow - spekTimeLast;                                       //timer0_overflow_count will be slightly off because of the way the Arduino core timer interrupt handler works; that is acceptable for this use. Using the core variable avoids an expensive call to millis() or micros()
@@ -215,11 +212,12 @@ SIGNAL(USART_RX_vect){
       if (spekInterval > 5000) {  //Potential start of a Spektrum frame, they arrive every 11 or every 22 ms. Mark it, and clear the buffer. 
         serialTailRX[0] = 0;
         serialHeadRX[0] = 0;
-        serialBufferRX[0][0] = d;
         spekFrameFlags = 0x01;
       }
     }
   #endif
+  uint8_t i = (serialHeadRX[0] + 1) % SERIAL_RX_BUFFER_SIZE;
+  if (i != serialTailRX[0]) {serialBufferRX[serialHeadRX[0]][0] = d; serialHeadRX[0] = i;}
 }
 #endif
 

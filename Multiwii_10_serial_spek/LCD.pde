@@ -789,8 +789,6 @@ void lcd_telemetry() {
     case '6':
     	if (linenr++ % 2) {
     		strcpy_P(line1,PSTR("Roll Pitch Throt"));
-    		if (armed) line2[14] = 'A'; else line2[14] = 'a';
-    		if (failsafeCnt > 5) line2[15] = 'F'; else line2[15] = 'f';
     		LCDsetLine(1);LCDprintChar(line1);
     	} else {
     		// 0123456789012345
@@ -807,6 +805,8 @@ void lcd_telemetry() {
     		line2[11] = '0' + rcData[THROTTLE] / 100  - (rcData[THROTTLE]/1000)  * 10;
     		line2[12] = '0' + rcData[THROTTLE] / 10   - (rcData[THROTTLE]/100)   * 10;
     		line2[13] = '0' + rcData[THROTTLE]        - (rcData[THROTTLE]/10)    * 10;
+    		if (armed) line2[14] = 'A'; else line2[14] = 'a';
+    		if (failsafeCnt > 5) line2[15] = 'F'; else line2[15] = 'f';
     		LCDsetLine(2);LCDprintChar(line2);
     	}
     	break;
