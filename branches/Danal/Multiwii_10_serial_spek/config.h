@@ -42,6 +42,9 @@
 /* should now be ok with BMA020 and BMA180 ACC */
 #define TRUSTED_ACCZ
 
+/* This will activate the ACC-Inflight calibration if unchecked */  
+//#define InflightAccCalibration
+
 /* PIN A0 and A1 instead of PIN D5 & D6 for 6 motors config and promini config
    This mod allow the use of a standard receiver on a pro mini
    (no need to use a PPM sum receiver)
@@ -100,6 +103,7 @@
 //#define MINIWII         // Jussi's MiniWii Flight Controller
 //#define CITRUSv1_0      // CITRUSv1 from qcrc.ca
 //#define DROTEK_IMU10DOF
+//#define MONGOOSE1_0     // mongoose 1.0    http://www.fuzzydrone.org/                      <- verified by matbogdan
 
 
 //if you use independent sensors
@@ -109,6 +113,7 @@
 //#define L3G4200D
 
 /* I2C accelerometer */
+//#define MMA745
 //#define ADXL345
 //#define BMA020
 //#define BMA180
@@ -201,7 +206,6 @@
 //#define BTSERIAL
 
 /* The following lines apply only for a pitch/roll tilt stabilization system
-   On promini board, it is not compatible with config with 6 motors or more
    Uncomment the first line to activate it */
 //#define SERVO_TILT
 #define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
