@@ -258,9 +258,9 @@
 //#define LCD_SERIAL3W    // Alex' initial variant with 3 wires, using rx-pin for transmission @9600 baud fixed
 /* serial (wired or wireless via BT etc.) */
 //#define LCD_TEXTSTAR    // Cat's Whisker LCD_TEXTSTAR Module CW-LCD-02 (Which has 4 input keys for selecting menus)
-#define LCD_VT100		  // vt100 compatible terminal emulation (blueterm, putty, etc.)
+//#define LCD_VT100		  // vt100 compatible terminal emulation (blueterm, putty, etc.)
 /* i2c devices */
-//#define LCD_ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
+#define LCD_ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
 //#define LCD_LCD03       // LCD03, which is i2c
 
 /* keys to navigate the LCD menu (preset to LCD_TEXTSTAR key-depress codes)*/
@@ -377,16 +377,16 @@
 /* Buttons toggle request for page on/off */
 /* The active page on the LCD does get updated automatically */
 /* Easy to use with Terminal application or display like LCD - uses the 4 buttons are preconfigured to send 'A', 'B', 'C', 'D' */
-//#define LCD_TELEMETRY
+#define LCD_TELEMETRY
 /* to enable automatic hopping between a choice of telemetry pages uncomment this. */
 /* This may be useful if your LCD has no buttons or the sending is broken */
 /* hopping is activated and deactivated in unarmed mode with throttle=low & roll=left & pitch=forward */
 /* set it to the sequence of telemetry pages you want to see */
-//#define LCD_TELEMETRY_AUTO "12345267" // pages 1 to 7 in ascending order
+#define LCD_TELEMETRY_AUTO "12345267" // pages 1 to 7 in ascending order
 //#define LCD_TELEMETRY_AUTO  "2122324252627" // strong emphasis on page 2
 /* Use this to trigger telemetry without a TX - only for debugging - do NOT fly with this activated */
 //#define LCD_TELEMETRY_DEBUG  //This form rolls between all screens, LCD_TELEMETRY_AUTO must also be defined.
-//#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
+#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
 
 /* on telemetry page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
@@ -415,7 +415,7 @@
 /* time base is main loop cycle time - a value of 6 means to trigger the action every 6th run through the main loop */
 /* example: with cycle time of approx 3ms, do action every 6*3ms=18ms */
 /* value must be [1; 65535] */
-#define LCD_TELEMETRY_FREQ 23       // to send telemetry data over serial 23 <=> 60ms <=> 16Hz (only sending interlaced, so 8Hz update rate)
+#define LCD_TELEMETRY_FREQ 5       // to send telemetry data over serial 23 <=> 60ms <=> 16Hz (only sending interlaced, so 8Hz update rate)
 #define LCD_TELEMETRY_AUTO_FREQ 667 // to step to next telemetry page 667 <=> 2s
 #define PSENSORFREQ 6               // to read hardware powermeter sensor 6 <=> 18ms
 #define VBATFREQ PSENSORFREQ        // to read battery voltage - keep equal to PSENSORFREQ unless you know what you are doing

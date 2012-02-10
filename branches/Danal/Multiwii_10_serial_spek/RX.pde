@@ -218,7 +218,7 @@ void  readSBus(){
   volatile uint32_t spekTimeLast;
 void readSpektrum() {
   if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
-    if (SerialPeek(SPEK_SERIAL_PORT) == 'M') {serialCom;} //GUI reqest for data?
+  if (SerialPeek((SPEK_SERIAL_PORT) == 'M') && (SerialAvailable(SPEK_SERIAL_PORT) == 1)) {serialCom(); return;} //GUI reqest for data?
     if (SPEK_FRAME_SIZE == SerialAvailable(SPEK_SERIAL_PORT)) {  //Frame is complete. If not, we'll catch it next time we are called. 
       uint8_t oldSREG = SREG; cli();
       SerialRead(SPEK_SERIAL_PORT); SerialRead(SPEK_SERIAL_PORT);        //Eat the header bytes 
