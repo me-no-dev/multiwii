@@ -217,10 +217,7 @@
   #define I2C_PULLUPS_ENABLE         PORTC |= 1<<4; PORTC |= 1<<5; 
   #define I2C_PULLUPS_DISABLE        PORTC &= ~(1<<4); PORTC &= ~(1<<5);  
   #define PPM_PIN_INTERRUPT          attachInterrupt(0, rxInt, RISING); //PIN 0
-  #define SPEK_SERIAL_VECT           USART_RX_vect
-  #define SPEK_BAUD_SET              UCSR0A  = (1<<U2X0); UBRR0H = ((F_CPU  / 4 / 115200 -1) / 2) >> 8; UBRR0L = ((F_CPU  / 4 / 115200 -1) / 2);
-  #define SPEK_SERIAL_INTERRUPT      UCSR0B |= (1<<RXEN0)|(1<<RXCIE0);
-  #define SPEK_DATA_REG              UDR0
+  #define SPEK_SERIAL_PORT           0
   #define MOTOR_ORDER                11,10,9,3 //for a quad+: RRight ,FRight ,RLeft, FLeft, n, n
   
   // TILT_PITCH

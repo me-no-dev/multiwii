@@ -416,7 +416,7 @@ void loop () {
 
   if (currentTime > rcTime ) { // 50Hz
     rcTime = currentTime + 20000;
-    #if !(defined(SPEKTRUM) ||defined(BTSERIAL))
+    #if !defined(BTSERIAL)
       computeRC();
     #endif
     // Failsafe routine - added by MIS

@@ -221,7 +221,7 @@ void SerialEnd(uint8_t port) {
   }
 }
 
-#if  (defined(PROMINI) || defined(MONGOOSE1_0)) && !(defined(SPEKTRUM))
+#if  defined(PROMINI) || defined(MONGOOSE1_0)
 SIGNAL(USART_RX_vect){
   uint8_t d = UDR0;
   #if defined(SPEKTRUM)
@@ -251,21 +251,39 @@ SIGNAL(USART1_RX_vect){
   uint8_t d = UDR1;
   #if defined(SPEKTRUM) && (SPEK_SERIAL_PORT == 1)
     if (!spekFrameFlags) {  
+      sei();
       uint32_t spekTimeNow = (timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond()); //Move timer0_overflow_count into registers so we don't touch a volatile twice
       uint32_t spekInterval = spekTimeNow - spekTimeLast;       //timer0_overflow_count will be slightly off because of the way the Arduino core timer interrupt handler works; that is acceptable for this use. Using the core variable avoids an expensive call to millis() or micros()
       spekTimeLast = spekTimeNow;
       if (spekInterval > 5000) {
+        cli();
         spekFrameFlags = 0x01;       //Potential start of a Spektrum frame, they arrive every 11 or every 22 ms. Mark it, and clear the buffer. 
         serialTailRX[1] = 0;
         serialHeadRX[1] = 0;
       }
     }
+    cli();
   #endif
   uint8_t i = (serialHeadRX[1] + 1) % SERIAL_RX_BUFFER_SIZE;
   if (i != serialTailRX[1]) {serialBufferRX[serialHeadRX[1]][1] = d; serialHeadRX[1] = i;}
 }
 SIGNAL(USART2_RX_vect){
   uint8_t d = UDR2;
+  #if defined(SPEKTRUM) && (SPEK_SERIAL_PORT == 2)
+    if (!spekFrameFlags) {  
+      sei();
+      uint32_t spekTimeNow = (timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond()); //Move timer0_overflow_count into registers so we don't touch a volatile twice
+      uint32_t spekInterval = spekTimeNow - spekTimeLast;       //timer0_overflow_count will be slightly off because of the way the Arduino core timer interrupt handler works; that is acceptable for this use. Using the core variable avoids an expensive call to millis() or micros()
+      spekTimeLast = spekTimeNow;
+      if (spekInterval > 5000) {
+        cli();
+        spekFrameFlags = 0x01;       //Potential start of a Spektrum frame, they arrive every 11 or every 22 ms. Mark it, and clear the buffer. 
+        serialTailRX[1] = 0;
+        serialHeadRX[1] = 0;
+      }
+    }
+    cli();
+  #endif
   uint8_t i = (serialHeadRX[2] + 1) % SERIAL_RX_BUFFER_SIZE;
   if (i != serialTailRX[2]) {serialBufferRX[serialHeadRX[2]][2] = d; serialHeadRX[2] = i;}
 }
