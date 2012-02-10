@@ -44,13 +44,19 @@ void configureReceiver() {
       PORTB   = (1<<1) | (1<<2) | (1<<3) | (1<<4);
       PCMSK0 |= (1<<1) | (1<<2) | (1<<3) | (1<<4); 
       PCICR   = (1<<0) ; // bit 0 PCINT activated only for the port dealing with PINs on port B
-      // AUX1 and AUX2 on RX and TX pin
       //attachinterrupt dosent works with atmega32u4 ATM.
-      pinMode(0,INPUT); // set to input
-      pinMode(1,INPUT);
-      PORTD |= (1 << 2) | (1 << 3); // enable pullups
-      EIMSK |= (1 << INT2) | (1 << INT3); // ISR
-      EICRA |= (1 << ISC20) | (1 << ISC30); // falling
+      //Trottle on pin 7
+      pinMode(7,INPUT); // set to input
+      PORTE |= (1 << 6); // enable pullups
+      EIMSK |= (1 << INT6); // enable interuppt
+      EICRB |= (1 << ISC60);
+      #if defined(RCAUX2PIN)
+        //AUX2 on RX pin
+        pinMode(0,INPUT); // set to input
+        PORTD |= (1 << 2); // enable pullups
+        EIMSK |= (1 << INT2); // enable interuppt
+        EICRA |= (1 << ISC20);
+      #endif
     #endif
     #if defined(MEGA)
       // PCINT activated only for specific pin inside [A8-A15]
@@ -64,10 +70,10 @@ void configureReceiver() {
     #if !defined(PROMICRO)
       PPM_PIN_INTERRUPT;
     #else
-      pinMode(1,INPUT);
-      PORTD |= (1 << 3); // enable pullups
-      EIMSK |= (1 << INT3); // ISR
-      EICRA |= (1 << ISC31); // rising
+      pinMode(7,INPUT); // set to input
+      PORTE |= (1 << 6); // enable pullups
+      EIMSK |= (1 << INT6); // enable interuppt
+      EICRB |= (1 << ISC61)|(1 << ISC60); // rising
     #endif
   #endif
   #if defined (SPEKTRUM)
@@ -106,20 +112,20 @@ void configureReceiver() {
     #if defined(PROMICRO)
       if (mask & 1<<2)        //indicates the bit 1 of the arduino port [B1-B4], that is to say digital pin 15, if 1 => this pin has just changed
         if (!(pin & 1<<2)) {     //indicates if the bit 1 of the arduino port [B1-B4] is not at a high state (so that we match here only descending PPM pulse)
-          dTime = cTime-edgeTime[2]; if (900<dTime && dTime<2200) rcValue[2] = dTime; // just a verification: the value must be in the range [1000;2000] + some margin
-        } else edgeTime[2] = cTime;    // if the bit 1 of the arduino port [B1-B4] is at a high state (ascending PPM pulse), we memorize the time
+          dTime = cTime-edgeTime[4]; if (900<dTime && dTime<2200) rcValue[4] = dTime; // just a verification: the value must be in the range [1000;2000] + some margin
+        } else edgeTime[4] = cTime;    // if the bit 1 of the arduino port [B1-B4] is at a high state (ascending PPM pulse), we memorize the time
       if (mask & 1<<3)   //same principle for other channels   // avoiding a for() is more than twice faster, and it's important to minimize execution time in ISR
         if (!(pin & 1<<3)) {
-          dTime = cTime-edgeTime[4]; if (900<dTime && dTime<2200) rcValue[4] = dTime;
-        } else edgeTime[4] = cTime;
-      if (mask & 1<<1)
-        if (!(pin & 1<<1)) {
           dTime = cTime-edgeTime[5]; if (900<dTime && dTime<2200) rcValue[5] = dTime;
         } else edgeTime[5] = cTime;
+      if (mask & 1<<1)
+        if (!(pin & 1<<1)) {
+          dTime = cTime-edgeTime[6]; if (900<dTime && dTime<2200) rcValue[6] = dTime;
+        } else edgeTime[6] = cTime;
       if (mask & 1<<4)
         if (!(pin & 1<<4)) {
-          dTime = cTime-edgeTime[6]; if (900<dTime && dTime<2200) rcValue[6] = dTime;
-        } else edgeTime[6] = cTime;   
+          dTime = cTime-edgeTime[7]; if (900<dTime && dTime<2200) rcValue[7] = dTime;
+        } else edgeTime[7] = cTime;   
     #endif
     #if defined(PROMINI) || defined(MEGA)  
     // mask is pins [D0-D7] that have changed // the principle is the same on the MEGA for PORTK and [A8-A15] PINs
@@ -193,23 +199,26 @@ void configureReceiver() {
 
 #if defined(PROMICRO) && !defined(SPEKTRUM) && !defined(SBUS) && !defined(BTSERIAL) && !defined(SERIAL_SUM_PPM)
   // because attachinterrupt dosent work on atmega32u4..
-  ISR(INT2_vect){
-    static uint16_t now,diff;
-    static uint16_t last = 0; 
-    now = micros();  
-    diff = now - last;
-    last = now;
-    if(900<diff && diff<2200) rcValue[7] = diff;
-  }
- 
-  ISR(INT3_vect){
+  // trottle
+  ISR(INT6_vect){
     static uint16_t now,diff;
     static uint16_t last = 0;
     now = micros();  
     diff = now - last;
     last = now;
-    if(900<diff && diff<2200) rcValue[0] = diff; 
+    if(900<diff && diff<2200) rcValue[2] = diff; 
   }
+  // Aux 2
+  #if defined(RCAUX2PIN)
+    ISR(INT2_vect){
+      static uint16_t now,diff;
+      static uint16_t last = 0; 
+      now = micros();  
+      diff = now - last;
+      last = now;
+      if(900<diff && diff<2200) rcValue[0] = diff;
+    }
+  #endif
 #endif
 
 
@@ -219,7 +228,7 @@ void configureReceiver() {
     void rxInt() {
   #else
     // because attachinterrupt dosent work on atmega32u4..
-    ISR(INT3_vect){
+    ISR(INT6_vect){
   #endif
     uint16_t now,diff;
     static uint16_t last = 0;
