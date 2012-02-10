@@ -121,9 +121,9 @@
   #define LEDPIN_TOGGLE              PIND |= 1<<5;     //switch LEDPIN state (Port D5)
   #define LEDPIN_OFF                 PORTD &= ~(1<<5);
   #define LEDPIN_ON                  PORTD |= (1<<5);
-  #define BUZZERPIN_PINMODE          pinMode (1, OUTPUT);
-  #define BUZZERPIN_ON               PORTD |= 1<<3;
-  #define BUZZERPIN_OFF              PORTD &= ~(1<<3);
+  #define BUZZERPIN_PINMODE          pinMode (7, OUTPUT);
+  #define BUZZERPIN_ON               PORTE |= 1<<6;
+  #define BUZZERPIN_OFF              PORTE &= ~(1<<6);
   #define POWERPIN_PINMODE           //
   #define POWERPIN_ON                //
   #define POWERPIN_OFF               //
