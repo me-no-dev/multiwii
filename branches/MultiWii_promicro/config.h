@@ -58,6 +58,9 @@
 //#define RCAUXPIN8
 //#define RCAUXPIN12
 
+//aux2 pin for promicro (on pin RX0)
+//#define RCAUX2PIN
+
 /* This option is here if you want to use the old level code from the verison 1.7
    It's just to have some feedback. This will be removed in the future */
 //#define STAB_OLD_17
@@ -114,7 +117,7 @@
 
 /* I2C accelerometer */
 //#define ADXL345
-//#define BMA020
+#define BMA020
 //#define BMA180
 //#define NUNCHACK  // if you want to use the nunckuk as a standalone I2C ACC without WMP
 //#define LIS3LV02
