@@ -87,7 +87,7 @@
    including some navigation functions
    contribution from EOSBandi
    http://code.google.com/p/i2c-gps-nav/ */
-#define I2C_GPS
+//#define I2C_GPS
 
 /* Pseudo-derivative conrtroller for level mode (experimental)
    Additional information: http://www.multiwii.com/forum/viewtopic.php?f=8&t=503 */
