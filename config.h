@@ -22,7 +22,8 @@
 //#define OCTOX8
 //#define OCTOFLATP
 //#define OCTOFLATX
-//#define FLYING_WING //experimental
+//#define FLYING_WING
+//#define VTAIL4
 
 #define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
 //#define YAW_DIRECTION -1
@@ -31,7 +32,7 @@
 //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
 //enable internal I2C pull ups
-//#define INTERNAL_I2C_PULLUPS
+#define INTERNAL_I2C_PULLUPS
 
 
 //****** advanced users settings   *************
@@ -41,7 +42,6 @@
 /* This option should be uncommented if ACC Z is accurate enough when motors are running*/
 /* should now be ok with BMA020 and BMA180 ACC */
 #define TRUSTED_ACCZ
-
 
 /* This will activate the ACC-Inflight calibration if unchecked */  
 //#define InflightAccCalibration
@@ -58,23 +58,31 @@
 //#define RCAUXPIN8
 //#define RCAUXPIN12
 
+/*Settings for Promicro (atmega32u4)
+*/
 //aux2 pin for promicro (on pin RX0)
 //#define RCAUX2PIN
+
+
 
 /* This option is here if you want to use the old level code from the verison 1.7
    It's just to have some feedback. This will be removed in the future */
 //#define STAB_OLD_17
 
-/* GPS
+/* GPS using a SERIAL port
    only available on MEGA boards (this might be possible on 328 based boards in the future)
    if enabled, define here the Arduino Serial port number and the UART speed
    note: only the RX PIN is used, the GPS is not configured by multiwii
    the GPS must be configured to output NMEA sentences (which is generally the default conf for most GPS devices)
-*/
-//#define GPS
-#define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
+   uncomment the first line to select the GPS serial port of the arduino */
+//#define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
 #define GPS_BAUD   115200
-//#define GPS_BAUD   9600
+
+/* I2C GPS device made with an independant arduino + GPS device
+   including some navigation functions
+   contribution from EOSBandi
+   http://code.google.com/p/i2c-gps-nav/ */
+//#define I2C_GPS
 
 /* Pseudo-derivative conrtroller for level mode (experimental)
    Additional information: http://www.multiwii.com/forum/viewtopic.php?f=8&t=503 */
@@ -107,7 +115,7 @@
 //#define MINIWII         // Jussi's MiniWii Flight Controller
 //#define CITRUSv1_0      // CITRUSv1 from qcrc.ca
 //#define DROTEK_IMU10DOF
-
+//#define MONGOOSE1_0     // mongoose 1.0    http://www.fuzzydrone.org/
 
 //if you use independent sensors
 //leave it commented it you already checked a specific board above
@@ -116,8 +124,9 @@
 //#define L3G4200D
 
 /* I2C accelerometer */
+//#define MMA745
 //#define ADXL345
-#define BMA020
+//#define BMA020
 //#define BMA180
 //#define NUNCHACK  // if you want to use the nunckuk as a standalone I2C ACC without WMP
 //#define LIS3LV02
@@ -208,7 +217,6 @@
 //#define BTSERIAL
 
 /* The following lines apply only for a pitch/roll tilt stabilization system
-   On promini board, it is not compatible with config with 6 motors or more
    Uncomment the first line to activate it */
 //#define SERVO_TILT
 #define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
@@ -265,7 +273,7 @@
 #define LCD_SERIAL3W    // Alex' initial variant with 3 wires, using rx-pin for transmission @9600 baud fixed
 /* serial (wired or wireless via BT etc.) */
 //#define LCD_TEXTSTAR    // Cat's Whisker LCD_TEXTSTAR Module CW-LCD-02 (Which has 4 input keys for selecting menus)
-//#define LCD_VT100               // vt100 compatible terminal emulation (blueterm, putty, etc.)
+//#define LCD_VT100		  // vt100 compatible terminal emulation (blueterm, putty, etc.)
 /* i2c devices */
 //#define LCD_ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
 //#define LCD_LCD03       // LCD03, which is i2c
@@ -429,4 +437,3 @@
 /**************************************/
 /****END OF CONFIGURABLE PARAMETERS****/
 /**************************************/
-
