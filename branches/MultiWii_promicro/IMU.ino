@@ -9,8 +9,12 @@ void computeIMU () {
     static int16_t gyroYawSmooth = 0;
   #endif
 
-  if (MAG)  Mag_getADC();
-  if (BARO) Baro_update();
+  #if MAG
+    Mag_getADC();
+  #endif
+  #if BARO
+    Baro_update();
+  #endif
 
   //we separate the 2 situations because reading gyro values with a gyro only setup can be acchieved at a higher rate
   //gyro+nunchuk: we must wait for a quite high delay betwwen 2 reads to get both WM+ and Nunchuk data. It works with 3ms
@@ -40,7 +44,11 @@ void computeIMU () {
       getEstimatedAttitude();
       if (BARO) getEstimatedAltitude();
     }
-    if (GYRO) Gyro_getADC(); else WMP_getRawADC();
+    #if GYRO
+      Gyro_getADC();
+    #else
+      WMP_getRawADC();
+    #endif
     for (axis = 0; axis < 3; axis++)
       gyroADCp[axis] =  gyroADC[axis];
     timeInterleave=micros();
@@ -50,7 +58,11 @@ void computeIMU () {
     } else {
        while((micros()-timeInterleave)<650) ; //empirical, interleaving delay between 2 consecutive reads
     }
-    if (GYRO) Gyro_getADC(); else WMP_getRawADC();
+    #if GYRO
+      Gyro_getADC();
+    #else
+      WMP_getRawADC();
+    #endif
     for (axis = 0; axis < 3; axis++) {
       gyroADCinter[axis] =  gyroADC[axis]+gyroADCp[axis];
       // empirical, we take a weighted value of the current and the previous values
@@ -141,7 +153,7 @@ typedef union {
 } t_fp_vector;
 
 int16_t _atan2(float y, float x){
-  #define fp_is_neg(val) ((((byte*)&val)[3] & 0x80) != 0)
+  #define fp_is_neg(val) ((((uint8_t*)&val)[3] & 0x80) != 0)
   float z = y / x;
   int16_t zi = abs(int16_t(z * 100)); 
   int8_t y_neg = fp_is_neg(y);
@@ -228,7 +240,7 @@ void getEstimatedAttitude(){
   if ( ( 36 < accMag && accMag < 196 ) || smallAngle25 )
     for (axis = 0; axis < 3; axis++) {
       int16_t acc = ACC_VALUE;
-      #if not defined(TRUSTED_ACCZ)
+      #if !defined(TRUSTED_ACCZ)
         if (smallAngle25 && axis == YAW)
           //We consider ACCZ = acc_1G when the acc on other axis is small.
           //It's a tweak to deal with some configs where ACC_Z tends to a value < acc_1G when high throttle is applied.
@@ -277,13 +289,9 @@ void getEstimatedAltitude(){
   int16_t AltError;
   int16_t InstAcc;
   static int32_t tmpAlt;
-  static int16_t EstVelocity=0;
-  static uint32_t velTimer;
-  static int16_t lastAlt;
   
   if (currentTime < deadLine) return;
   deadLine = currentTime + UPDATE_INTERVAL; 
-  // Soft start
 
   if (!inited) {
     inited = 1;
@@ -296,9 +304,8 @@ void getEstimatedAltitude(){
   AltErrorI += AltError;
   AltErrorI=constrain(AltErrorI,-2500,+2500);
   // Gravity vector correction and projection to the local Z
-  //InstAcc = (accADC[YAW] * (1 - acc_1G * InvSqrt(isq(accADC[ROLL]) + isq(accADC[PITCH]) + isq(accADC[YAW])))) * AccScale + (Ki) * AltErrorI;
   #if defined(TRUSTED_ACCZ)
-    InstAcc = (accADC[YAW] * (1 - acc_1G * InvSqrt(isq(accADC[ROLL]) + isq(accADC[PITCH]) + isq(accADC[YAW])))) * AccScale +  AltErrorI / 100;
+    InstAcc = (accADC[YAW] * (1 - acc_1G * InvSqrt(isq(accADC[ROLL]) + isq(accADC[PITCH]) + isq(accADC[YAW])))) * AccScale +  AltErrorI / 100; // Ki = 1/100
   #else
     InstAcc = AltErrorI / 100;
   #endif
@@ -309,11 +316,4 @@ void getEstimatedAltitude(){
   EstVelocity = constrain(EstVelocity,-10000,+10000);
   
   EstAlt = tmpAlt/10;
-
-  if (currentTime < velTimer) return;
-  velTimer = currentTime + 500000;
-  zVelocity = tmpAlt - lastAlt;
-  lastAlt = tmpAlt;
-
-debug4 = zVelocity;
 }

@@ -1,79 +1,32 @@
-#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)
-  #define SERVO
+#if defined(PROMINI)
+  uint8_t PWM_PIN[8] = {9,10,11,3,6,5,A2,12};   //for a quad+: rear,right,left,front
 #endif
-
-#if defined(GIMBAL)
-  #define NUMBER_MOTOR 0
-  #define PRI_SERVO_FROM   1 // use servo from 1 to 2
-  #define PRI_SERVO_TO     2
-#elif defined(FLYING_WING)
-  #define NUMBER_MOTOR 1
-  #define PRI_SERVO_FROM   1 // use servo from 1 to 2
-  #define PRI_SERVO_TO     2
-#elif defined(BI)
-  #define NUMBER_MOTOR 2
-  #define PRI_SERVO_FROM   5 // use servo from 5 to 6
-  #define PRI_SERVO_TO     6
-#elif defined(TRI)
-  #define NUMBER_MOTOR 3
-  #define PRI_SERVO_FROM   5 // use only servo 5
-  #define PRI_SERVO_TO     5
-#elif defined(QUADP) || defined(QUADX) || defined(Y4)
-  #define NUMBER_MOTOR 4
-#elif defined(Y6) || defined(HEX6) || defined(HEX6X)
-  #define NUMBER_MOTOR 6
-#elif defined(OCTOX8) || defined(OCTOFLATP) || defined(OCTOFLATX)
-  #define NUMBER_MOTOR 8
+#if defined(PROMICRO)
+  uint8_t PWM_PIN[8] = {9,10,5,6,4,A2,A0,A1};   //for a quad+: rear,right,left,front
 #endif
-
-#if defined(SERVO_TILT) && defined(CAMTRIG)
-  #define SEC_SERVO_FROM   1 // use servo from 1 to 3
-  #define SEC_SERVO_TO     3
-#else
-  #if defined(SERVO_TILT)
-    // if A0 and A1 is taken by motors, we can use A2 and 12 for Servo tilt
-    #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && defined(PROMINI)
-      #define SEC_SERVO_FROM   3 // use servo from 3 to 4
-      #define SEC_SERVO_TO     4    
-    #else
-      #define SEC_SERVO_FROM   1 // use servo from 1 to 2
-      #define SEC_SERVO_TO     2
-    #endif
-  #endif
-  #if defined(CAMTRIG)
-    #define SEC_SERVO_FROM   3 // use servo 3
-    #define SEC_SERVO_TO     3
-  #endif
+#if defined(MEGA)
+  uint8_t PWM_PIN[8] = {3,5,6,2,7,8,9,10};      //for a quad+: rear,right,left,front   //+ for y6: 7:under right  8:under left
 #endif
-
-
-uint8_t PWM_PIN[8] = {MOTOR_ORDER};
-// so we need a servo pin array
 #if !defined(PROMICRO)
   volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,125};
 #else
   volatile uint16_t atomicServo[8] = {8000,8000,8000,8000,8000,8000,8000,8000};
 #endif
 
-
-#if defined(PROMICRO) || defined(PROMINI)
-  //for HEX Y6 and HEX6/HEX6X flat and for promini & promicro
-  volatile uint16_t atomicPWM_PIN1_lowState;
-  volatile uint16_t atomicPWM_PIN1_highState;
-  volatile uint16_t atomicPWM_PIN2_lowState;
-  volatile uint16_t atomicPWM_PIN2_highState;
-  //for OCTO on promini & promicro
-  volatile uint16_t atomicPWM_PIN3_lowState;
-  volatile uint16_t atomicPWM_PIN3_highState;
-  volatile uint16_t atomicPWM_PIN4_lowState;
-  volatile uint16_t atomicPWM_PIN4_highState;
-
-#endif
+//for HEX Y6 and HEX6/HEX6X flat and for promini
+volatile uint8_t atomicPWM_PIN5_lowState;
+volatile uint8_t atomicPWM_PIN5_highState;
+volatile uint8_t atomicPWM_PIN6_lowState;
+volatile uint8_t atomicPWM_PIN6_highState;
+//for OCTO on promini
+volatile uint8_t atomicPWM_PINA2_lowState;
+volatile uint8_t atomicPWM_PINA2_highState;
+volatile uint8_t atomicPWM_PIN12_lowState;
+volatile uint8_t atomicPWM_PIN12_highState;
 
 void writeServos() {
   #if defined(SERVO)
-    // write primary servos
-    #if defined(PRI_SERVO_FROM)
+    #if defined(PRI_SERVO_FROM)    // write primary servos
       for(uint8_t i = (PRI_SERVO_FROM-1); i < PRI_SERVO_TO; i++){
         #if !defined(PROMICRO)
           atomicServo[i] = (servo[i]-1000)>>2;
@@ -82,8 +35,7 @@ void writeServos() {
         #endif
       }
     #endif
-    // write secundary servos
-    #if defined(SEC_SERVO_FROM)
+    #if defined(SEC_SERVO_FROM)   // write secundary servos
       for(uint8_t i = (SEC_SERVO_FROM-1); i < SEC_SERVO_TO; i++){
         #if !defined(PROMICRO)
           atomicServo[i] = (servo[i]-1000)>>2;
@@ -98,24 +50,50 @@ void writeServos() {
 void writeMotors() { // [1000;2000] => [125;250]
   #if defined(MEGA)
     #if (NUMBER_MOTOR > 0)
-      OCR3C = motor[0]>>3; //  pin 3
+      #ifndef EXT_MOTOR_RANGE 
+        OCR3C = motor[0]>>3; //  pin 3
+      #else
+        OCR3C = ((motor[0]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 1)
-      OCR3A = motor[1]>>3; //  pin 5
+      #ifndef EXT_MOTOR_RANGE 
+        OCR3A = motor[1]>>3; //  pin 5
+      #else
+        OCR3A = ((motor[1]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 2)
-      OCR4A = motor[2]>>3; //  pin 6
+      #ifndef EXT_MOTOR_RANGE 
+        OCR4A = motor[2]>>3; //  pin 6
+      #else
+        OCR4A = ((motor[2]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 3)
-      OCR3B = motor[3]>>3; //  pin 2
+      #ifndef EXT_MOTOR_RANGE 
+        OCR3B = motor[3]>>3; //  pin 2
+      #else
+        OCR3B = ((motor[3]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 4)
-      OCR4B = motor[4]>>3; //  pin 7
-      OCR4C = motor[5]>>3; //  pin 8
+      #ifndef EXT_MOTOR_RANGE 
+        OCR4B = motor[4]>>3; //  pin 7
+        OCR4C = motor[5]>>3; //  pin 8
+      #else
+        OCR4B = ((motor[4]>>2) - 250) + 2);
+        OCR4C = ((motor[5]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 6)
-      OCR2B = motor[6]>>3; //  pin 9
-      OCR2A = motor[7]>>3; //  pin 10
+      #ifndef EXT_MOTOR_RANGE 
+        OCR2B = motor[6]>>3; //  pin 9
+        OCR2A = motor[7]>>3; //  pin 10
+      #else
+        OCR2B = ((motor[6]>>2) - 250) + 2);
+        OCR2A = ((motor[7]>>2) - 250) + 2);
+      #endif
     #endif
   #endif
   #if defined(PROMICRO)
@@ -152,16 +130,16 @@ void writeMotors() { // [1000;2000] => [125;250]
       OCR4D = pwm4_LBD;  //  pin 6
     #endif    
     #if (NUMBER_MOTOR > 4)
-      atomicPWM_PIN1_highState = ((motor[4]-1000)<<4)+200;
-      atomicPWM_PIN1_lowState = 16383-atomicPWM_PIN1_highState;
-      atomicPWM_PIN2_highState = ((motor[5]-1000)<<4)+200;
-      atomicPWM_PIN2_lowState = 16383-atomicPWM_PIN2_highState;
+      atomicPWM_PIN5_highState = ((motor[4]-1000)<<4)+200;
+      atomicPWM_PIN5_lowState = 16383-atomicPWM_PIN5_highState;
+      atomicPWM_PIN6_highState = ((motor[5]-1000)<<4)+200;
+      atomicPWM_PIN6_lowState = 16383-atomicPWM_PIN6_highState;
     #endif
     #if (NUMBER_MOTOR > 6)
-      atomicPWM_PIN3_highState = ((motor[6]-1000)<<4)+200;
-      atomicPWM_PIN3_lowState = 16383-atomicPWM_PIN3_highState;
-      atomicPWM_PIN4_highState = ((motor[7]-1000)<<4)+200;
-      atomicPWM_PIN4_lowState = 16383-atomicPWM_PIN4_highState;
+      atomicPWM_PINA2_highState = ((motor[6]-1000)<<4)+200;
+      atomicPWM_PINA2_lowState = 16383-atomicPWM_PINA2_highState;
+      atomicPWM_PIN12_highState = ((motor[7]-1000)<<4)+200;
+      atomicPWM_PIN12_lowState = 16383-atomicPWM_PIN12_highState;
     #endif
   #endif
   #if defined(PROMINI)
@@ -169,41 +147,41 @@ void writeMotors() { // [1000;2000] => [125;250]
       #ifndef EXT_MOTOR_RANGE 
         OCR1A = motor[0]>>3; //  pin 9
       #else
-        OCR1A = ((motor[0]>>2) - 250) + 2)
+        OCR1A = ((motor[0]>>2) - 250) + 2);
       #endif
     #endif
     #if (NUMBER_MOTOR > 1)
       #ifndef EXT_MOTOR_RANGE 
         OCR1B = motor[1]>>3; //  pin 10
       #else
-        OCR1B = ((motor[1]>>2) - 250) + 2)
+        OCR1B = ((motor[1]>>2) - 250) + 2);
       #endif
     #endif
     #if (NUMBER_MOTOR > 2)
       #ifndef EXT_MOTOR_RANGE 
         OCR2A = motor[2]>>3; //  pin 11
       #else
-        OCR2A = ((motor[2]>>2) - 250) + 2)
+        OCR2A = ((motor[2]>>2) - 250) + 2);
       #endif
     #endif
     #if (NUMBER_MOTOR > 3)
       #ifndef EXT_MOTOR_RANGE 
         OCR2B = motor[3]>>3; //  pin 3
       #else
-        OCR2B = ((motor[3]>>2) - 250) + 2)
+        OCR2B = ((motor[3]>>2) - 250) + 2);
       #endif
     #endif
-  #if (NUMBER_MOTOR > 4)
-      atomicPWM_PIN5_highState = ((motor[5]-1000)>>2)+2;
-      atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
+    #if (NUMBER_MOTOR > 4) //note: EXT_MOTOR_RANGE not possible here
       atomicPWM_PIN6_highState = ((motor[4]-1000)>>2)+2;
-      atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
+      atomicPWM_PIN6_lowState  = 255-atomicPWM_PIN6_highState;
+      atomicPWM_PIN5_highState = ((motor[5]-1000)>>2)+2;
+      atomicPWM_PIN5_lowState  = 255-atomicPWM_PIN5_highState;
     #endif
-    #if (NUMBER_MOTOR > 6)
+    #if (NUMBER_MOTOR > 6) //note: EXT_MOTOR_RANGE not possible here
       atomicPWM_PINA2_highState = ((motor[6]-1000)>>2)+2;
-      atomicPWM_PINA2_lowState = 255-atomicPWM_PINA2_highState;
+      atomicPWM_PINA2_lowState  = 255-atomicPWM_PINA2_highState;
       atomicPWM_PIN12_highState = ((motor[7]-1000)>>2)+2;
-      atomicPWM_PIN12_lowState = 255-atomicPWM_PIN12_highState;
+      atomicPWM_PIN12_lowState  = 255-atomicPWM_PIN12_highState;
     #endif
   #endif
 }
@@ -215,9 +193,9 @@ void writeAllMotors(int16_t mc) {   // Sends commands to all motors
 }
 
 void initOutput() {
+  for(uint8_t i=0;i<NUMBER_MOTOR;i++)
+    pinMode(PWM_PIN[i],OUTPUT);
   #if defined(MEGA)
-    for(uint8_t i=0;i<NUMBER_MOTOR;i++)
-      pinMode(PWM_PIN[i],OUTPUT);
     #if (NUMBER_MOTOR > 0)
       TCCR3A |= _BV(COM3C1); // connect pin 3 to timer 3 channel C
     #endif
@@ -239,15 +217,13 @@ void initOutput() {
       TCCR2A |= _BV(COM2A1); // connect pin 10 to timer 2 channel A
     #endif
   #endif
-  #if defined(PROMICRO)
-    for(uint8_t i=0;i<NUMBER_MOTOR;i++)
-      pinMode(PWM_PIN[i],OUTPUT);
+#if defined(PROMICRO)
     #if (NUMBER_MOTOR > 0)
       TCCR1A |= (1<<WGM11); // phase correct mode
       TCCR1A &= ~(1<<WGM10);
       TCCR1B |= (1<<WGM13);
       TCCR1B &= ~(1<<CS11); // no prescaler
-      ICR1 |= 0x3FFF; // TOP to = 16383;
+      ICR1   |= 0x3FFF; // TOP to 16383;
       TCCR1A |= _BV(COM1A1); // connect pin 9 to timer 1 channel A
     #endif
     #if (NUMBER_MOTOR > 1)
@@ -265,10 +241,11 @@ void initOutput() {
     #if (NUMBER_MOTOR > 3)
       TCCR4C |= (1<<COM4D1)|(1<<PWM4D); // connect pin 6 to timer 4 channel D
     #endif
+    #if (NUMBER_MOTOR > 4)
+      initializeSoftPWM();
+    #endif
   #endif
   #if defined(PROMINI)
-    for(uint8_t i=0;i<NUMBER_MOTOR;i++)
-      pinMode(PWM_PIN[i],OUTPUT);
     #if (NUMBER_MOTOR > 0)
       TCCR1A |= _BV(COM1A1); // connect pin 9 to timer 1 channel A
     #endif
@@ -281,6 +258,15 @@ void initOutput() {
     #if (NUMBER_MOTOR > 3)
       TCCR2A |= _BV(COM2B1); // connect pin 3 to timer 2 channel B
     #endif
+    #if (NUMBER_MOTOR == 6)  // PIN 5 & 6 or A0 & A1
+      initializeSoftPWM();
+      #if defined(A0_A1_PIN_HEX)
+        pinMode(5,INPUT);pinMode(6,INPUT);     // we reactivate the INPUT affectation for these two PINs
+        pinMode(A0,OUTPUT);pinMode(A1,OUTPUT);
+      #endif
+    #elif (NUMBER_MOTOR == 8) // PIN A2 & 12
+      initializeSoftPWM();
+    #endif
   #endif
   
   writeAllMotors(1000);
@@ -288,16 +274,7 @@ void initOutput() {
   #if defined(SERVO)
     initializeServo();
   #endif
-  #if (NUMBER_MOTOR > 4) && (defined(PROMINI) || defined(PROMICRO))
-    initializeSoftPWM();
-    #if defined(A0_A1_PIN_HEX)
-      pinMode(5,INPUT);pinMode(6,INPUT);     // we reactivate the INPUT affectation for these two PINs
-      pinMode(A0,OUTPUT);pinMode(A1,OUTPUT);
-    #endif
-  #endif
 }
-
-
 
 #if defined(SERVO)
 void initializeServo() {
@@ -324,29 +301,17 @@ void initializeServo() {
   #endif 
   #if (PRI_SERVO_FROM <= 8 && PRI_SERVO_TO >= 8) || (SEC_SERVO_FROM <= 8 && SEC_SERVO_TO >= 8) 
     SERVO_8_PINMODE;
-  #endif 
+  #endif
   
   #if !defined(PROMICRO)
     TCCR0A = 0; // normal counting mode
     TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
-    
-    // timer 0B for hex with servo tilt
-    #if (NUMBER_MOTOR == 6) && (defined(PROMINI) || defined(PROMICRO))
-      TIMSK0 |= (1<<OCIE0B); 
-    #endif
   #else
     TCCR3A &= ~(1<<WGM30); // normal counting mode
     TCCR3B &= ~(1<<CS31); // no prescaler
-    TIMSK3 |= (1<<OCIE3A); // Enable CTC interrupt 
-    #if (NUMBER_MOTOR > 4)
-      TIMSK3 |= (1<<OCIE3B); // Enable CTC interrupt 
-    #endif
-    #if (NUMBER_MOTOR > 6)
-      TIMSK3 |= (1<<OCIE3C); // Enable CTC interrupt
-    #endif 
+    TIMSK3 |= (1<<OCIE3A); // Enable CTC interrupt   
   #endif
 }
-
 
 #if !defined(PROMICRO)
   #define SERVO_ISR TIMER0_COMPA_vect
@@ -358,10 +323,6 @@ void initializeServo() {
   #define SERVO_1K_US 16000
 #endif
 
-
-
-
-// ****servo yaw with a 50Hz refresh rate****
 // prescaler is set by default to 64 on Timer0
 // Duemilanove : 16MHz / 64 => 4 us
 // 256 steps = 1 counter cycle = 1024 us
@@ -369,8 +330,6 @@ ISR(SERVO_ISR) {
   static uint8_t state = 0;
   static uint8_t count;
   if (state == 0) {
-    //http://billgrundmann.wordpress.com/2009/03/03/to-use-or-not-use-writedigital/ 
-    
     #if (PRI_SERVO_FROM == 1) || (SEC_SERVO_FROM == 1)
       SERVO_1_PIN_HIGH;
     #endif
@@ -479,6 +438,7 @@ ISR(SERVO_ISR) {
 #endif
 
 #if (NUMBER_MOTOR > 4) && (defined(PROMINI) || defined(PROMICRO))
+
   #if !defined(PROMICRO)
     #define SOFT_PWM_ISR1 TIMER0_COMPB_vect
     #define SOFT_PWM_ISR2 TIMER0_COMPA_vect
@@ -490,34 +450,28 @@ ISR(SERVO_ISR) {
     #define SOFT_PWM_CHANNEL1 OCR3B
     #define SOFT_PWM_CHANNEL2 OCR3C   
   #endif
-  
+
   void initializeSoftPWM() {
     #if !defined(PROMICRO)
-      // if there are servos its alredy done
-      #if (NUMBER_MOTOR == 6) && not defined(SERVO)
-        TCCR0A = 0; // normal counting mode
+      TCCR0A = 0; // normal counting mode
+      #if (NUMBER_MOTOR == 6)
         TIMSK0 |= (1<<OCIE0B); // Enable CTC interrupt  
       #endif
-      
-      #if (NUMBER_MOTOR > 6)
-        TCCR0A = 0; // normal counting mode
-        TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
+      #if (NUMBER_MOTOR == 8)
+        TIMSK0 |= (1<<OCIE0A);
         TIMSK0 |= (1<<OCIE0B);
       #endif
     #else
-      // if there are servos its alredy done
-      #if !defined(SERVO)
         TCCR3A &= ~(1<<WGM30); // normal counting mode
         TCCR3B &= ~(1<<CS31); // no prescaler
-        TIMSK3 |= (1<<OCIE3B); // Enable CTC interrupt 
+        TIMSK3 |= (1<<OCIE3B); // Enable CTC interrupt  
         #if (NUMBER_MOTOR > 6)
-          TIMSK3 |= (1<<OCIE3C); // Enable CTC interrupt
-        #endif  
-      #endif  
+          TIMSK3 |= (1<<OCIE3C);
+        #endif   
     #endif
   }
   
-  // HEXA with just OCR0B // OCR3B
+  // HEXA with just OCR0B 
   ISR(SOFT_PWM_ISR1) { 
     static uint8_t state = 0;
     if(state == 0){
@@ -578,20 +532,12 @@ ISR(SERVO_ISR) {
       }
     }
   #endif
-
 #endif
-
-
-
-
 
 void mixTable() {
   int16_t maxMotor;
-  uint8_t i,axis;
-  static uint8_t camCycle = 0;
-  static uint8_t camState = 0;
-  static uint32_t camTime = 0;
-  
+  uint8_t i;
+
   #define PIDMIX(X,Y,Z) rcCommand[THROTTLE] + axisPID[ROLL]*X + axisPID[PITCH]*Y + YAW_DIRECTION * axisPID[YAW]*Z
 
   #if NUMBER_MOTOR > 3
@@ -608,7 +554,7 @@ void mixTable() {
     motor[0] = PIDMIX( 0,+4/3, 0); //REAR
     motor[1] = PIDMIX(-1,-2/3, 0); //RIGHT
     motor[2] = PIDMIX(+1,-2/3, 0); //LEFT
-    servo[4] = constrain(TRI_YAW_MIDDLE + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
   #endif
   #ifdef QUADP
     motor[0] = PIDMIX( 0,+1,-1); //REAR
@@ -682,21 +628,29 @@ void mixTable() {
     motor[6] = PIDMIX(-1/2,+1  ,-1); //REAR_R
     motor[7] = PIDMIX(+1  ,+1/2,-1); //MIDREAR_L 
   #endif
+  #ifdef VTAIL4
+    motor[0] = PIDMIX(+0,+1, -1/2);      //REAR_R 
+    motor[1] = PIDMIX(-1, -1, +2/10); //FRONT_R 
+    motor[2] = PIDMIX(+0,+1, +1/2);      //REAR_L 
+    motor[3] = PIDMIX(+1, -1, -2/10); //FRONT_L
+  #endif
 
   #ifdef SERVO_TILT
-    if ((rcOptions1 & activate1[BOXCAMSTAB]) || (rcOptions2 & activate2[BOXCAMSTAB])) {
-      servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] /16 + rcData[AUX3]-1500 , TILT_PITCH_MIN, TILT_PITCH_MAX);
-      servo[1] = constrain(TILT_ROLL_MIDDLE  + TILT_ROLL_PROP  * angle[ROLL]  /16 + rcData[AUX4]-1500, TILT_ROLL_MIN, TILT_ROLL_MAX);
-    } else {
-      // to use it with A0_A1_PIN_HEX
-      #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && defined(PROMINI)
-        servo[2] = constrain(TILT_PITCH_MIDDLE  + rcData[AUX3]-1500 , TILT_PITCH_MIN, TILT_PITCH_MAX);
-        servo[3] = constrain(TILT_ROLL_MIDDLE   + rcData[AUX4]-1500,  TILT_ROLL_MIN, TILT_ROLL_MAX);     
-      #else
-        servo[0] = constrain(TILT_PITCH_MIDDLE  + rcData[AUX3]-1500 , TILT_PITCH_MIN, TILT_PITCH_MAX);
-        servo[1] = constrain(TILT_ROLL_MIDDLE   + rcData[AUX4]-1500,  TILT_ROLL_MIN, TILT_ROLL_MAX);
-      #endif
+    #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && defined(PROMINI)
+      #define S_PITCH servo[2]
+      #define S_ROLL  servo[3]
+    #else
+      #define S_PITCH servo[0]
+      #define S_ROLL  servo[1]
+    #endif
+    S_PITCH = TILT_PITCH_MIDDLE + rcData[AUX3]-1500;
+    S_ROLL  = TILT_ROLL_MIDDLE  + rcData[AUX4]-1500;
+    if (rcOptions[BOXCAMSTAB]) {
+      S_PITCH += TILT_PITCH_PROP * angle[PITCH] /16 ;
+      S_ROLL  += TILT_ROLL_PROP  * angle[ROLL]  /16 ;
     }
+    S_PITCH = constrain(S_PITCH, TILT_PITCH_MIN, TILT_PITCH_MAX);
+    S_ROLL  = constrain(S_ROLL , TILT_ROLL_MIN, TILT_ROLL_MAX  );   
   #endif
   #ifdef GIMBAL
     servo[0] = constrain(TILT_PITCH_MIDDLE + TILT_PITCH_PROP * angle[PITCH] /16 + rcCommand[PITCH], TILT_PITCH_MIN, TILT_PITCH_MAX);
@@ -704,15 +658,20 @@ void mixTable() {
   #endif
   #ifdef FLYING_WING
     motor[0] = rcCommand[THROTTLE];
-    if (passThruMode) {// use raw stick values to drive output 
-       servo[0]  = constrain(wing_left_mid  + PITCH_DIRECTION_L * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL]-MIDRC), WING_LEFT_MIN,  WING_LEFT_MAX); //LEFT
-       servo[1]  = constrain(wing_right_mid + PITCH_DIRECTION_R * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL]-MIDRC), WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
+    if (passThruMode) {// do not use sensors for correction, simple 2 channel mixing
+       servo[0]  = PITCH_DIRECTION_L * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL]-MIDRC);
+       servo[1]  = PITCH_DIRECTION_R * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL]-MIDRC);
     } else { // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
-       servo[0]  = constrain(wing_left_mid  + PITCH_DIRECTION_L * axisPID[PITCH]        + ROLL_DIRECTION_L * axisPID[ROLL], WING_LEFT_MIN,  WING_LEFT_MAX); //LEFT
-       servo[1]  = constrain(wing_right_mid + PITCH_DIRECTION_R * axisPID[PITCH]        + ROLL_DIRECTION_R * axisPID[ROLL], WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
+       servo[0]  = PITCH_DIRECTION_L * axisPID[PITCH]        + ROLL_DIRECTION_L * axisPID[ROLL];
+       servo[1]  = PITCH_DIRECTION_R * axisPID[PITCH]        + ROLL_DIRECTION_R * axisPID[ROLL];
     }
+    servo[0]  = constrain(servo[0] + wing_left_mid , WING_LEFT_MIN,  WING_LEFT_MAX );
+    servo[1]  = constrain(servo[1] + wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX);
   #endif
   #if defined(CAMTRIG)
+    static uint8_t camCycle = 0;
+    static uint8_t camState = 0;
+    static uint32_t camTime = 0;
     if (camCycle==1) {
       if (camState == 0) {
         servo[2] = CAM_SERVO_HIGH;
@@ -731,7 +690,7 @@ void mixTable() {
        }
       }
     }
-    if ((rcOptions1 & activate1[BOXCAMTRIG]) || (rcOptions1 & activate2[BOXCAMTRIG])) camCycle=1;
+    if (rcOptions[BOXCAMTRIG]) camCycle=1;
   #endif
 
   maxMotor=motor[0];
@@ -765,9 +724,9 @@ void mixTable() {
                                      44507,46890,49358,51910,54549,57276,60093,63000};
   
     if (vbat) { // by all means - must avoid division by zero 
-      for (uint8_t i =0;i<NUMBER_MOTOR;i++) {
+      for (i =0;i<NUMBER_MOTOR;i++) {
         amp = amperes[ ((motor[i] - 1000)>>4) ] / vbat; // range mapped from [1000:2000] => [0:1000]; then break that up into 64 ranges; lookup amp
-          #if (LOG_VALUES == 2)
+  	  #if (LOG_VALUES == 2)
            pMeter[i]+= amp; // sum up over time the mapped ESC input 
         #endif
         #if defined(POWERMETER_SOFT)
@@ -777,4 +736,3 @@ void mixTable() {
     }
   #endif
 }
-

@@ -1,7 +1,7 @@
 
 WMC with ProMicro support
 
-based on r501
+based on r567
 
 - Output seem to work
 - vBat works
