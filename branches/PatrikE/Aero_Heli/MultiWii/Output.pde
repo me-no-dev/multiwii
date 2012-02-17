@@ -606,22 +606,14 @@ if (armed){
  // motor[0] =constrain(   rcData[THROTTLE] , 1020, 2000); 	//   490hz ESC
     servo[7]  = constrain(  rcData[THROTTLE] , 1020, 2000);     //   50hz ESC or servo
 }
-    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //   YAW  
-
  
  /************************************************************************************************************/  
   #ifdef HELI_120_CCPM    
- if(!passThruMode){ 
- #define HELIMIX(X,Y,Z) rcCommand[CollectivePitch] + axisPID[ROLL]*X + axisPID[PITCH]*Y + YAW_DIRECTION * axisPID[YAW]*Z
-    servo[3] = HELIMIX( 0,+4/3, 0); //Nick
-    servo[4] = HELIMIX(+1,-2/3, 0); //LEFT
-    servo[6] = HELIMIX(-1,-2/3, 0); //RIGHT
-  }else{
     /*                     3000-rcData[AXIS] Will reverse servos     */
-    servo[3]  = constrain(     rcData[CollectivePitch] - HeliNick, 1020, 2000);                  //    NICK  servo
-    servo[4]  = constrain(     rcData[CollectivePitch] + HeliNick*0.66 + HeliRoll , 1020, 2000); //    LEFT servo
-    servo[6]  = constrain(3000-rcData[CollectivePitch] - HeliNick*0.66 + HeliRoll , 1020, 2000); //    RIGHT  servo   
- }  
+    servo[3]  = constrain(     rcData[CollectivePitch] - HeliNick*1.1, 1020, 2000);              //    NICK  servo
+    servo[4]  = constrain(     rcData[CollectivePitch] + HeliNick*0.6 + HeliRoll , 1020, 2000); //    LEFT servo
+    servo[6]  = constrain(3000-rcData[CollectivePitch] - HeliNick*0.6 + HeliRoll , 1020, 2000); //    RIGHT  servo   
+  
    #endif
  
  /************************************************************************************************************/   
@@ -631,7 +623,13 @@ if (armed){
     servo[4]  = constrain(1500 + HeliRoll   , 1020, 2000);               //     ROLL servo
     servo[6]  = constrain(3000 - rcData[CollectivePitch] , 1020, 2000);  //     COLLECTIVE  servo  
    #endif    
-  for(uint8_t i=0;i<8;i++){servo[i]=map(servo[i], SERVO_MIN, SERVO_MAX, servolimit[i][0],  servolimit[i][1]);}
+   
+   
+// Yaw is common for Helis
+    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //   YAW  
+    
+    for(uint8_t i=0;i<8;i++){servo[i]  = constrain( servo[i], SERVO_MIN, SERVO_MAX); }
+   
 #endif
   
  /************************************************************************************************************/ 
