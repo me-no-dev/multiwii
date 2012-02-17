@@ -43,6 +43,10 @@ void configureReceiver() {
     #if defined(PROMICRO)
       PORTB   = (1<<1) | (1<<2) | (1<<3) | (1<<4);
       PCMSK0 |= (1<<1) | (1<<2) | (1<<3) | (1<<4); 
+      #if defined(RCAUX2PIND17)
+        PORTB  |= (1<<0);
+        PCMSK0 |= (1<<0);       
+      #endif
       PCICR   = (1<<0) ; // bit 0 PCINT activated only for the port dealing with PINs on port B
       //attachinterrupt dosent works with atmega32u4 ATM.
       //Trottle on pin 7
@@ -50,7 +54,7 @@ void configureReceiver() {
       PORTE |= (1 << 6); // enable pullups
       EIMSK |= (1 << INT6); // enable interuppt
       EICRB |= (1 << ISC60);
-      #if defined(RCAUX2PIN)
+      #if defined(RCAUX2PINRXO)
         //AUX2 on RX pin
         pinMode(0,INPUT); // set to input
         PORTD |= (1 << 2); // enable pullups
@@ -126,7 +130,13 @@ void configureReceiver() {
       if (mask & 1<<4)
         if (!(pin & 1<<4)) {
           dTime = cTime-edgeTime[7]; if (900<dTime && dTime<2200) rcValue[7] = dTime;
-        } else edgeTime[7] = cTime;   
+        } else edgeTime[7] = cTime;  
+      #if defined(RCAUX2PIND17)
+        if (mask & 1<<0)
+          if (!(pin & 1<<0)) {
+            dTime = cTime-edgeTime[0]; if (900<dTime && dTime<2200) rcValue[0] = dTime;
+          } else edgeTime[0] = cTime;       
+      #endif 
     #endif
     #if defined(PROMINI) || defined(MEGA)      
     // mask is pins [D0-D7] that have changed // the principle is the same on the MEGA for PORTK and [A8-A15] PINs
@@ -222,7 +232,7 @@ void configureReceiver() {
     }  
   }
   // Aux 2
-  #if defined(RCAUX2PIN)
+  #if defined(RCAUX2PINRXO)
     ISR(INT2_vect){
       static uint16_t now,diff;
       static uint16_t last = 0; 

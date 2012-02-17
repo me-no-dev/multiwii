@@ -2,12 +2,16 @@
   uint8_t PWM_PIN[8] = {9,10,11,3,6,5,A2,12};   //for a quad+: rear,right,left,front
 #endif
 #if defined(PROMICRO)
-  uint8_t PWM_PIN[8] = {9,10,5,6,4,A2,A0,A1};   //for a quad+: rear,right,left,front
+  #if !defined(HWPWM6)
+    uint8_t PWM_PIN[8] = {9,10,5,6,4,A2,A0,A1};   //for a quad+: rear,right,left,front
+  #else
+    uint8_t PWM_PIN[8] = {9,10,5,6,11,13,A0,A1};   //for a quad+: rear,right,left,front
+  #endif
 #endif
 #if defined(MEGA)
   uint8_t PWM_PIN[8] = {3,5,6,2,7,8,9,10};      //for a quad+: rear,right,left,front   //+ for y6: 7:under right  8:under left
 #endif
-#if !defined(PROMICRO)
+#if !defined(PROMICRO) || defined(HWPWM6)
   volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,125};
 #else
   volatile uint16_t atomicServo[8] = {8000,8000,8000,8000,8000,8000,8000,8000};
@@ -28,7 +32,7 @@ void writeServos() {
   #if defined(SERVO)
     #if defined(PRI_SERVO_FROM)    // write primary servos
       for(uint8_t i = (PRI_SERVO_FROM-1); i < PRI_SERVO_TO; i++){
-        #if !defined(PROMICRO)
+        #if !defined(PROMICRO) || defined(HWPWM6)
           atomicServo[i] = (servo[i]-1000)>>2;
         #else
           atomicServo[i] = (servo[i]-1000)<<4;
@@ -37,7 +41,7 @@ void writeServos() {
     #endif
     #if defined(SEC_SERVO_FROM)   // write secundary servos
       for(uint8_t i = (SEC_SERVO_FROM-1); i < SEC_SERVO_TO; i++){
-        #if !defined(PROMICRO)
+        #if !defined(PROMICRO) || defined(HWPWM6)
           atomicServo[i] = (servo[i]-1000)>>2;
         #else
           atomicServo[i] = (servo[i]-1000)<<4;
@@ -104,42 +108,57 @@ void writeMotors() { // [1000;2000] => [125;250]
       OCR1B = motor[1]<<3; //  pin 10
     #endif
     #if (NUMBER_MOTOR > 2) // Timer 4 A & D [1000:2000] => [1000:2000]
-      // to write values > 255 to timer 4 A we need to split the bytes
-      static uint8_t pwm4_HBA; // high byte for timer 4 A
-      static uint16_t pwm4_LBA; // low byte for timer 4 A
-      pwm4_LBA = 2047-motor[2]; // channel A is inverted
-      pwm4_HBA = 0;
-      while(pwm4_LBA > 255){
-        pwm4_HBA++;
-        pwm4_LBA-=256;
-      }     
-      TC4H  = pwm4_HBA; // high byte
-      OCR4A = pwm4_LBA;  //  pin 5
+      #if !defined(HWPWM6)
+        // to write values > 255 to timer 4 A/B we need to split the bytes
+        static uint8_t pwm4_HBA, pwm4_LBA; // high and low byte for timer 4 A
+        pwm4_LBA = 2047-motor[2]; pwm4_HBA = 0; // channel A is inverted
+        while(pwm4_LBA > 255){
+          pwm4_HBA++;
+          pwm4_LBA-=256;
+        }     
+        TC4H = pwm4_HBA; OCR4A = pwm4_LBA; //  pin 5
+      #else
+        OCR3A = motor[2]<<3; //  pin 5
+      #endif
     #endif
     #if (NUMBER_MOTOR > 3)
-      // to write values > 255 to timer 4 D we need to split the bytes
-      static uint8_t pwm4_HBD; // high byte for timer 4 D
-      static uint16_t pwm4_LBD; // low byte for timer 4 D
-      pwm4_LBD = motor[3];
-      pwm4_HBD = 0;
+      static uint8_t pwm4_HBD, pwm4_LBD; // high and low byte for timer 4 D
+      pwm4_LBD = motor[3]; pwm4_HBD = 0;
       while(pwm4_LBD > 255){
         pwm4_HBD++;
         pwm4_LBD-=256;
       }     
-      TC4H  = pwm4_HBD; // high byte
-      OCR4D = pwm4_LBD;  //  pin 6
+      TC4H = pwm4_HBD; OCR4D = pwm4_LBD; //  pin 6
     #endif    
     #if (NUMBER_MOTOR > 4)
-      atomicPWM_PIN5_highState = ((motor[4]-1000)<<4)+200;
-      atomicPWM_PIN5_lowState = 16383-atomicPWM_PIN5_highState;
-      atomicPWM_PIN6_highState = ((motor[5]-1000)<<4)+200;
-      atomicPWM_PIN6_lowState = 16383-atomicPWM_PIN6_highState;
+      #if !defined(HWPWM6)
+        atomicPWM_PIN5_highState = ((motor[4]-1000)<<4)+200;
+        atomicPWM_PIN5_lowState = 16383-atomicPWM_PIN5_highState;
+        atomicPWM_PIN6_highState = ((motor[5]-1000)<<4)+200;
+        atomicPWM_PIN6_lowState = 16383-atomicPWM_PIN6_highState;
+      #else
+        OCR1C = motor[4]<<3; //  pin 11
+        static uint8_t pwm4_HBA, pwm4_LBA; // high and low byte for timer 4 A
+        pwm4_LBA = motor[5]; pwm4_HBA = 0;
+        while(pwm4_LBA > 255){
+          pwm4_HBA++;
+          pwm4_LBA-=256;
+        }     
+        TC4H = pwm4_HBA; OCR4A = pwm4_LBA; //  pin 13      
+      #endif
     #endif
     #if (NUMBER_MOTOR > 6)
-      atomicPWM_PINA2_highState = ((motor[6]-1000)<<4)+200;
-      atomicPWM_PINA2_lowState = 16383-atomicPWM_PINA2_highState;
-      atomicPWM_PIN12_highState = ((motor[7]-1000)<<4)+200;
-      atomicPWM_PIN12_lowState = 16383-atomicPWM_PIN12_highState;
+      #if !defined(HWPWM6)
+        atomicPWM_PINA2_highState = ((motor[6]-1000)<<4)+200;
+        atomicPWM_PINA2_lowState = 16383-atomicPWM_PINA2_highState;
+        atomicPWM_PIN12_highState = ((motor[7]-1000)<<4)+200;
+        atomicPWM_PIN12_lowState = 16383-atomicPWM_PIN12_highState;
+      #else
+        atomicPWM_PINA2_highState = ((motor[6]-1000)>>2)+2;
+        atomicPWM_PINA2_lowState = 255-atomicPWM_PINA2_highState;
+        atomicPWM_PIN12_highState = ((motor[7]-1000)>>2)+2;
+        atomicPWM_PIN12_lowState = 255-atomicPWM_PIN12_highState;     
+      #endif
     #endif
   #endif
   #if defined(PROMINI)
@@ -219,30 +238,45 @@ void initOutput() {
   #endif
 #if defined(PROMICRO)
     #if (NUMBER_MOTOR > 0)
-      TCCR1A |= (1<<WGM11); // phase correct mode
-      TCCR1A &= ~(1<<WGM10);
-      TCCR1B |= (1<<WGM13);
-      TCCR1B &= ~(1<<CS11); // no prescaler
-      ICR1   |= 0x3FFF; // TOP to 16383;
+      TCCR1A |= (1<<WGM11); TCCR1A &= ~(1<<WGM10); TCCR1B |= (1<<WGM13);  // phase correct mode
+      TCCR1B &= ~(1<<CS11); ICR1 |= 0x3FFF; // no prescaler & TOP to 16383;
       TCCR1A |= _BV(COM1A1); // connect pin 9 to timer 1 channel A
     #endif
     #if (NUMBER_MOTOR > 1)
       TCCR1A |= _BV(COM1B1); // connect pin 10 to timer 1 channel B
     #endif
     #if (NUMBER_MOTOR > 2)
-      TCCR4E |= (1<<ENHC4); // enhanced pwm mode
-      TCCR4B &= ~(1<<CS41); // prescaler to 16
-      TCCR4B |= (1<<CS42)|(1<<CS40);
-      TCCR4D |= (1<<WGM40); // phase and frequency correct mode
-      TC4H    = 0x3; // top to 1023 but with enhanced pwm mode we have 2047
-      OCR4C   = 0xFF;
-      TCCR4A |= (1<<COM4A0)|(1<<PWM4A); // connect pin 5 to timer 3 channel A  
+      #if !defined(HWPWM6) // timer 4A
+        TCCR4E |= (1<<ENHC4); // enhanced pwm mode
+        TCCR4B &= ~(1<<CS41); TCCR4B |= (1<<CS42)|(1<<CS40); // prescaler to 16
+        TCCR4D |= (1<<WGM40); TC4H = 0x3; OCR4C = 0xFF; // phase and frequency correct mode & top to 1023 but with enhanced pwm mode we have 2047
+        TCCR4A |= (1<<COM4A0)|(1<<PWM4A); // connect pin 5 to timer 4 channel A 
+      #else // timer 3A
+        TCCR3A |= (1<<WGM31); TCCR3A &= ~(1<<WGM30); TCCR3B |= (1<<WGM33);  // phase correct mode
+        TCCR3B &= ~(1<<CS31); ICR3 |= 0x3FFF; // no prescaler & TOP to 16383;
+        TCCR3A |= _BV(COM3A1); // connect pin 5 to timer 3 channel A    
+      #endif 
     #endif
     #if (NUMBER_MOTOR > 3)
+      #if defined(HWPWM6) 
+        TCCR4E |= (1<<ENHC4); // enhanced pwm mode
+        TCCR4B &= ~(1<<CS41); TCCR4B |= (1<<CS42)|(1<<CS40); // prescaler to 16
+        TCCR4D |= (1<<WGM40); TC4H = 0x3; OCR4C = 0xFF; // phase and frequency correct mode & top to 1023 but with enhanced pwm mode we have 2047
+      #endif
       TCCR4C |= (1<<COM4D1)|(1<<PWM4D); // connect pin 6 to timer 4 channel D
     #endif
     #if (NUMBER_MOTOR > 4)
-      initializeSoftPWM();
+      #if defined(HWPWM6) 
+        TCCR1A |= _BV(COM1C1); // connect pin 11 to timer 1 channel C
+        TCCR4A |= (1<<COM4A1)|(1<<PWM4A); // connect pin 13 to timer 4 channel A 
+      #else
+        initializeSoftPWM();
+      #endif
+    #endif
+    #if (NUMBER_MOTOR > 6)
+      #if defined(HWPWM6) 
+        initializeSoftPWM();
+      #endif
     #endif
   #endif
   #if defined(PROMINI)
@@ -303,7 +337,7 @@ void initializeServo() {
     SERVO_8_PINMODE;
   #endif
   
-  #if !defined(PROMICRO)
+  #if !defined(PROMICRO) || defined(HWPWM6)
     TCCR0A = 0; // normal counting mode
     TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
   #else
@@ -313,7 +347,7 @@ void initializeServo() {
   #endif
 }
 
-#if !defined(PROMICRO)
+#if !defined(PROMICRO) || defined(HWPWM6)
   #define SERVO_ISR TIMER0_COMPA_vect
   #define SERVO_CHANNEL OCR0A
   #define SERVO_1K_US 250
@@ -439,7 +473,7 @@ ISR(SERVO_ISR) {
 
 #if (NUMBER_MOTOR > 4) && (defined(PROMINI) || defined(PROMICRO))
 
-  #if !defined(PROMICRO)
+  #if !defined(PROMICRO) || defined(HWPWM6)
     #define SOFT_PWM_ISR1 TIMER0_COMPB_vect
     #define SOFT_PWM_ISR2 TIMER0_COMPA_vect
     #define SOFT_PWM_CHANNEL1 OCR0B
@@ -452,14 +486,13 @@ ISR(SERVO_ISR) {
   #endif
 
   void initializeSoftPWM() {
-    #if !defined(PROMICRO)
+    #if !defined(PROMICRO) || defined(HWPWM6)
       TCCR0A = 0; // normal counting mode
-      #if (NUMBER_MOTOR == 6)
+      #if (NUMBER_MOTOR > 4) && !defined(HWPWM6) 
         TIMSK0 |= (1<<OCIE0B); // Enable CTC interrupt  
       #endif
-      #if (NUMBER_MOTOR == 8)
+      #if (NUMBER_MOTOR > 6)
         TIMSK0 |= (1<<OCIE0A);
-        TIMSK0 |= (1<<OCIE0B);
       #endif
     #else
         TCCR3A &= ~(1<<WGM30); // normal counting mode
@@ -510,7 +543,7 @@ ISR(SERVO_ISR) {
   }
 
   //the same with digital PIN A2 & 12 OCR0A counter for OCTO
-  #if (NUMBER_MOTOR > 6)
+  #if (NUMBER_MOTOR > 6) && !defined(HWPWM6)
     ISR(SOFT_PWM_ISR2) {
       static uint8_t state = 0;
       if(state == 0){
