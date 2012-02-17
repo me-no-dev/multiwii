@@ -23,14 +23,15 @@
 //#define OCTOFLATP
 //#define OCTOFLATX
 //#define FLYING_WING 
-//#define VTAIL4      //experimental The mix may need to be modified. Y4 Mix can be astertinpoint.
+//#define VTAIL4      //experimental The mix is a modified Y4 Mix.
 
 //*****************************************************//
 //**** !!!!   Warning     Early BETATSEST   !!!! ******//
 //*****************************************************//
+// Use EXPO in the TX!  EPXO In GUI dont work in PassthruMode.
 #define AIRPLANE	 // PatrikE Experimental 
 
-#define NUM_MOTRORS 0        // Only for use with 490Hz ESC's 
+#define NUM_MOTRORS 0        // Only for use with 490Hz ESC's on Airplane & Heli
 
 //#define HELI_120_CCPM	 // PatrikE Experimental 
 //#define HELI_90_DEG	 // PatrikE Experimental 
@@ -120,8 +121,7 @@
 //#define MINIWII         // Jussi's MiniWii Flight Controller
 //#define CITRUSv1_0      // CITRUSv1 from qcrc.ca
 //#define DROTEK_IMU10DOF
-//#define MONGOOSE1_0     // mongoose 1.0    http://www.fuzzydrone.org/                      <- verified by matbogdan
-
+//#define MONGOOSE1_0     // full FC board or standalone 9DOF+baro board from (ProMini 5V 16Mhz)   http://www.fuzzydrone.org/     <- verified by matbogdan
 
 //if you use independent sensors
 //leave it commented it you already checked a specific board above
@@ -262,7 +262,7 @@
 /* this is the maximum value for the ESCs at full power
    this value can be increased up to 2000 */
 #if defined(AIRPLANE)|| defined(HELICOPTER)
-#define MAXTHROTTLE  2000
+#define MAXTHROTTLE  2000        // range must be inside [1020;2000]
 #else
 #define MAXTHROTTLE 1850
 #endif

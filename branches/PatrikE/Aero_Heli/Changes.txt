@@ -43,10 +43,6 @@ http://youtu.be/zKGr6iR54vM
 *********************************************************
 120203
 ------
-Added 
-- RUSHDUINO OSD TO Arduino - contribution from JohnyGab (rushduino.com)
-  Y and Z to the serial file
-
 Small bugfixes
 
 *********************************************************
@@ -56,9 +52,12 @@ Added
 - Servo mixing for a simple GIMBAL By Bledy || http://youtu.be/zKGr6iR54vM ||
 - I2C_GPS
 
-Modified Flyingwing yo use servo servo 3&4 in this ver
 *********************************************************
+120217
+Updated codebase.
+Servoorder changed by Alex.
+Setup servos in Multiwii tab.
 
-
+*********************************************************
 
 // Patrik

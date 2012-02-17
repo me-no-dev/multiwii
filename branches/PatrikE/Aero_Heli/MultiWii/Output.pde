@@ -1,8 +1,13 @@
-uint8_t PWM_PIN[8] = {MOTOR_ORDER};
+#if defined(PROMINI)
+  uint8_t PWM_PIN[8] = {9,10,11,3,6,5,A2,12};   //for a quad+: rear,right,left,front
+#endif
+#if defined(MEGA)
+  uint8_t PWM_PIN[8] = {3,5,6,2,7,8,9,10};      //for a quad+: rear,right,left,front   //+ for y6: 7:under right  8:under left
+#endif
 // so we need a servo pin array
 #if defined(AIRPLANE)|| defined(HELICOPTER)
 // To prevent motor to start at reset. atomicServo[7]=5 or 249 if reverseed servo
-   volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,5};
+volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,5}; 
 #else
    volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,125};
 #endif
@@ -20,14 +25,12 @@ volatile uint8_t atomicPWM_PIN12_highState;
 
 void writeServos() {
   #if defined(SERVO)
-    // write primary servos
-    #if defined(PRI_SERVO_FROM)
+    #if defined(PRI_SERVO_FROM)    // write primary servos
       for(uint8_t i = (PRI_SERVO_FROM-1); i < PRI_SERVO_TO; i++){
         atomicServo[i] = (servo[i]-1000)>>2;
       }
     #endif
-    // write secundary servos
-    #if defined(SEC_SERVO_FROM)
+    #if defined(SEC_SERVO_FROM)   // write secundary servos
       for(uint8_t i = (SEC_SERVO_FROM-1); i < SEC_SERVO_TO; i++){
         atomicServo[i] = (servo[i]-1000)>>2;
       }
@@ -38,27 +41,53 @@ void writeServos() {
 void writeMotors() { // [1000;2000] => [125;250]
   #if defined(MEGA)
     #if (NUMBER_MOTOR > 0)
-      OCR3C = motor[0]>>3; //  pin 3
+      #ifndef EXT_MOTOR_RANGE 
+        OCR3C = motor[0]>>3; //  pin 3
+      #else
+        OCR3C = ((motor[0]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 1)
-      OCR3A = motor[1]>>3; //  pin 5
+      #ifndef EXT_MOTOR_RANGE 
+        OCR3A = motor[1]>>3; //  pin 5
+      #else
+        OCR3A = ((motor[1]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 2)
-      OCR4A = motor[2]>>3; //  pin 6
+      #ifndef EXT_MOTOR_RANGE 
+        OCR4A = motor[2]>>3; //  pin 6
+      #else
+        OCR4A = ((motor[2]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 3)
-      OCR3B = motor[3]>>3; //  pin 2
+      #ifndef EXT_MOTOR_RANGE 
+        OCR3B = motor[3]>>3; //  pin 2
+      #else
+        OCR3B = ((motor[3]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 4)
-      OCR4B = motor[4]>>3; //  pin 7
-      OCR4C = motor[5]>>3; //  pin 8
+      #ifndef EXT_MOTOR_RANGE 
+        OCR4B = motor[4]>>3; //  pin 7
+        OCR4C = motor[5]>>3; //  pin 8
+      #else
+        OCR4B = ((motor[4]>>2) - 250) + 2);
+        OCR4C = ((motor[5]>>2) - 250) + 2);
+      #endif
     #endif
     #if (NUMBER_MOTOR > 6)
-      OCR2B = motor[6]>>3; //  pin 9
-      OCR2A = motor[7]>>3; //  pin 10
+      #ifndef EXT_MOTOR_RANGE 
+        OCR2B = motor[6]>>3; //  pin 9
+        OCR2A = motor[7]>>3; //  pin 10
+      #else
+        OCR2B = ((motor[6]>>2) - 250) + 2);
+        OCR2A = ((motor[7]>>2) - 250) + 2);
+      #endif
     #endif
   #endif
-   #if defined(PROMINI) || defined(MONGOOSE1_0)
+  #if defined(PROMINI)
     #if (NUMBER_MOTOR > 0)
       #ifndef EXT_MOTOR_RANGE 
         OCR1A = motor[0]>>3; //  pin 9
@@ -87,17 +116,17 @@ void writeMotors() { // [1000;2000] => [125;250]
         OCR2B = ((motor[3]>>2) - 250) + 2);
       #endif
     #endif
-    #if (NUMBER_MOTOR > 4)
-      atomicPWM_PIN5_highState = ((motor[5]-1000)>>2)+2;
-      atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
+    #if (NUMBER_MOTOR > 4) //note: EXT_MOTOR_RANGE not possible here
       atomicPWM_PIN6_highState = ((motor[4]-1000)>>2)+2;
-      atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
+      atomicPWM_PIN6_lowState  = 255-atomicPWM_PIN6_highState;
+      atomicPWM_PIN5_highState = ((motor[5]-1000)>>2)+2;
+      atomicPWM_PIN5_lowState  = 255-atomicPWM_PIN5_highState;
     #endif
-    #if (NUMBER_MOTOR > 6)
+    #if (NUMBER_MOTOR > 6) //note: EXT_MOTOR_RANGE not possible here
       atomicPWM_PINA2_highState = ((motor[6]-1000)>>2)+2;
-      atomicPWM_PINA2_lowState = 255-atomicPWM_PINA2_highState;
+      atomicPWM_PINA2_lowState  = 255-atomicPWM_PINA2_highState;
       atomicPWM_PIN12_highState = ((motor[7]-1000)>>2)+2;
-      atomicPWM_PIN12_lowState = 255-atomicPWM_PIN12_highState;
+      atomicPWM_PIN12_lowState  = 255-atomicPWM_PIN12_highState;
     #endif
   #endif
 }
@@ -109,9 +138,9 @@ void writeAllMotors(int16_t mc) {   // Sends commands to all motors
 }
 
 void initOutput() {
+  for(uint8_t i=0;i<NUMBER_MOTOR;i++)
+    pinMode(PWM_PIN[i],OUTPUT);
   #if defined(MEGA)
-    for(uint8_t i=0;i<NUMBER_MOTOR;i++)
-      pinMode(PWM_PIN[i],OUTPUT);
     #if (NUMBER_MOTOR > 0)
       TCCR3A |= _BV(COM3C1); // connect pin 3 to timer 3 channel C
     #endif
@@ -133,9 +162,7 @@ void initOutput() {
       TCCR2A |= _BV(COM2A1); // connect pin 10 to timer 2 channel A
     #endif
   #endif
-   #if defined(PROMINI) || defined(MONGOOSE1_0)
-    for(uint8_t i=0;i<min(NUMBER_MOTOR,4);i++)
-      pinMode(PWM_PIN[i],OUTPUT);
+  #if defined(PROMINI)
     #if (NUMBER_MOTOR > 0)
       TCCR1A |= _BV(COM1A1); // connect pin 9 to timer 1 channel A
     #endif
@@ -148,25 +175,21 @@ void initOutput() {
     #if (NUMBER_MOTOR > 3)
       TCCR2A |= _BV(COM2B1); // connect pin 3 to timer 2 channel B
     #endif
+    #if (NUMBER_MOTOR == 6)  // PIN 5 & 6 or A0 & A1
+      initializeSoftPWM();
+      #if defined(A0_A1_PIN_HEX)
+        pinMode(5,INPUT);pinMode(6,INPUT);     // we reactivate the INPUT affectation for these two PINs
+        pinMode(A0,OUTPUT);pinMode(A1,OUTPUT);
+      #endif
+    #elif (NUMBER_MOTOR == 8) // PIN A2 & 12
+      initializeSoftPWM();
+    #endif
   #endif
   
   writeAllMotors(1000);
   delay(300);
   #if defined(SERVO)
     initializeServo();
-  #endif
-  #if (NUMBER_MOTOR == 6) && (defined(PROMINI) || defined(MONGOOSE1_0))
-    initializeSoftPWM();
-    #if defined(A0_A1_PIN_HEX)
-      pinMode(5,INPUT);pinMode(6,INPUT);     // we reactivate the INPUT affectation for these two PINs
-      pinMode(A0,OUTPUT);pinMode(A1,OUTPUT);
-    #endif
-  #elif (NUMBER_MOTOR == 8) && (defined(PROMINI) || defined(MONGOOSE1_0))
-    initializeSoftPWM();
-    #if defined(A0_A1_PIN_HEX)
-      pinMode(5,INPUT);pinMode(6,INPUT);     // we reactivate the INPUT affectation for these two PINs
-      pinMode(A0,OUTPUT);pinMode(A1,OUTPUT);
-    #endif
   #endif
 }
 
@@ -199,14 +222,8 @@ void initializeServo() {
 
   TCCR0A = 0; // normal counting mode
   TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
-  
-  // timer 0B for hex with servo tilt
-  #if (NUMBER_MOTOR == 6) && (defined(PROMINI) || defined(MONGOOSE1_0))
-    TIMSK0 |= (1<<OCIE0B); 
-  #endif
 }
 
-// ****servo yaw with a 50Hz refresh rate****
 // prescaler is set by default to 64 on Timer0
 // Duemilanove : 16MHz / 64 => 4 us
 // 256 steps = 1 counter cycle = 1024 us
@@ -214,8 +231,6 @@ ISR(TIMER0_COMPA_vect) {
   static uint8_t state = 0;
   static uint8_t count;
   if (state == 0) {
-    //http://billgrundmann.wordpress.com/2009/03/03/to-use-or-not-use-writedigital/ 
-    
     #if (PRI_SERVO_FROM == 1) || (SEC_SERVO_FROM == 1)
       SERVO_1_PIN_HIGH;
     #endif
@@ -323,17 +338,14 @@ ISR(TIMER0_COMPA_vect) {
 }
 #endif
 
-#if (NUMBER_MOTOR > 4) && (defined(PROMINI) || defined(MONGOOSE1_0))
+#if (NUMBER_MOTOR > 4) && defined(PROMINI)
   void initializeSoftPWM() {
-    // if there are servos its alredy done
-    #if (NUMBER_MOTOR == 6) && not defined(SERVO)
-      TCCR0A = 0; // normal counting mode
+    TCCR0A = 0; // normal counting mode
+    #if (NUMBER_MOTOR == 6)
       TIMSK0 |= (1<<OCIE0B); // Enable CTC interrupt  
     #endif
-    
-    #if (NUMBER_MOTOR > 6)
-      TCCR0A = 0; // normal counting mode
-      TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
+    #if (NUMBER_MOTOR == 8)
+      TIMSK0 |= (1<<OCIE0A);
       TIMSK0 |= (1<<OCIE0B);
     #endif
   }
@@ -342,7 +354,7 @@ ISR(TIMER0_COMPA_vect) {
   ISR(TIMER0_COMPB_vect) { 
     static uint8_t state = 0;
     if(state == 0){
-      #if not defined(A0_A1_PIN_HEX)
+      #if !defined(A0_A1_PIN_HEX)
         PORTD |= 1<<5; //digital PIN 5 high
       #else
         PORTC |= 1<<0;//PIN A0
@@ -350,7 +362,7 @@ ISR(TIMER0_COMPA_vect) {
       OCR0B += atomicPWM_PIN5_highState;
       state = 1;
     }else if(state == 1){
-      #if not defined(A0_A1_PIN_HEX)
+      #if !defined(A0_A1_PIN_HEX)
         PORTD &= ~(1<<6);
       #else
         PORTC &= ~(1<<1);
@@ -358,7 +370,7 @@ ISR(TIMER0_COMPA_vect) {
       OCR0B += atomicPWM_PIN6_lowState;
       state = 2;
     }else if(state == 2){
-      #if not defined(A0_A1_PIN_HEX)
+      #if !defined(A0_A1_PIN_HEX)
         PORTD |= 1<<6;
       #else
         PORTC |= 1<<1;//PIN A1
@@ -366,7 +378,7 @@ ISR(TIMER0_COMPA_vect) {
       OCR0B += atomicPWM_PIN6_highState;
       state = 3;  
     }else if(state == 3){
-      #if not defined(A0_A1_PIN_HEX)
+      #if !defined(A0_A1_PIN_HEX)
         PORTD &= ~(1<<5); //digital PIN 5 low
       #else
         PORTC &= ~(1<<0);
@@ -399,7 +411,6 @@ ISR(TIMER0_COMPA_vect) {
       }
     }
   #endif
-
 #endif
 
 void mixTable() {
@@ -422,7 +433,7 @@ void mixTable() {
     motor[0] = PIDMIX( 0,+4/3, 0); //REAR
     motor[1] = PIDMIX(-1,-2/3, 0); //RIGHT
     motor[2] = PIDMIX(+1,-2/3, 0); //LEFT
-    servo[4] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
   #endif
   #ifdef QUADP
     motor[0] = PIDMIX( 0,+1,-1); //REAR
@@ -496,126 +507,147 @@ void mixTable() {
     motor[6] = PIDMIX(-1/2,+1  ,-1); //REAR_R
     motor[7] = PIDMIX(+1  ,+1/2,-1); //MIDREAR_L 
   #endif
- 
- /************************************************************************************************************/ 
- // PatrikE Experimentals
- /************************************************************************************************************/ 
-  #ifdef VTAIL4
+  #ifdef VTAIL4 
+           /* Modified Y4 */
     motor[0] = PIDMIX(+0,+1, -1/2);   //REAR_R 
     motor[1] = PIDMIX(-1, -1, +2/10); //FRONT_R 
     motor[2] = PIDMIX(+0,+1, +1/2);   //REAR_L 
     motor[3] = PIDMIX(+1, -1, -2/10); //FRONT_L
   #endif   
  
- /************************************************************************************************************/  
+ /************************************************************************************************************
+ PatrikE Experimentals
+ ************************************************************************************************************/  
 #if defined(AIRPLANE)|| defined(HELICOPTER)
-   if (armed==0){
-     //for(i=0; i<7; i++){ servo[i]=MIDRC;}
-     servo[7]=constrain( 900, 1020, 2000); // Set throttle to min
+static int16_t servolimit[8][2]; // Holds servolimit data
+#define SERVO_MIN 1020           // limit servo travel range must be inside [1020;2000]
+#define SERVO_MAX 2000           // limit servo travel range must be inside [1020;2000]
+
+
+ /***************************
+    Set rates with endpoints. 
+ ***************************/
+/*
+static int16_t     servoHIGH[8] = {2000,2000,2000,2000,2000,2000,2000,2000}; // HIGHpoint on servo
+static int16_t      servoLOW[8] = {1020,1020,1020,1020,1020,1020,1020,1020}; // LOWpoint on servo
+ 
+ for(i=0; i<8; i++){ 
+    servolimit[i][0] = servoHIGH[i];  //Min
+    servolimit[i][1] = servoHIGH[i];  //Max   
+      }  
+*/
+ /***************************
+    Set rates with 0 - 100%. 
+ ***************************/
+ for(i=0; i<8; i++){
+      servolimit[i][0]=servoMid[i]-((servoMid[i]-SERVO_MIN) *(servotravel[i]*0.01));
+      servolimit[i][1]=servoMid[i]+((SERVO_MAX - servoMid[i]) *(servotravel[i]*0.01));  
+    }
+ /***********************************************************************************/
+ 
+   if (!armed){ 
+     // Kill throttle when disarmed
+     //servo[7]=constrain( 900, MINCOMMAND, SERVO_MAX); // Use with esc
+     servo[7]=constrain( 900, SERVO_MIN, SERVO_MAX);  // Use with servo
+ }else{   
+ if (NUM_MOTRORS){
+   motor[0]  = constrain(rcCommand[THROTTLE], servolimit[7][0], servolimit[7][1]); //   490hz ESC
+  } else { 
+  servo[7]  = constrain(rcCommand[THROTTLE], servolimit[7][0], servolimit[7][1]); }//   50hz ESC or servo
  }
    #endif
+    /*   servo[7] is programmed with safty features to avoid motorstarts when ardu reset..  
+      All other servos go to center at reset..  Half throttle can be dangerus    
+      Only use servo[7] as motorcontrol if motor is used in the setup            */
+   
   #ifdef AIRPLANE    
  /************************************************************************************************************/  
-        
-    // servo[x] 0,1 & 2 is free to use. (Gimball)
-    // Optional pins to use for throttle 
-    
-   if(passThruMode){ // Direct passthru from RX to mixer
- // 3000-rcData[AXIS] Will reverse servos
-    servo[3]  = constrain( (3000-rcData[ROLL]), 1020, 2000);     //   Wing 1
-    servo[4]  = constrain( (rcData[ROLL]), 1020, 2000);          //   Wing 2
-    //servo[4]  = constrain( (rcData[AUX3]), 1020, 2000);        //   Ex. Flaps or gear 
-    servo[5]  = constrain( (rcData[YAW]) , 1020, 2000);          //   Rudder
-    servo[6]  = constrain( (rcData[PITCH]), 1020, 2000);         //   Elevator
-  }else{
-   // use sensors to correct (gyro only or gyro+acc according to AUX configuration in Gui
+ 
+    if(passThruMode){   // Direct passthru from RX 
+    servo[3]  = servoMid[3]+(rcCommand[ROLL] *servoreverse[3]);     //   Wing 1
+    servo[4]  = servoMid[4]+(rcCommand[ROLL] *servoreverse[4]);     //   Wing 2
+    servo[5]  = servoMid[5]+(rcCommand[YAW]  *servoreverse[5]);     //   Rudder
+    servo[6]  = servoMid[6]+(rcCommand[PITCH]*servoreverse[6]);     //   Elevator 
+   }else{
+   // use sensors to correct (gyro only or gyro+acc according to AUX configuration
    // invert the sign before axisPID to reverse servos GyroResponse
-    servo[3]  = constrain(1500 - (axisPID[ROLL]  + (angle[ROLL]  /16)) , 1020, 2000); //   Right Ail 
-    servo[4]  = constrain(1500 + (axisPID[ROLL]  - (angle[ROLL]  /16)) , 1020, 2000); //   Left Ail  
-  //servo[4]  = constrain( rcData[AUX3], 1020, 2000);                                 //   Ex. Flaps or gear
-    servo[5]  = constrain(1500 + (axisPID[YAW] ), 1020, 2000);                        //   Rudder
-    servo[6]  = constrain(1500 + (axisPID[PITCH] + (angle[PITCH] /16)) , 1020, 2000); //   Adjust servolimits here
-    } 
-      
- /* Throttle 
-  ********************
-       servo[7] is programmed with safty features to avoid motorstarts when ardu reset..   
-        All other servos go to center at reset..  Half throttle can be dangerus    
-        Only use servo[7] as Throttlecontrol if motor is used in the setup            */
-        
-  if (armed){ 
- // motor[0] =constrain(   rcData[THROTTLE] , 1020, 2000); 	//   490hz ESC
-    servo[7]  = constrain(   rcData[THROTTLE] , 1020, 2000); 	//   50hz ESC or servo
+    servo[3]  =(servoMid[3] + (((axisPID[ROLL]) + (angle[ROLL]  /16)) *servoreverse[3])); //   Right Ail 
+    servo[4]  =(servoMid[4] + (((axisPID[ROLL]) + (angle[ROLL]  /16)) *servoreverse[4])); //   Left Ail  
+    servo[5]  =(servoMid[5] + (((axisPID[YAW])                      ) *servoreverse[5])); //   Rudder
+    servo[6]  =(servoMid[6] + (((axisPID[PITCH] + (angle[PITCH] /16)))*servoreverse[6])); //   Elevator
+     } 
+     
+   // ServoRates
+    for(uint8_t i=0;i<8;i++){ 
+    servo[i]  = map(servo[i], SERVO_MIN, SERVO_MAX, servolimit[i][0],  servolimit[i][1]);
+    servo[i]  = constrain( servo[i], SERVO_MIN, SERVO_MAX);
   }
-  
+ 
    #endif
  
  /************************************************************************************************************/   
- #ifdef HELICOPTER 
- // Common for Helicopters
+#ifdef HELICOPTER 
+ // Common for Helicopters 
  int HeliRoll= (axisPID[ROLL]  +(angle[ROLL]  /16));
  int HeliNick= (axisPID[PITCH] +(angle[PITCH] /16));
  
  if(passThruMode){ // Pass Rcdata direct to mixer
        HeliRoll=  rcCommand[ROLL] ;
-       HeliNick=  rcCommand[PITCH];    
+       HeliNick=  rcCommand[PITCH];
      }
- #endif
- 
-#ifdef HELI_120_CCPM          
-    /*                     3000-rcData[AXIS] Will reverse servos     */
-    servo[3]  = constrain(     rcData[CollectivePitch] - HeliNick, 1020, 2000);                  //    NICK  servo
-    servo[4]  = constrain(     rcData[CollectivePitch] + HeliNick*0.5 + HeliRoll , 1020, 2000);	 //    LEFT servo
-    servo[6]  = constrain(3000-rcData[CollectivePitch]  - HeliNick*0.5 + HeliRoll , 1020, 2000); //    RIGHT  servo   
-    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //   YAW  
-      
+           
  /* Throttle 
   ********************
-       servo[7] is programmed with safty features to avoid motorstarts when ardu reset..   
-        All other servos go to center at reset..  Half throttle can be dangerus    
-        Only use servo[7] as Throttlecontrol if motor is used in the setup            */
+     servo[7] is programmed with safty features to avoid motorstarts when ardu reset..   
+     All other servos go to center at reset..  Half throttle can be dangerus    
+     Only use servo[7] as Throttlecontrol if motor is used in the setup            */
        
 if (armed){  
  // motor[0] =constrain(   rcData[THROTTLE] , 1020, 2000); 	//   490hz ESC
-    servo[7]  = constrain(         rcData[THROTTLE] , 1020, 2000); 	//   50hz ESC or servo
+    servo[7]  = constrain(  rcData[THROTTLE] , 1020, 2000);     //   50hz ESC or servo
 }
+    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //   YAW  
+
+ 
+ /************************************************************************************************************/  
+  #ifdef HELI_120_CCPM    
+ if(!passThruMode){ 
+ #define HELIMIX(X,Y,Z) rcCommand[CollectivePitch] + axisPID[ROLL]*X + axisPID[PITCH]*Y + YAW_DIRECTION * axisPID[YAW]*Z
+    servo[3] = HELIMIX( 0,+4/3, 0); //Nick
+    servo[4] = HELIMIX(+1,-2/3, 0); //LEFT
+    servo[6] = HELIMIX(-1,-2/3, 0); //RIGHT
+  }else{
+    /*                     3000-rcData[AXIS] Will reverse servos     */
+    servo[3]  = constrain(     rcData[CollectivePitch] - HeliNick, 1020, 2000);                  //    NICK  servo
+    servo[4]  = constrain(     rcData[CollectivePitch] + HeliNick*0.66 + HeliRoll , 1020, 2000); //    LEFT servo
+    servo[6]  = constrain(3000-rcData[CollectivePitch] - HeliNick*0.66 + HeliRoll , 1020, 2000); //    RIGHT  servo   
+ }  
    #endif
  
  /************************************************************************************************************/   
-   #ifdef HELI_90_DEG     
- 
+   #ifdef HELI_90_DEG      
    /*                     3000-rcData[AXIS] Will reverse servos     */
     servo[3]  = constrain(1500 + HeliNick   , 1020, 2000);               //     NICK  servo
     servo[4]  = constrain(1500 + HeliRoll   , 1020, 2000);               //     ROLL servo
-    servo[6]  = constrain(3000 - rcData[CollectivePitch] , 1020, 2000);  //     COLLECTIVE  servo 
-    servo[5]  = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //   YAW    
-      
- /* Throttle 
-  ********************
-       servo[7] is programmed with safty features to avoid motorstarts when ardu reset..   
-        All other servos go to center at reset..  Half throttle can be dangerus    
-        Only use servo[7] as Throttlecontrol if motor is used in the setup            */
-        
-if (armed){ 
- // motor[0] =constrain(   rcData[THROTTLE] , 1020, 2000); 	//   490hz ESC
-    servo[7]  = constrain(    rcData[THROTTLE] , 1020, 2000); 	//   50hz ESC or servo
-}
-   #endif
+    servo[6]  = constrain(3000 - rcData[CollectivePitch] , 1020, 2000);  //     COLLECTIVE  servo  
+   #endif    
+  for(uint8_t i=0;i<8;i++){servo[i]map(servo[i], SERVO_MIN, SERVO_MAX, servolimit[i][0],  servolimit[i][1]);}
+#endif
   
  /************************************************************************************************************/ 
  // End of PatrikE Experimentals
  /************************************************************************************************************/ 
   #ifdef SERVO_TILT
-    #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && (defined(PROMINI) || defined(MONGOOSE1_0))
-      #define S_PITCH servo[0]
-      #define S_ROLL  servo[1]
-    #else
+    #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && defined(PROMINI)
       #define S_PITCH servo[2]
       #define S_ROLL  servo[3]
+    #else
+      #define S_PITCH servo[0]
+      #define S_ROLL  servo[1]
     #endif
     S_PITCH = TILT_PITCH_MIDDLE + rcData[AUX3]-1500;
     S_ROLL  = TILT_ROLL_MIDDLE  + rcData[AUX4]-1500;
-    if ((rcOptions1 & activate1[BOXCAMSTAB]) || (rcOptions2 & activate2[BOXCAMSTAB])) {
+    if (rcOptions[BOXCAMSTAB]) {
       S_PITCH += TILT_PITCH_PROP * angle[PITCH] /16 ;
       S_ROLL  += TILT_ROLL_PROP  * angle[ROLL]  /16 ;
     }
@@ -629,7 +661,7 @@ if (armed){
  /************************************************************************************************************/ 
    #ifdef SERVO_MIX_TILT 
    //  Simple CameraGimbal By Bledy
-    if ((rcOptions1 & activate1[BOXCAMSTAB]) || (rcOptions2 & activate2[BOXCAMSTAB])) {
+    if (rcOptions[BOXCAMSTAB]) {
       servo[0] = constrain(TILT_PITCH_MIDDLE - (-TILT_ROLL_PROP) * angle[PITCH] /16 - TILT_ROLL_PROP * angle[ROLL] /16 , TILT_PITCH_MIN, TILT_PITCH_MAX);
       servo[1] = constrain(TILT_ROLL_MIDDLE + (-TILT_ROLL_PROP) * angle[PITCH] /16 - TILT_ROLL_PROP * angle[ROLL] /16 , TILT_ROLL_MIN, TILT_ROLL_MAX);
     } else {
@@ -654,14 +686,14 @@ if (armed){
   #ifdef FLYING_WING
     motor[0] = rcCommand[THROTTLE]; 	// 490hz ESC 
     if (passThruMode) {// do not use sensors for correction, simple 2 channel mixing
-       servo[0]  = wing_left_mid  + PITCH_DIRECTION_L * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL]-MIDRC);
-       servo[1]  = wing_right_mid + PITCH_DIRECTION_R * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL]-MIDRC);
+       servo[0]  = PITCH_DIRECTION_L * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL]-MIDRC);
+       servo[1]  = PITCH_DIRECTION_R * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL]-MIDRC);
     } else { // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
-       servo[0]  = wing_left_mid  + PITCH_DIRECTION_L * axisPID[PITCH]        + ROLL_DIRECTION_L * axisPID[ROLL];
-       servo[1]  = wing_right_mid + PITCH_DIRECTION_R * axisPID[PITCH]        + ROLL_DIRECTION_R * axisPID[ROLL];
+       servo[0]  = PITCH_DIRECTION_L * axisPID[PITCH]        + ROLL_DIRECTION_L * axisPID[ROLL];
+       servo[1]  = PITCH_DIRECTION_R * axisPID[PITCH]        + ROLL_DIRECTION_R * axisPID[ROLL];
     }
-    servo[0]  = constrain(servo[0], WING_LEFT_MIN,  WING_LEFT_MAX );
-    servo[1]  = constrain(servo[1], WING_RIGHT_MIN, WING_RIGHT_MAX);
+    servo[0]  = constrain(servo[0] + wing_left_mid , WING_LEFT_MIN,  WING_LEFT_MAX );
+    servo[1]  = constrain(servo[1] + wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX);
   #endif
   #if defined(CAMTRIG)
     static uint8_t camCycle = 0;
@@ -685,7 +717,7 @@ if (armed){
        }
       }
     }
-    if ((rcOptions1 & activate1[BOXCAMTRIG]) || (rcOptions1 & activate2[BOXCAMTRIG])) camCycle=1;
+    if (rcOptions[BOXCAMTRIG]) camCycle=1;
   #endif
 
   maxMotor=motor[0];

@@ -29,6 +29,24 @@ In config:
 #define TRI_YAW_MIDDLE 1500 // tail servo center pos. - use this for initial trim; later trim midpoint via LCD
 
 /******************************************************/
+	Setup Airplane
+/******************************************************/
+
+Connect the servos.
+
+Setup your TX.
+Set servo directions in PassthruMode.
+Expo should be set on TX. 
+Set EXPO to 0 in gui.
+
+Setup MWii in MultiWii-tab
+(  Servosettings For Airplane  )
+Gyro/Acc mode.
+Set servoreverse for Gyro if needed.
+Adjust ServoMid & Servotravel.
+
+
+/******************************************************/
 
 
 In Output:

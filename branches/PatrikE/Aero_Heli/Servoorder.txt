@@ -12,8 +12,8 @@ servo[0] =	A0
 servo[1] =	A1
 servo[2] =	A2
 servo[3] =	D12
-servo[4] =	D3	= motor[4]
-servo[5] =	D11	= motor[3]
+servo[4] =	D11	= motor[4]
+servo[5] =	D3	= motor[3]
 servo[6] =	D10	= motor[1]
 servo[7] =	D9	= motor[0]
 

@@ -17,7 +17,7 @@ ListBox commListbox;
 int CHECKBOXITEMS=11;
 int PIDITEMS=8;
 int commListMax;
-int frame_size_read = 106+3*PIDITEMS+2*CHECKBOXITEMS;
+int frame_size_read = 108+3*PIDITEMS+2*CHECKBOXITEMS;
 int frame_size_write = 8+3*PIDITEMS+2*CHECKBOXITEMS;
 
 
@@ -86,7 +86,7 @@ float rcThrottle = 1500,rcRoll = 1500,rcPitch = 1500,rcYaw =1500,
 int nunchukPresent,i2cAccPresent,i2cBaroPresent,i2cMagnetoPresent,GPSPresent,levelMode;
 
 float time1,time2;
-int cycleTime;
+int cycleTime,i2cError;
 
 CheckBox checkbox1[] = new CheckBox[CHECKBOXITEMS];
 CheckBox checkbox2[] = new CheckBox[CHECKBOXITEMS];
@@ -221,7 +221,6 @@ void setup() {
     confD[i] = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("confD"+i,0,xParam+120,yParam+20+i*20,30,14));
     confD[i].setColorBackground(red_);confD[i].setMin(0);confD[i].setDirection(Controller.HORIZONTAL);confD[i].setDecimalPrecision(0);confD[i].setMultiplier(1);confD[i].setMax(100);}
   confI[7].hide();confD[7].hide();
-  confP[4].hide();confI[4].hide();confD[4].hide();
 
   rollPitchRate = (controlP5.Numberbox) hideLabel(controlP5.addNumberbox("rollPitchRate",0,xParam+160,yParam+30,30,14));rollPitchRate.setDecimalPrecision(2);rollPitchRate.setMultiplier(0.01);
   rollPitchRate.setDirection(Controller.HORIZONTAL);rollPitchRate.setMin(0);rollPitchRate.setMax(1);rollPitchRate.setColorBackground(red_);
@@ -273,7 +272,7 @@ void setup() {
     servoSliderV[i]  = controlP5.addSlider("ServoV"+i,1000,2000,1500,0,0,10,100);servoSliderV[i].setDecimalPrecision(0);
   }
 
-  scaleSlider = controlP5.addSlider("SCALE",0,10,1,xGraph+400,yGraph-25,150,20);
+  scaleSlider = controlP5.addSlider("SCALE",0,10,1,xGraph+515,yGraph,75,20);scaleSlider.setLabel("");
  
   confPowerTrigger = controlP5.addNumberbox("",0,xGraph+50,yGraph-29,40,14);confPowerTrigger.setDecimalPrecision(0);confPowerTrigger.setMultiplier(10);
   confPowerTrigger.setDirection(Controller.HORIZONTAL);confPowerTrigger.setMin(0);confPowerTrigger.setMax(65535);confPowerTrigger.setColorBackground(red_);
@@ -288,9 +287,11 @@ void draw() {
   text("multiwii.com",0,16);
   text("V",0,32);text(version, 10, 32);
 //  text("v1.dev", 0, 32);
-  text("Cycle Time:",xGraph+220,yGraph-10);text(cycleTime,xGraph+320,yGraph-10);
-
+  text(i2cError,xGraph+410,yGraph-10);
+  text(cycleTime,xGraph+290,yGraph-10);
   textFont(font12);
+  text("I2C error:",xGraph+350,yGraph-10);
+  text("Cycle Time:",xGraph+220,yGraph-10);
   text("Power:",xGraph-5,yGraph-30); text(pMeterSum,xGraph+50,yGraph-30);
   text("pAlarm:",xGraph-5,yGraph-15);
   text("Volt:",xGraph-5,yGraph-2);  text(bytevbat/10.0,xGraph+50,yGraph-2);
@@ -339,7 +340,7 @@ void draw() {
   strokeWeight(0);sphere(size/3);strokeWeight(3);
   line(0,0, 10,0,-size-5,10);line(0,-size-5,10,+size/4,-size/2,10); line(0,-size-5,10,-size/4,-size/2,10);
   stroke(255);
-  
+
   textFont(font12);
   if (multiType == 1) { //TRI
     ellipse(-size, -size, size, size);ellipse(+size, -size, size, size);ellipse(0,  +size,size, size);
@@ -416,13 +417,6 @@ void draw() {
     servoSliderV[0].setPosition(xMot+5,yMot+10);servoSliderV[0].setCaptionLabel("LEFT");servoSliderV[0].show(); 
     servoSliderV[1].setPosition(xMot+100,yMot+10);servoSliderV[1].setCaptionLabel("RIGHT");servoSliderV[1].show();
     motSlider[0].setPosition(xMot+50,yMot+30);motSlider[0].setHeight(90);motSlider[0].setCaptionLabel("Mot");motSlider[0].show();
-     
-   // servoSliderH[3].setPosition(xMot,yMot-5) ;servoSliderH[3].setCaptionLabel("Left");servoSliderH[3].show();
-   // servoSliderH[4].setPosition(xMot,yMot+25);servoSliderH[4].setCaptionLabel("Right");servoSliderH[4].show();
-   // servoSliderH[5].setPosition(xMot,yMot+55);servoSliderH[5].setCaptionLabel("Rudd");servoSliderH[5].show();
-   // servoSliderH[6].setPosition(xMot,yMot+85);servoSliderH[6].setCaptionLabel("Elev");servoSliderH[6].show();
-   // servoSliderH[7].setPosition(xMot,yMot+115);servoSliderH[7].setCaptionLabel("Thro");servoSliderH[7].show(); 
- 
   } else if (multiType == 9) { //Y4
     ellipse(-size,  -size, size, size);ellipse(+size,  -size, size, size);ellipse(0,  +size, size+2, size+2);
     line(-size,-size, 0,0);line(+size,-size, 0,0);line(0,+size, 0,0);
@@ -446,9 +440,10 @@ void draw() {
     motSlider[3].setPosition(xMot+25,yMot-20);motSlider[3].setHeight(45);motSlider[3].setCaptionLabel("FRONT_L");motSlider[3].show(); 
     motSlider[4].setPosition(xMot+90,yMot+35);motSlider[4].setHeight(45);motSlider[4].setCaptionLabel("RIGHT");motSlider[4].show(); 
     motSlider[5].setPosition(xMot+5,yMot+35);motSlider[5].setHeight(45);motSlider[5].setCaptionLabel("LEFT");motSlider[5].show(); 
-  } else if (multiType == 11) { //OCTOX8
+  } else if (multiType >= 11 && multiType <= 13) { //OCTOX8
+  // GUI is the same for all 8 motor configs. multiType 11-13
     noLights();text("OCTOCOPTER X8", -45,-50);camera();popMatrix();
-  } else if (multiType == 12) { //Aeroplane
+  } else if (multiType == 14) { //Aeroplane
   float Span = size*1.3;  
   float VingRoot = Span*0.25;  
   // Wing
@@ -463,7 +458,7 @@ void draw() {
     line(0,size-3,0,  0,size,15); line(0,size,15,  0,size+5,15);line(0,size+5,15,  0,size+5,0);       
     noLights();
     textFont(font12);
-    text("AEROPLANE", -40,-50);camera();popMatrix();
+    text("AIRPLANE", -30,-50);camera();popMatrix();
   
     servoSliderH[3].setPosition(xMot,yMot-5) ;servoSliderH[3].setCaptionLabel("Wing 1");servoSliderH[3].show();
     servoSliderH[4].setPosition(xMot,yMot+25);servoSliderH[4].setCaptionLabel("Wing 2");servoSliderH[4].show();
@@ -473,7 +468,7 @@ void draw() {
     
     motSlider[0].hide();motSlider[1].hide();motSlider[2].hide();motSlider[3].hide();motSlider[4].hide();motSlider[5].hide();
     servoSliderH[1].hide();servoSliderH[2].hide();
-  }else if (multiType == 13) { //Heli 120 
+  }else if (multiType == 15) { //Heli 120 
     
 // HeliGraphics    
 float scalesize=size*0.8;
@@ -505,13 +500,7 @@ float scalesize=size*0.8;
     servoSliderH[5].setPosition(xMot,yMot+55);servoSliderH[5].setCaptionLabel("Yaw");servoSliderH[5].show();
     servoSliderH[6].setPosition(xMot,yMot+85);servoSliderH[6].setCaptionLabel("Right");servoSliderH[6].show();
     servoSliderH[7].setPosition(xMot,yMot+115);servoSliderH[7].setCaptionLabel("Thro");servoSliderH[7].show();  
-
- 
-    motSlider[1].hide();motSlider[1].hide(); motSlider[3].hide();motSlider[4].hide();motSlider[5].hide();
-    servoSliderH[1].hide();servoSliderH[2].hide();
-
-  } else if (multiType == 14) { //Heli 90
- 
+  } else if (multiType == 16) { //Heli 90 
 // HeliGraphics    
 float scalesize=size*0.8;
   // Rotor
@@ -539,12 +528,7 @@ float scalesize=size*0.8;
     servoSliderH[5].setPosition(xMot,yMot+55);servoSliderH[5].setCaptionLabel("YAW");servoSliderH[5].show();
     servoSliderH[6].setPosition(xMot,yMot+85);servoSliderH[6].setCaptionLabel("COLL");servoSliderH[6].show();
     servoSliderH[7].setPosition(xMot,yMot+115);servoSliderH[7].setCaptionLabel("THRO");servoSliderH[7].show();  
-
- 
-    motSlider[1].hide();motSlider[1].hide(); motSlider[3].hide();motSlider[4].hide();motSlider[5].hide();
-    servoSliderH[1].hide();servoSliderH[2].hide();
-
-  }  else if (multiType == 15) { //Vtail   
+  }  else if (multiType == 17) { //Vtail   
     ellipse(-0.55*size,size,size,size); ellipse(+0.55*size,size,size,size);
     line(-0.55*size,size,0,0);line(+0.55*size,size,0,0);    
     ellipse(-size, -size, size, size);ellipse(+size, -size, size, size);
@@ -560,8 +544,7 @@ float scalesize=size*0.8;
     motSlider[4].hide();motSlider[5].hide();
     servoSliderH[1].hide();servoSliderH[2].hide();servoSliderH[3].hide();servoSliderH[4].hide();
     servoSliderV[0].hide();servoSliderV[1].hide();servoSliderV[2].hide();
-
-  }else {
+  } else {
     noLights();camera();popMatrix();
   }
   
@@ -673,24 +656,12 @@ float scalesize=size*0.8;
   text("RATE",xParam+160,yParam+15);
   text("ROLL",xParam+3,yParam+32);text("PITCH",xParam+3,yParam+52);text("YAW",xParam+3,yParam+72);
   text("ALT",xParam+3,yParam+92);
-//  text("VEL",xParam+3,yParam+112);
+  text("VEL",xParam+3,yParam+112);
   text("GPS",xParam+3,yParam+132);
   text("LEVEL",xParam+1,yParam+152);
   text("MAG",xParam+3,yParam+172); 
   text("Throttle PID",xParam+220,yParam+15);text("attenuation",xParam+220,yParam+30);
   text("AUX1",xBox+55,yBox+5);text("AUX2",xBox+105,yBox+5);
-/*  text("LEVEL",xBox,yBox+30);
-  text("BARO",xBox,yBox+43);
-  text("MAG",xBox,yBox+56);
-  text("ARM",xBox,yBox+95);
-  textFont(font8);
-  text("CAMSTAB",xBox-5,yBox+69);
-  text("CAMTRIG",xBox-5,yBox+82);
-  text("GPS HOME",xBox-5,yBox+108);
-  //text("GPS HOLD",xBox-5,yBox+121); //not yet
-  text("PASSTHRU",xBox-5,yBox+134);
-  text("HEADFREE",xBox-5,yBox+147);
-  text("BEEPER",xBox-5,yBox+160); */
   textFont(font8);
   text("LOW",xBox+37,yBox+15);text("MID",xBox+57,yBox+15);text("HIGH",xBox+74,yBox+15);
   text("LOW",xBox+100,yBox+15);text("MID",xBox+123,yBox+15);text("HIGH",xBox+140,yBox+15);
@@ -783,8 +754,8 @@ public void READ() {
     if ((byte(activation1[i])&(1<<a))>0) checkbox1[i].activate(a); else checkbox1[i].deactivate(a);
     if ((byte(activation2[i])&(1<<a))>0) checkbox2[i].activate(a); else checkbox2[i].deactivate(a);
   }
-
-/* updating bg-color here is only executed, when READ button gets pressed - not live
+  
+  /* updating bg-color here is only executed, when READ button gets pressed - not live
   for(int i=0;i<CHECKBOXITEMS;i++)  { // highest bit contains mwc state for this item xxx
     if ((byte(activation2[i])&(1<<7))>0) buttonCheckbox[i].setColorBackground(green_); else buttonCheckbox[i].setColorBackground(red_);
   } */
@@ -892,6 +863,7 @@ void processSerialData() {
       present = read8(); 
       mode = read8();
       cycleTime = read16();
+      i2cError = read16();
       angx = read16()/10;angy = read16()/10;
       multiType = read8();                                                            
       for(int i=0;i<PIDITEMS;i++) {byteP[i] = read8();byteI[i] = read8();byteD[i] = read8();}
