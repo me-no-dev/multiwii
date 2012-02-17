@@ -94,14 +94,21 @@
   #define SERVO_8_PIN_HIGH           PORTB |= 1<<1;
   #define SERVO_8_PIN_LOW            PORTB &= ~(1<<1);
 #endif
+
 #if defined(PROMICRO)
   #define LEDPIN_PINMODE             //
   #define LEDPIN_TOGGLE              PIND |= 1<<5;     //switch LEDPIN state (Port D5)
   #define LEDPIN_OFF                 PORTD &= ~(1<<5);
   #define LEDPIN_ON                  PORTD |= (1<<5);
-  #define BUZZERPIN_PINMODE          pinMode (1, OUTPUT);
-  #define BUZZERPIN_ON               PORTD |= 1<<3;
-  #define BUZZERPIN_OFF              PORTD &= ~(1<<3);
+  #if !defined(D8BUZZER) && !defined(A32U4ALLPINS)
+    #define BUZZERPIN_PINMODE          pinMode (1, OUTPUT);
+    #define BUZZERPIN_ON               PORTD |= 1<<3;
+    #define BUZZERPIN_OFF              PORTD &= ~(1<<3);
+  #else
+    #define BUZZERPIN_PINMODE          pinMode (8, OUTPUT);
+    #define BUZZERPIN_ON               PORTB |= 1<<4;
+    #define BUZZERPIN_OFF              PORTB &= ~(1<<4);  
+  #endif
   #define POWERPIN_PINMODE           //
   #define POWERPIN_ON                //
   #define POWERPIN_OFF               //
@@ -118,75 +125,74 @@
   #define SPEK_DATA_REG              UDR1
   #define USB_CDC_TX                 3
   #define USB_CDC_RX                 2
-  #define MOTOR_ORDER                9,10,5,6,4,A2,A0,A1  //for a quad+: rear,right,left,front
   
   
   //soft PWM Pins  
   #define SOFT_PWM_1_PIN_HIGH        PORTD |= 1<<4;
   #define SOFT_PWM_1_PIN_LOW         PORTD &= ~(1<<4);
-  
   #define SOFT_PWM_2_PIN_HIGH        PORTF |= 1<<5;
   #define SOFT_PWM_2_PIN_LOW         PORTF &= ~(1<<5);
-     
   #define SOFT_PWM_3_PIN_HIGH        PORTF |= 1<<7;
   #define SOFT_PWM_3_PIN_LOW         PORTF &= ~(1<<7);
-
   #define SOFT_PWM_4_PIN_HIGH        PORTF |= 1<<6;
   #define SOFT_PWM_4_PIN_LOW         PORTF &= ~(1<<6);
   
-  // TILT_PITCH
+  // Servos
   #define SERVO_1_PINMODE   pinMode(A0,OUTPUT);
   #define SERVO_1_PIN_HIGH  PORTF|= 1<<7;
   #define SERVO_1_PIN_LOW   PORTF &= ~(1<<7);
-  
-  // TILT_ROLL
   #define SERVO_2_PINMODE   pinMode(A1,OUTPUT);
   #define SERVO_2_PIN_HIGH  PORTF |= 1<<6;
   #define SERVO_2_PIN_LOW   PORTF &= ~(1<<6);
-  
-  // CAM TRIG
   #define SERVO_3_PINMODE   pinMode(A2,OUTPUT);
   #define SERVO_3_PIN_HIGH  PORTF |= 1<<5;
   #define SERVO_3_PIN_LOW   PORTF &= ~(1<<5);
-  
-  // new
-  #define SERVO_4_PINMODE   pinMode(4,OUTPUT);
-  #define SERVO_4_PIN_HIGH  PORTD |= 1<<4;
-  #define SERVO_4_PIN_LOW   PORTD &= ~(1<<4);
-
-  // TRI REAR
+  #if !defined(A32U4ALLPINS)
+    #define SERVO_4_PINMODE   pinMode(4,OUTPUT);
+    #define SERVO_4_PIN_HIGH  PORTD |= 1<<4;
+    #define SERVO_4_PIN_LOW   PORTD &= ~(1<<4);
+  #else
+    #define SERVO_4_PINMODE   pinMode(A3,OUTPUT);
+    #define SERVO_4_PIN_HIGH  PORTF |= 1<<4;
+    #define SERVO_4_PIN_LOW   PORTF &= ~(1<<4);  
+  #endif
   #define SERVO_5_PINMODE   pinMode(6,OUTPUT);
   #define SERVO_5_PIN_HIGH  PORTD |= 1<<7;
   #define SERVO_5_PIN_LOW   PORTD &= ~(1<<7);
-
-  // BI LEFT
   #define SERVO_6_PINMODE   pinMode(5,OUTPUT);
   #define SERVO_6_PIN_HIGH  PORTC|= 1<<6;
   #define SERVO_6_PIN_LOW   PORTC &= ~(1<<6);
-  
-  // new motor pin 10
   #define SERVO_7_PINMODE   pinMode(10,OUTPUT);
   #define SERVO_7_PIN_HIGH  PORTB |= 1<<6;
   #define SERVO_7_PIN_LOW   PORTB &= ~(1<<6);
-  
-  //new motor pin 9
   #define SERVO_8_PINMODE   pinMode(9,OUTPUT);
   #define SERVO_8_PIN_HIGH  PORTB |= 1<<5;
   #define SERVO_8_PIN_LOW   PORTB &= ~(1<<5);
-
- 
+  
   #define THROTTLEPIN                2
-  #define ROLLPIN                    4
-  #define PITCHPIN                   5
-  #define YAWPIN                     6
-  #define AUX1PIN                    7 
+  #if !defined(A32U4ALLPINS)
+    #define ROLLPIN                    4
+    #define PITCHPIN                   5
+    #define YAWPIN                     6
+    #define AUX1PIN                    7
+  #else
+    #define ROLLPIN                    7
+    #define PITCHPIN                   4
+    #define YAWPIN                     6
+    #define AUX1PIN                    5   
+  #endif
   #define AUX2PIN                    0 
   #define AUX3PIN                    1 // unused 
   #define AUX4PIN                    3 // unused 
   #define ISR_UART                   ISR(USART_UDRE_vect)
-  #define V_BATPIN                   A3    // Analog PIN 3
+  #if !defined(A32U4ALLPINS)
+    #define V_BATPIN                   A3    // Analog PIN 3
+  #else
+    #define V_BATPIN                   A4    // Analog PIN 4
+  #endif
   #define PSENSORPIN                 A2    // Analog PIN 2 
 #endif
+
 #if defined(MEGA)
   #define LEDPIN_PINMODE             pinMode (13, OUTPUT);pinMode (30, OUTPUT);
   #define LEDPIN_TOGGLE              PINB  |= (1<<7); PINC  |= (1<<7);
@@ -286,7 +292,7 @@
   #define YAWPIN                     6
   #define AUX1PIN                    7
   #define AUX2PIN                    0 // optional PIN 8 or PIN 12
-  #define AUX3PIN                    1 // unused 
+  #define AUX3PIN                    1 // unused +
   #define AUX4PIN                    3 // unused 
   #define ISR_UART                   ISR(USART_UDRE_vect)
   #define V_BATPIN                   A3    // Analog PIN 3

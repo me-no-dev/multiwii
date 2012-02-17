@@ -58,10 +58,35 @@
 //#define RCAUXPIN8
 //#define RCAUXPIN12
 
-/*Settings for Promicro (atmega32u4)
-*/
-//aux2 pin for promicro (on pin RX0)
-//#define RCAUX2PIN
+
+
+/* Settings for ProMicro, Leonardo and other Atmega32u4 Boards */
+
+// activate this for a better pinlayout if all pins can be used => not possible on ProMicro!
+//#define A32U4ALLPINS
+
+// activate all 6 hardware PWM outputs Motor 5 = D11 and 6 = D13. => not possible on ProMicro! (untested!) 
+// if activated: 
+// Motor 1-6 = 10-bit hardware PWM
+// Motor 7-8 = 8-bit Software PWM
+// Servos    = 8-bit Software PWM
+// if deactivated:
+// Motor 1-4 = 10-bit hardware PWM
+// Motor 5-8 = 10-bit Software PWM
+// Servos    = 10-bit Software PWM
+//#define HWPWM6
+
+// aux2 pin on pin RXO 
+//#define RCAUX2PINRXO
+
+// aux2 pin on pin D17 (RXLED)
+//#define RCAUX2PIND17
+
+// this moves the Buzzer pin from TXO to D8 for use with ppm sum or spectrum sat. RX (not needed if A32U4ALLPINS is active)
+//#define D8BUZZER
+
+/* end of Settings for ProMicro, Leonardo and other Atmega32u4 Boards */
+
 
 
 
