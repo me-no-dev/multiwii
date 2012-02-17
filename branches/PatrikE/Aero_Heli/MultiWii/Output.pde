@@ -631,7 +631,7 @@ if (armed){
     servo[4]  = constrain(1500 + HeliRoll   , 1020, 2000);               //     ROLL servo
     servo[6]  = constrain(3000 - rcData[CollectivePitch] , 1020, 2000);  //     COLLECTIVE  servo  
    #endif    
-  for(uint8_t i=0;i<8;i++){servo[i]map(servo[i], SERVO_MIN, SERVO_MAX, servolimit[i][0],  servolimit[i][1]);}
+  for(uint8_t i=0;i<8;i++){servo[i]=map(servo[i], SERVO_MIN, SERVO_MAX, servolimit[i][0],  servolimit[i][1]);}
 #endif
   
  /************************************************************************************************************/ 

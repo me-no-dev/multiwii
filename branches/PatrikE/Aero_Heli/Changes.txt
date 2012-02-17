@@ -56,7 +56,7 @@ Added
 120217
 Updated codebase.
 Servoorder changed by Alex.
-Setup servos in Multiwii tab.
+New servo setup in Multiwii tab.
 
 *********************************************************
 
