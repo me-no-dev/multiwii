@@ -25,9 +25,9 @@
 //#define FLYING_WING 
 //#define VTAIL4      //experimental The mix is a modified Y4 Mix.
 
-//*****************************************************//
-//**** !!!!   Warning     Early BETATSEST   !!!! ******//
-//*****************************************************//
+//***********************************//
+//**** !!!!   BETATSEST   !!!! ******//
+//***********************************//
 // Use EXPO in the TX!  EPXO In GUI dont work in PassthruMode.
 #define AIRPLANE	 // PatrikE Experimental 
 

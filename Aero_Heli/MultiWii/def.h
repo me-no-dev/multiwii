@@ -170,6 +170,9 @@
   #define PINMODE_LCD                ; //
   #define LCDPIN_OFF                 ;
   #define LCDPIN_ON                  ; 
+  #define SERVO_4_PINMODE            pinMode(12,OUTPUT); 
+  #define SERVO_4_PIN_HIGH           PORTB |= 1<<4;
+  #define SERVO_4_PIN_LOW            PORTB &= ~(1<<4);
   
   //RX PIN assignment inside the port //for PORTD
   #define THROTTLEPIN                2
@@ -496,7 +499,7 @@
 
 /* motor and servo numbers */
 
-#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(SERVO_MIX_TILT)|| defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)|| defined(AIRPLANE)
+#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(SERVO_MIX_TILT)|| defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)|| defined(AIRPLANE)|| defined(HELICOPTER)
   #define SERVO
 #endif
 

@@ -7,7 +7,10 @@ void computeIMU () {
   static uint32_t timeInterleave = 0;
   #if defined(TRI)
     static int16_t gyroYawSmooth = 0;
-  #endif
+  #endif 
+  #if defined(HELICOPTER)   
+   static int16_t gyroSmooth[3] = {0,0,0};
+  #endif 	
 
   #if MAG
     Mag_getADC();
@@ -75,6 +78,15 @@ void computeIMU () {
     gyroData[YAW] = (gyroYawSmooth*2+gyroData[YAW]+1)/3;
     gyroYawSmooth = gyroData[YAW];
   #endif
+/************************************/
+   #if defined(HELICOPTER)   
+for (axis = 0; axis < 3; axis++) {
+    gyroData[axis] = (gyroSmooth[axis]*(Smoothing[axis]-1)+gyroData[axis]+1)/Smoothing[axis];
+    gyroSmooth[axis] = gyroData[axis];
+	}
+  #endif
+/************************************/
+
 }
 
 // **************************************************
