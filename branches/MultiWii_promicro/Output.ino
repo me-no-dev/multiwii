@@ -516,7 +516,7 @@ ISR(SERVO_ISR) {
       #else
         PORTC |= 1<<0;//PIN A0
       #endif
-      SOFT_PWM_CHANNEL1 += atomicPWM_PIN1_highState;
+      SOFT_PWM_CHANNEL1 += atomicPWM_PIN5_highState;
       state = 1;
     }else if(state == 1){
       #if not defined(A0_A1_PIN_HEX)
@@ -524,7 +524,7 @@ ISR(SERVO_ISR) {
       #else
         PORTC &= ~(1<<1);
       #endif
-      SOFT_PWM_CHANNEL1 += atomicPWM_PIN2_lowState;
+      SOFT_PWM_CHANNEL1 += atomicPWM_PIN6_lowState;
       state = 2;
     }else if(state == 2){
       #if not defined(A0_A1_PIN_HEX)
@@ -532,7 +532,7 @@ ISR(SERVO_ISR) {
       #else
         PORTC |= 1<<1;//PIN A1
       #endif
-      SOFT_PWM_CHANNEL1 += atomicPWM_PIN2_highState;
+      SOFT_PWM_CHANNEL1 += atomicPWM_PIN6_highState;
       state = 3;  
     }else if(state == 3){
       #if not defined(A0_A1_PIN_HEX)
@@ -540,7 +540,7 @@ ISR(SERVO_ISR) {
       #else
         PORTC &= ~(1<<0);
       #endif 
-      SOFT_PWM_CHANNEL1 += atomicPWM_PIN1_lowState;
+      SOFT_PWM_CHANNEL1 += atomicPWM_PIN5_lowState;
       state = 0;   
     }
   }
@@ -551,19 +551,19 @@ ISR(SERVO_ISR) {
       static uint8_t state = 0;
       if(state == 0){
         SOFT_PWM_3_PIN_HIGH;
-        SOFT_PWM_CHANNEL2 += atomicPWM_PIN3_highState;
+        SOFT_PWM_CHANNEL2 += atomicPWM_PINA2_highState;
         state = 1;
       }else if(state == 1){
         SOFT_PWM_4_PIN_LOW;
-        SOFT_PWM_CHANNEL2 += atomicPWM_PIN4_lowState;
+        SOFT_PWM_CHANNEL2 += atomicPWM_PIN12_lowState;
         state = 2;
       }else if(state == 2){
         SOFT_PWM_4_PIN_HIGH;
-        SOFT_PWM_CHANNEL2 += atomicPWM_PIN4_highState;
+        SOFT_PWM_CHANNEL2 += atomicPWM_PIN12_highState;
         state = 3;  
       }else if(state == 3){
         SOFT_PWM_3_PIN_LOW;
-        SOFT_PWM_CHANNEL2 += atomicPWM_PIN3_lowState;
+        SOFT_PWM_CHANNEL2 += atomicPWM_PINA2_lowState;
         state = 0;   
       }
     }
