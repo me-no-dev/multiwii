@@ -110,7 +110,8 @@ void writeMotors() { // [1000;2000] => [125;250]
     #if (NUMBER_MOTOR > 2) // Timer 4 A & D [1000:2000] => [1000:2000]
       #if !defined(HWPWM6)
         // to write values > 255 to timer 4 A/B we need to split the bytes
-        static uint8_t pwm4_HBA, pwm4_LBA; // high and low byte for timer 4 A
+        static uint8_t pwm4_HBA;
+        static uint16_t pwm4_LBA; // high and low byte for timer 4 A
         pwm4_LBA = 2047-motor[2]; pwm4_HBA = 0; // channel A is inverted
         while(pwm4_LBA > 255){
           pwm4_HBA++;
@@ -122,7 +123,8 @@ void writeMotors() { // [1000;2000] => [125;250]
       #endif
     #endif
     #if (NUMBER_MOTOR > 3)
-      static uint8_t pwm4_HBD, pwm4_LBD; // high and low byte for timer 4 D
+      static uint8_t pwm4_HBD;
+      static uint16_t pwm4_LBD; // high and low byte for timer 4 D
       pwm4_LBD = motor[3]; pwm4_HBD = 0;
       while(pwm4_LBD > 255){
         pwm4_HBD++;
@@ -138,7 +140,8 @@ void writeMotors() { // [1000;2000] => [125;250]
         atomicPWM_PIN6_lowState = 16383-atomicPWM_PIN6_highState;
       #else
         OCR1C = motor[4]<<3; //  pin 11
-        static uint8_t pwm4_HBA, pwm4_LBA; // high and low byte for timer 4 A
+        static uint8_t pwm4_HBA;
+        static uint16_t pwm4_LBA; // high and low byte for timer 4 A
         pwm4_LBA = motor[5]; pwm4_HBA = 0;
         while(pwm4_LBA > 255){
           pwm4_HBA++;
