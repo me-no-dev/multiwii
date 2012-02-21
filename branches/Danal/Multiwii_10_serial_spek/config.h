@@ -4,10 +4,10 @@
 
 /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller)
    This is the minimum value that allow motors to run at a idle speed  */
-#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
+//#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
 //#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
 //#define MINTHROTTLE 1220
-//#define MINTHROTTLE 1150 
+#define MINTHROTTLE 1150 
 
 /* The type of multicopter */
 //#define GIMBAL
@@ -22,7 +22,8 @@
 //#define OCTOX8
 //#define OCTOFLATP
 //#define OCTOFLATX
-//#define FLYING_WING //experimental
+//#define FLYING_WING
+//#define VTAIL4
 
 #define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
 //#define YAW_DIRECTION -1
@@ -57,20 +58,54 @@
 //#define RCAUXPIN8
 //#define RCAUXPIN12
 
+
+
+/* Settings for ProMicro, Leonardo and other Atmega32u4 Boards (BETA) */
+
+// activate this for a better pinlayout if all pins can be used => not possible on ProMicro!
+//#define A32U4ALLPINS
+
+// activate all 6 hardware PWM outputs Motor 5 = D11 and 6 = D13. => not possible on ProMicro! (untested!) 
+// if activated: 
+// Motor 1-6 = 10-bit hardware PWM
+// Motor 7-8 = 8-bit Software PWM
+// Servos    = 8-bit Software PWM
+// if deactivated:
+// Motor 1-4 = 10-bit hardware PWM
+// Motor 5-8 = 10-bit Software PWM
+// Servos    = 10-bit Software PWM
+//#define HWPWM6
+
+// aux2 pin on pin RXO 
+//#define RCAUX2PINRXO
+
+// aux2 pin on pin D17 (RXLED)
+//#define RCAUX2PIND17
+
+// this moves the Buzzer pin from TXO to D8 for use with ppm sum or spectrum sat. RX (not needed if A32U4ALLPINS is active)
+//#define D8BUZZER
+
+/* end of Settings for ProMicro, Leonardo and other Atmega32u4 Boards */
+
+
+
 /* This option is here if you want to use the old level code from the verison 1.7
    It's just to have some feedback. This will be removed in the future */
 //#define STAB_OLD_17
 
-/* GPS
+/* GPS using a SERIAL port
    only available on MEGA boards (this might be possible on 328 based boards in the future)
    if enabled, define here the Arduino Serial port number and the UART speed
    note: only the RX PIN is used, the GPS is not configured by multiwii
    the GPS must be configured to output NMEA sentences (which is generally the default conf for most GPS devices)
-*/
-//#define GPS
-#define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
+   uncomment the first line to select the GPS serial port of the arduino */
+//#define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
 #define GPS_BAUD   115200
-//#define GPS_BAUD   9600
+/* I2C GPS device made with an independant arduino + GPS device
+   including some navigation functions
+   contribution from EOSBandi
+   http://code.google.com/p/i2c-gps-nav/ */
+//#define I2C_GPS
 
 /* Pseudo-derivative conrtroller for level mode (experimental)
    Additional information: http://www.multiwii.com/forum/viewtopic.php?f=8&t=503 */
@@ -103,7 +138,9 @@
 //#define MINIWII         // Jussi's MiniWii Flight Controller
 //#define CITRUSv1_0      // CITRUSv1 from qcrc.ca
 //#define DROTEK_IMU10DOF
-//#define MONGOOSE1_0     // mongoose 1.0    http://www.fuzzydrone.org/                      <- verified by matbogdan
+//#define MONGOOSE1_0     // mongoose 1.0    http://www.fuzzydrone.org/
+//#define CRIUS_LITE      // Crius MultiWii Lite
+//#define CRIUS_SE        // Crius MultiWii SE
 
 
 //if you use independent sensors
@@ -390,7 +427,7 @@
 //#define LCD_TELEMETRY_AUTO  "2122324252627" // strong emphasis on page 2
 /* Use this to trigger telemetry without a TX - only for debugging - do NOT fly with this activated */
 //#define LCD_TELEMETRY_DEBUG  //This form rolls between all screens, LCD_TELEMETRY_AUTO must also be defined.
-//#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
+#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
 
 /* on telemetry page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
