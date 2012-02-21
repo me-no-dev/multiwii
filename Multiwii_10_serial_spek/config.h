@@ -14,10 +14,10 @@
 //#define BI
 //#define TRI
 //#define QUADP
-#define QUADX
+//#define QUADX
 //#define Y4
 //#define Y6
-//#define HEX6
+#define HEX6
 //#define HEX6X
 //#define OCTOX8
 //#define OCTOFLATP
@@ -31,7 +31,7 @@
 //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
 //enable internal I2C pull ups
-#define INTERNAL_I2C_PULLUPS
+//#define INTERNAL_I2C_PULLUPS
 
 
 //****** advanced users settings   *************
@@ -243,7 +243,7 @@
 
 /* this is the maximum value for the ESCs at full power
    this value can be increased up to 2000 */
-#define MAXTHROTTLE 1850
+#define MAXTHROTTLE 1950
 
 /* This is the speed of the serial interface. 115200 kbit/s is the best option for a USB connection.*/
 #define SERIAL_COM_SPEED 115200
@@ -390,7 +390,7 @@
 //#define LCD_TELEMETRY_AUTO  "2122324252627" // strong emphasis on page 2
 /* Use this to trigger telemetry without a TX - only for debugging - do NOT fly with this activated */
 //#define LCD_TELEMETRY_DEBUG  //This form rolls between all screens, LCD_TELEMETRY_AUTO must also be defined.
-#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
+//#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
 
 /* on telemetry page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
