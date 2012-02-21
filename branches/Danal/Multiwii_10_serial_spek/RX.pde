@@ -226,8 +226,11 @@ void  readSBus(){
   volatile uint32_t spekTimeLast;
 void readSpektrum() {
   if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
-  if (SerialPeek((SPEK_SERIAL_PORT) == 'M') && (SerialAvailable(SPEK_SERIAL_PORT) == 1)) {serialCom(); return;} //GUI reqest for data?
-    if (SPEK_FRAME_SIZE == SerialAvailable(SPEK_SERIAL_PORT)) {  //Frame is complete. If not, we'll catch it next time we are called. 
+    uint8_t sp = SerialPeek(SPEK_SERIAL_PORT);
+      #if defined(FAILSAFE)
+    if ((failsafeCnt > 5) && (sp == 'M' || sp == 'W' || sp == 'S' || sp == 'E')) {serialCom(); spekFrameFlags = 0; return;} //GUI?
+      #endif
+    if (SerialAvailable(SPEK_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //Frame is complete. If not, we'll catch it next time we are called. 
       uint8_t oldSREG = SREG; cli();
       SerialRead(SPEK_SERIAL_PORT); SerialRead(SPEK_SERIAL_PORT);        //Eat the header bytes 
       for (uint8_t b = 2; b < SPEK_FRAME_SIZE; b += 2) {
@@ -242,10 +245,8 @@ void readSpektrum() {
         if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // Valid frame, clear FailSafe counter
       #endif
     } else { //Start flag is on, but not enough bytes = incomplete frame in buffer.  This could be OK, if we happened to be called in the middle of a frame.  Or not, if it has been a while since the start flag was set.
-        uint32_t spekInterval = (timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond()) - spekTimeLast;
-        if (spekInterval > 2777) {
-          spekFrameFlags = 0;  
-        }
+      uint32_t spekInterval = (timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond()) - spekTimeLast;
+      if (spekInterval > 2500) {spekFrameFlags = 0;}
     }
   }
 }
@@ -278,13 +279,16 @@ void computeRC() {
   #endif
   rc4ValuesIndex++;
   for (chan = 0; chan < 8; chan++) {
-//    rcData4Values[chan][rc4ValuesIndex%4] = readRawRC(chan);
-//    rcDataMean[chan] = 0;
-//    for (a=0;a<4;a++) rcDataMean[chan] += rcData4Values[chan][a];
-//    rcDataMean[chan]= (rcDataMean[chan]+2)/4;
-//    if ( rcDataMean[chan] < rcData[chan] -3)  rcData[chan] = rcDataMean[chan]+2;
-//    if ( rcDataMean[chan] > rcData[chan] +3)  rcData[chan] = rcDataMean[chan]-2;
- rcData[chan] = readRawRC(chan);
+    #if defined(SPEKTRUM) || defined(SBUS) || defined(BTSERIAL) //Pure digital RXs don't need averaging. 
+      rcData[chan] = readRawRC(chan);
+    #else
+      rcData4Values[chan][rc4ValuesIndex%4] = readRawRC(chan);
+      rcDataMean[chan] = 0;
+      for (a=0;a<4;a++) rcDataMean[chan] += rcData4Values[chan][a];
+      rcDataMean[chan]= (rcDataMean[chan]+2)/4;
+      if ( rcDataMean[chan] < rcData[chan] -3)  rcData[chan] = rcDataMean[chan]+2;
+      if ( rcDataMean[chan] > rcData[chan] +3)  rcData[chan] = rcDataMean[chan]-2;
+    #endif
   }
 }
 

@@ -169,11 +169,7 @@ void serialCom() {
   }
 }
 
-#if defined(SPEKTRUM) && defined(PROMINI)
-  #define SERIAL_RX_BUFFER_SIZE 32
-#else
-  #define SERIAL_RX_BUFFER_SIZE 64
-#endif
+#define SERIAL_RX_BUFFER_SIZE 64
 
 #if defined(PROMINI) || defined(MONGOOSE1_0)
 uint8_t serialBufferRX[SERIAL_RX_BUFFER_SIZE][1];
@@ -225,7 +221,8 @@ void SerialEnd(uint8_t port) {
 SIGNAL(USART_RX_vect){
   uint8_t d = UDR0;
   #if defined(SPEKTRUM)
-    if (!spekFrameFlags) {  
+    if (!spekFrameFlags) { 
+      sei(); 
       uint32_t spekTimeNow = (timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond()); //Move timer0_overflow_count into registers so we don't touch a volatile twice
       uint32_t spekInterval = spekTimeNow - spekTimeLast;                                       //timer0_overflow_count will be slightly off because of the way the Arduino core timer interrupt handler works; that is acceptable for this use. Using the core variable avoids an expensive call to millis() or micros()
       spekTimeLast = spekTimeNow;
@@ -234,6 +231,7 @@ SIGNAL(USART_RX_vect){
         serialHeadRX[0] = 0;
         spekFrameFlags = 0x01;
       }
+      cli();
     }
   #endif
   uint8_t i = (serialHeadRX[0] + 1) % SERIAL_RX_BUFFER_SIZE;
