@@ -311,8 +311,10 @@ void annexCode() { //this code is excetuted at each loop and won't interfere wit
       calibratedACC = 1;
   }
 
-  serialCom();
-
+  #if !(defined(SPEKTRUM) && defined(PROMINI))  //Only one serial port on ProMini.  Skip serial com if Spektrum Sat in use. Note: Spek code will auto-call serialCom if GUI data detected on serial0.
+    serialCom();
+  #endif
+  
   #if defined(POWERMETER)
     intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
     intPowerTrigger1 = powerTrigger1 * PLEVELSCALE; 
