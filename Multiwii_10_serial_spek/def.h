@@ -9,8 +9,6 @@
 #endif
 
 #if defined(PROMINI) && !defined(MONGOOSE1_0)
-  #define MOTOR_ORDER                9,10,11,3,6,5  //for a quad+: rear,right,left,front
-
   #define LEDPIN_PINMODE             pinMode (13, OUTPUT);
   #define LEDPIN_TOGGLE              PINB |= 1<<5;     //switch LEDPIN state (digital PIN 13)
   #define LEDPIN_OFF                 PORTB &= ~(1<<5);
@@ -96,8 +94,13 @@
 #if defined(PROMICRO)
   #define LEDPIN_PINMODE             //
   #define LEDPIN_TOGGLE              PIND |= 1<<5;     //switch LEDPIN state (Port D5)
-  #define LEDPIN_OFF                 PORTD &= ~(1<<5);
-  #define LEDPIN_ON                  PORTD |= (1<<5);
+  #if !defined(PROMICRO10)
+    #define LEDPIN_OFF                 PORTD |= (1<<5);
+    #define LEDPIN_ON                  PORTD &= ~(1<<5);  
+  #else
+    #define LEDPIN_OFF                 PORTD &= ~(1<<5);
+    #define LEDPIN_ON                  PORTD |= (1<<5);
+  #endif
   #if !defined(D8BUZZER) && !defined(A32U4ALLPINS)
     #define BUZZERPIN_PINMODE          pinMode (1, OUTPUT);
     #define BUZZERPIN_ON               PORTD |= 1<<3;
