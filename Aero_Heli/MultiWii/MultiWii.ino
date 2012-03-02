@@ -1,7 +1,7 @@
 /*
 MultiWiiCopter by Alexandre Dubus
 www.multiwii.com
-December  2011     V1.dev
+February  2012     V1.dev
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -14,15 +14,12 @@ December  2011     V1.dev
 #define   VERSION  19
 
 /**************************************************************************************************************
-  Servosettings Only For Airplane  
-/**************************************************************************************************************/
-static uint16_t      servoMid[8] = {1500,1500,1500,1500,1500,1500,1500,1500}; // Midpoint on servo
-static uint16_t   servotravel[8] = {100, 100, 100, 100, 100, 100, 100, 100};  // Rates in 0-100% 
-static int8_t    servoreverse[8] = { 1,   1,   1,   1,  -1,   1,   1,   1};   // Invert servos by setting -1  
-/**************************************************************************************************************/
-  #if defined(HELICOPTER)   //  Only For Heli
-   static uint8_t  Smoothing[3] = {20,20,3}; // How much to smoothen Gyro per axis
-#endif
+  Servosettings Only For Airplane */
+
+ uint16_t      servoMid[8] = {1500,1500,1500,1500,1500,1500,1500,1500}; // Midpoint on servo
+ uint16_t   servotravel[8] = {100, 100, 100, 100, 100, 100, 100, 100};     // Rates in 0-100% 
+ int8_t    servoreverse[8] = { 1,   1,   1,   -1,  1,   1,   1,   1};   // Invert servos by setting -1  
+
 /**************************************************************************************************************/
 
 /*********** RC alias *****************/
@@ -81,10 +78,11 @@ static uint8_t  calibratedACC = 0;
 static uint8_t  vbat;               // battery voltage in 0.1V steps
 static uint8_t  okToArm = 0;
 static uint8_t  rcOptions[CHECKBOXITEMS];
-static int32_t  pressure;
-static int16_t  BaroAlt;
-static int16_t  EstAlt;             // in cm
-static int32_t  EstVelocity;
+static int32_t  BaroAlt;
+static int32_t  EstAlt;             // in cm
+static int16_t  BaroPID = 0;
+static int32_t  AltHold;
+static int16_t  errorAltitudeI = 0;
 static uint8_t  buzzerState = 0;
 static int16_t  debug1,debug2,debug3,debug4;
   
@@ -413,11 +411,7 @@ void loop () {
   static int16_t errorAngleI[2] = {0,0};
   static uint32_t rcTime  = 0;
   static int16_t initialThrottleHold;
-  static int16_t errorAltitudeI = 0;
-  int16_t AltPID = 0;
-  static int16_t lastVelError = 0;
-  static int16_t AltHold;
- 
+
   #if defined(SPEKTRUM)
     if (rcFrameComplete) computeRC();
   #endif
@@ -574,8 +568,7 @@ void loop () {
           AltHold = EstAlt;
           initialThrottleHold = rcCommand[THROTTLE];
           errorAltitudeI = 0;
-          lastVelError = 0;
-          EstVelocity = 0;
+          BaroPID=0;
         }
       } else baroMode = 0;
     #endif
@@ -600,8 +593,33 @@ void loop () {
     #endif
     if (rcOptions[BOXPASSTHRU]) {passThruMode = 1;}
     else passThruMode = 0;
+  } else { //not in rc loop
+    static int8_t taskOrder=0; //never call all function in the same loop
+    switch (taskOrder) {
+      case 0:
+        taskOrder++;    
+        #if MAG
+          Mag_getADC();
+          break;
+        #endif
+      case 1:
+        taskOrder++; 
+        #if BARO
+          Baro_update();     
+          break;
+        #endif
+      case 2:
+        taskOrder++; 
+        #if BARO
+          getEstimatedAltitude();
+        break;
+        #endif
+      default:
+        taskOrder=0;
+        break;
+    }
   }
-  
+
   computeIMU();
   // Measure loop rate just afer reading the sensors
   currentTime = micros();
@@ -620,35 +638,9 @@ void loop () {
   #if BARO
     if (baroMode) {
       if (abs(rcCommand[THROTTLE]-initialThrottleHold)>20) {
-        AltHold = EstAlt;
-        initialThrottleHold = rcCommand[THROTTLE];
-        errorAltitudeI = 0;
-        lastVelError = 0;
-        EstVelocity = 0;
+         baroMode = 0; // so that a new althold reference occurs
       }
-      //**** Alt. Set Point stabilization PID ****
-      error = constrain( AltHold - EstAlt, -100, 100);   //  +/-10m,  1 decimeter accuracy
-      errorAltitudeI += error;
-      errorAltitudeI = constrain(errorAltitudeI,-5000,5000);
-      
-      PTerm = P8[PIDALT]*error/10;                       // 16 bits is ok here
-
-      if (abs(error)>5)                                  // under 50cm error, we neutralize Iterm 
-        ITerm = (int32_t)I8[PIDALT]*errorAltitudeI/4000;
-      else 
-        ITerm = 0;
-      
-      AltPID = PTerm + ITerm ;
-
-      //**** Velocity stabilization PD ****        
-      error = constrain(EstVelocity*2, -30000, 30000);
-      delta = error - lastVelError;
-      lastVelError = error;
-      
-      PTerm = (int32_t)error * P8[PIDVEL]/800;
-      DTerm = (int32_t)delta * D8[PIDVEL]/16;
-      
-      rcCommand[THROTTLE] = initialThrottleHold + constrain(AltPID - (PTerm - DTerm) ,-100,+100);
+      rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
     }
   #endif
   
@@ -677,6 +669,8 @@ void loop () {
       PTerm = constrain(PTerm,-D8[PIDLEVEL]*5,+D8[PIDLEVEL]*5);
 
       errorAngleI[axis]  = constrain(errorAngleI[axis]+errorAngle,-10000,+10000);    //WindUp     //16 bits is ok here
+      if (errorAngle > 0 && errorAngleI[axis]<0 ) errorAngleI[axis] = 0;             // DEV - test code - use with precaution. To prevent Windup exaggerating overshoot. 
+      if (errorAngle < 0 && errorAngleI[axis]>0 ) errorAngleI[axis] = 0;             // DEV - test code - use with precaution. To prevent Windup exaggerating overshoot. 
       ITerm              = ((int32_t)errorAngleI[axis]*I8[PIDLEVEL])>>12;            //32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
     } else { //ACRO MODE or YAW axis
       if (abs(rcCommand[axis])<350) error =          rcCommand[axis]*10*8/P8[axis] ; //16 bits is needed for calculation: 350*10*8 = 28000      16 bits is ok for result if P8>2 (P>0.2)
@@ -728,7 +722,7 @@ void loop () {
           if (GPS_update) { GPS_update = 0;} else { GPS_update = 1;}                  //Fancy flash on GUI :D
           //Read GPS data for distance and heading
           i2c_rep_start(I2C_GPS_ADDRESS);
-          i2c_write(I2C_GPS_DISTANCE);                                               //Start read from here 2x2 bytes distance and direction
+          i2c_write(I2C_GPS_DISTANCE);                                                //Start read from here 2x2 bytes distance and direction
           i2c_rep_start(I2C_GPS_ADDRESS+1);
           uint8_t *varptr = (uint8_t *)&GPS_distanceToHome;
           *varptr++ = i2c_readAck();
