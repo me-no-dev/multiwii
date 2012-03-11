@@ -55,13 +55,33 @@ void writeServos() {
       }
     #endif
     #if defined(SEC_SERVO_FROM)   // write secundary servos
-      for(uint8_t i = (SEC_SERVO_FROM-1); i < SEC_SERVO_TO; i++){
-        #if !defined(PROMICRO) || defined(HWPWM6)
-          atomicServo[i] = (servo[i]-1000)>>2;
-        #else
-          atomicServo[i] = (servo[i]-1000)<<4;
-        #endif
-      }
+      #if defined(SERVO_TILT) && defined(MMSERVOGIMBAL)
+        // Moving Average Servo Gimbal by Magnetron1
+        static int16_t mediaMobileServoGimbalADC[2][MMSERVOGIMBALVECTORLENGHT];
+        static int32_t mediaMobileServoGimbalADCSum[2];
+        static uint8_t mediaMobileServoGimbalIDX;
+        uint8_t axis;
+
+        mediaMobileServoGimbalIDX = ++mediaMobileServoGimbalIDX % MMSERVOGIMBALVECTORLENGHT;
+        for (axis=1; axis < 2; axis++) {
+          mediaMobileServoGimbalADCSum[axis] -= mediaMobileServoGimbalADC[axis][mediaMobileServoGimbalIDX];
+          mediaMobileServoGimbalADC[axis][mediaMobileServoGimbalIDX] = servo[axis];
+          mediaMobileServoGimbalADCSum[axis] += mediaMobileServoGimbalADC[axis][mediaMobileServoGimbalIDX];
+          #if !defined(PROMICRO) || defined(HWPWM6)
+            atomicServo[axis] = (mediaMobileServoGimbalADCSum[axis] / MMSERVOGIMBALVECTORLENGHT - 1000)>>2;
+          #else
+            atomicServo[axis] = (mediaMobileServoGimbalADCSum[axis] / MMSERVOGIMBALVECTORLENGHT - 1000)<<4;
+          #endif
+        }
+      #else
+        for(uint8_t i = (SEC_SERVO_FROM-1); i < SEC_SERVO_TO; i++){
+          #if !defined(PROMICRO) || defined(HWPWM6)
+            atomicServo[i] = (servo[i]-1000)>>2;
+          #else
+            atomicServo[i] = (servo[i]-1000)<<4;
+          #endif
+        }
+      #endif
     #endif
   #endif
 }
@@ -269,7 +289,7 @@ void initOutput() {
       TCCR2A |= _BV(COM2A1); // connect pin 10 to timer 2 channel A
     #endif
   #endif
-#if defined(PROMICRO)
+  #if defined(PROMICRO)
     #if (NUMBER_MOTOR > 0)
       TCCR1A |= (1<<WGM11); TCCR1A &= ~(1<<WGM10); TCCR1B |= (1<<WGM13);  // phase correct mode
       TCCR1B &= ~(1<<CS11); ICR1 |= 0x3FFF; // no prescaler & TOP to 16383;
@@ -325,14 +345,12 @@ void initOutput() {
     #if (NUMBER_MOTOR > 3)
       TCCR2A |= _BV(COM2B1); // connect pin 3 to timer 2 channel B
     #endif
-    #if (NUMBER_MOTOR == 6)  // PIN 5 & 6 or A0 & A1
+    #if (NUMBER_MOTOR > 5)  // PIN 5 & 6 or A0 & A1
       initializeSoftPWM();
       #if defined(A0_A1_PIN_HEX) || (NUMBER_MOTOR > 6)
         pinMode(5,INPUT);pinMode(6,INPUT);     // we reactivate the INPUT affectation for these two PINs
         pinMode(A0,OUTPUT);pinMode(A1,OUTPUT);
       #endif
-    #elif (NUMBER_MOTOR == 8) // PIN A2 & 12
-      initializeSoftPWM();
     #endif
   #endif
   
@@ -620,9 +638,8 @@ void mixTable() {
     motor[0] = PIDMIX( 0,+4/3, 0); //REAR
     motor[1] = PIDMIX(-1,-2/3, 0); //RIGHT
     motor[2] = PIDMIX(+1,-2/3, 0); //LEFT
-    servo[4] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
-    servo[5] =servo[4];
-    #endif
+    servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+  #endif
   #ifdef QUADP
     motor[0] = PIDMIX( 0,+1,-1); //REAR
     motor[1] = PIDMIX(-1, 0,+1); //RIGHT
@@ -706,14 +723,16 @@ void mixTable() {
  /************************************************************************************************************
  PatrikE Experimentals
  ************************************************************************************************************/  
-#if defined(AIRPLANE)|| defined(HELICOPTER)
+#if defined(AIRPLANE)|| defined(HELICOPTER) 
+// Common functions for Plane and Heli
+
 static int16_t servolimit[8][2]; // Holds servolimit data
 #define SERVO_MIN 1020           // limit servo travel range must be inside [1020;2000]
 #define SERVO_MAX 2000           // limit servo travel range must be inside [1020;2000]
 
 
  /***************************
-    Set rates with endpoints. 
+    Set rates using endpoints. 
  ***************************/
 /*
 static int16_t     servoHIGH[8] = {2000,2000,2000,2000,2000,2000,2000,2000}; // HIGHpoint on servo
@@ -733,10 +752,9 @@ static int16_t      servoLOW[8] = {1020,1020,1020,1020,1020,1020,1020,1020}; // 
     }
  /***********************************************************************************/
  
-   if (!armed){ 
+ if (!armed){ 
      // Kill throttle when disarmed
-     //servo[7]=constrain( 900, MINCOMMAND, SERVO_MAX); // Use with esc
-     servo[7]=constrain( 900, SERVO_MIN, SERVO_MAX);  // Use with servo
+     servo[7]=constrain( 900, SERVO_MIN, SERVO_MAX); 
  }else{   
  if (NUM_MOTRORS){
    motor[0]  = constrain(rcCommand[THROTTLE], servolimit[7][0], servolimit[7][1]); //   490hz ESC
@@ -776,25 +794,22 @@ static int16_t      servoLOW[8] = {1020,1020,1020,1020,1020,1020,1020,1020}; // 
  /************************************************************************************************************/   
 #ifdef HELICOPTER 
  // Common for Helicopters 
- int HeliRoll= (axisPID[ROLL]  +(angle[ROLL]  /16));
- int HeliNick= (axisPID[PITCH] +(angle[PITCH] /16));
+ int HeliRoll,HeliNick;
  
  if(passThruMode){ // Pass Rcdata direct to mixer
-       HeliRoll=  rcCommand[ROLL] ;
-       HeliNick=  rcCommand[PITCH];
-     }
+      HeliRoll=  rcCommand[ROLL] ;
+      HeliNick=  rcCommand[PITCH];
+     }else{ 
+       // Stable mode
+      HeliRoll= (axisPID[ROLL]  +(angle[ROLL]  /16));
+      HeliNick= (axisPID[PITCH] +(angle[PITCH] /16));
+    }
+     
            
  /* Throttle 
   ********************
-     servo[7] is programmed with safty features to avoid motorstarts when ardu reset..   
-     All other servos go to center at reset..  Half throttle can be dangerus    
-     Only use servo[7] as Throttlecontrol if motor is used in the setup            */
-       
-if (armed){  
- // motor[0] =constrain(   rcData[THROTTLE] , 1020, 2000); 	//   490hz ESC
-    servo[7]  = constrain(  rcData[THROTTLE] , 1020, 2000);     //   50hz ESC or servo
-}
- 
+Handeled in common functions for plane & Heli */
+
  /************************************************************************************************************/  
   #ifdef HELI_120_CCPM    
     /*                     3000-rcData[AXIS] Will reverse servos     */

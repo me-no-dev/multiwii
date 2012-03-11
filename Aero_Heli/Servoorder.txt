@@ -13,7 +13,7 @@ servo[0] =	A0	D34/44	-	-	-
 servo[1] =	A1	D35/45  -       -       -
 servo[2] =	A2	D33/46  -       -       -
 servo[3] =	D12	D37     Wing:1  Nck	Nckservo
-servo[4] =	D11	D6	Wing:2	Roll	Left		= motor[4]
-servo[5] =	D3	D2	Rudder	Tail	Tail		= motor[3]	
+servo[4] =	D11	D6	Wing:2	Roll	Left		= motor[3]
+servo[5] =	D3	D2	Rudder	Tail	Tail		= motor[2]	
 servo[6] =	D10	D5	Elev	Coll	Right		= motor[1]
 servo[7] =	D9	D3	Engine	Engine	Engine		= motor[0]	

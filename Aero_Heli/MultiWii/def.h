@@ -317,7 +317,7 @@
   #define SERVO_3_PINMODE            pinMode(A2,OUTPUT); // CAM TRIG
   #define SERVO_3_PIN_HIGH           PORTC |= 1<<2;
   #define SERVO_3_PIN_LOW            PORTC &= ~(1<<2); 
-  #define SERVO_4_PINMODE            ; 
+  #define SERVO_4_PINMODE            ;                   // Not available
   #define SERVO_4_PIN_HIGH           ;
   #define SERVO_4_PIN_LOW            ;
   #define SERVO_5_PINMODE            pinMode(3,OUTPUT); // BI LEFT
@@ -499,8 +499,8 @@
 #if defined(MINIWII)
   #define ITG3200
   #define BMA180
-  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  =  Y; accADC[YAW]  = -Z;}
-  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = -Y; accADC[YAW]  = -Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
 #endif
 
 #if defined(CITRUSv1_0)
@@ -603,10 +603,16 @@
 #define HELICOPTER
 #endif
 
-#if defined (AIRPLANE) || defined(HELICOPTER) && defined(PROMINI)
+#if defined (AIRPLANE) || defined(HELICOPTER) && defined(PROMINI) 
+ #if defined(D12_POWER)
+  #define SERVO_4_PINMODE            ;  // D12
+  #define SERVO_4_PIN_HIGH           ;
+  #define SERVO_4_PIN_LOW            ;
+ #else if
   #define POWERPIN_PINMODE           ;
   #define POWERPIN_ON                ;
   #define POWERPIN_OFF               ;
+ #endif
 #endif
 
 
