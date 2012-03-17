@@ -320,9 +320,9 @@ void  readSBus(){
 void readSpektrum() {
   if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
     uint8_t sp = SerialPeek(SPEK_SERIAL_PORT);
-      #if defined(FAILSAFE)
-    if ((failsafeCnt > 5) && (sp == 'M' || sp == 'W' || sp == 'S' || sp == 'E')) {serialCom(); spekFrameFlags = 0; return;} //GUI?
-      #endif
+    #if defined(FAILSAFE)
+      if ((failsafeCnt > 5) && (sp == 'M' || sp == 'W' || sp == 'S' || sp == 'E')) {serialCom(); spekFrameFlags = 0; return;} //GUI?
+    #endif
     if (SerialAvailable(SPEK_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //Frame is complete. If not, we'll catch it next time we are called. 
       uint8_t oldSREG = SREG; cli();
       SerialRead(SPEK_SERIAL_PORT); SerialRead(SPEK_SERIAL_PORT);        //Eat the header bytes 
@@ -330,7 +330,7 @@ void readSpektrum() {
         uint8_t bh = SerialRead(SPEK_SERIAL_PORT);
         uint8_t bl = SerialRead(SPEK_SERIAL_PORT);
         uint8_t spekChannel = 0x0F & (bh >> SPEK_CHAN_SHIFT);
-        if (spekChannel < SPEK_MAX_CHANNEL) rcValue[spekChannel] = 988 + ((int(bh & SPEK_CHAN_MASK) << 8) + bl) SPEK_DATA_SHIFT;
+        if (spekChannel < SPEK_MAX_CHANNEL) rcValue[spekChannel] = 988 + (((uint16_t)(bh & SPEK_CHAN_MASK) << 8) + bl) SPEK_DATA_SHIFT;
       }
       spekFrameFlags = 0x00;
       SREG = oldSREG; 
