@@ -155,7 +155,7 @@
 /* I2C accelerometer */
 //#define MMA745
 //#define ADXL345
-//#define BMA020
+#define BMA020
 //#define BMA180
 //#define NUNCHACK  // if you want to use the nunckuk as a standalone I2C ACC without WMP
 //#define LIS3LV02
@@ -283,7 +283,7 @@
 
 /* this is the maximum value for the ESCs at full power
    this value can be increased up to 2000 */
-#define MAXTHROTTLE 1950
+#define MAXTHROTTLE 1900
 
 /* This is the speed of the serial interface. 115200 kbit/s is the best option for a USB connection.*/
 #define SERIAL_COM_SPEED 115200
@@ -426,11 +426,11 @@
 /* This may be useful if your LCD has no buttons or the sending is broken */
 /* hopping is activated and deactivated in unarmed mode with throttle=low & roll=left & pitch=forward */
 /* set it to the sequence of telemetry pages you want to see */
-#define LCD_TELEMETRY_AUTO "12345267" // pages 1 to 7 in ascending order
-//#define LCD_TELEMETRY_AUTO  "2122324252627" // strong emphasis on page 2
+//#define LCD_TELEMETRY_AUTO "12345267" // pages 1 to 7 in ascending order
+#define LCD_TELEMETRY_AUTO  "2122324252627" // strong emphasis on page 2
 /* Use this to trigger telemetry without a TX - only for debugging - do NOT fly with this activated */
 //#define LCD_TELEMETRY_DEBUG  //This form rolls between all screens, LCD_TELEMETRY_AUTO must also be defined.
-#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
+//#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
 
 /* on telemetry page B it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
 /* so we try do define a meaningful part. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
@@ -459,7 +459,7 @@
 /* time base is main loop cycle time - a value of 6 means to trigger the action every 6th run through the main loop */
 /* example: with cycle time of approx 3ms, do action every 6*3ms=18ms */
 /* value must be [1; 65535] */
-#define LCD_TELEMETRY_FREQ 5       // to send telemetry data over serial 23 <=> 60ms <=> 16Hz (only sending interlaced, so 8Hz update rate)
+#define LCD_TELEMETRY_FREQ 23       // to send telemetry data over serial 23 <=> 60ms <=> 16Hz (only sending interlaced, so 8Hz update rate)
 #define LCD_TELEMETRY_AUTO_FREQ 667 // to step to next telemetry page 667 <=> 2s
 #define PSENSORFREQ 6               // to read hardware powermeter sensor 6 <=> 18ms
 #define VBATFREQ PSENSORFREQ        // to read battery voltage - keep equal to PSENSORFREQ unless you know what you are doing
