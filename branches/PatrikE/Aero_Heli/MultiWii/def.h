@@ -712,7 +712,7 @@
   #define PRI_SERVO_FROM   1 // use servo from 1 to 2
   #define PRI_SERVO_TO     2
 #elif defined(AIRPLANE)|| defined(HELICOPTER)
-  #define NUMBER_MOTOR NUM_MOTRORS
+  #define NUMBER_MOTOR 0
   // Use all acvailable servos - NUMBER_MOTOR
   #define ALL_SERVOS
   

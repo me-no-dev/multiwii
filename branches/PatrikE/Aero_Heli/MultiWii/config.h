@@ -31,8 +31,6 @@
 //Howto setup =>>> http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
 #define AIRPLANE       
 //#define D12_POWER    // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
-#define NUM_MOTRORS 0  // Only for use with 490Hz ESC's on Airplane & Heli
-//*************************************************************************************************//
 
 #define SERVO_OFFSET     {  0,   0,   0, -20,  40,   0,  20,   0 } // MID Offset on servo
 #define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100 } // Rates in 0-100% 
@@ -40,7 +38,7 @@
 //*************************************************************************************************// 
 
 //#define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
-#define YAW_DIRECTION -1
+#define YAW_DIRECTION -
 
 #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
 //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones

@@ -761,11 +761,8 @@ static int16_t      servoLOW[8] = {1020,1020,1020,1020,1020,1020,1020,1020}; // 
  if (!armed){ 
      // Kill throttle when disarmed
      servo[7]=constrain( 900, SERVO_MIN, SERVO_MAX); 
- }else{   
- if (NUM_MOTRORS){
-   motor[0]  = constrain(rcCommand[THROTTLE], servolimit[7][0], servolimit[7][1]); //   490hz ESC
-  } else { 
-  servo[7]  = constrain(rcCommand[THROTTLE], servolimit[7][0], servolimit[7][1]); }//   50hz ESC or servo
+ }else{  
+  servo[7]  = constrain(rcCommand[THROTTLE], servolimit[7][0], servolimit[7][1]); // ESC or servo
  }
    #endif
     /*   servo[7] is programmed with safty features to avoid motorstarts when ardu reset..  
@@ -782,12 +779,11 @@ static int16_t      servoLOW[8] = {1020,1020,1020,1020,1020,1020,1020,1020}; // 
     servo[6]  = servoMid[6]+(rcCommand[PITCH]*servoreverse[6]);     //   Elevator 
    }else{
    // use sensors to correct (gyro only or gyro+acc according to AUX configuration
-   // invert the sign before axisPID to reverse servos GyroResponse
-    servo[3]  =(servoMid[3] + (((axisPID[ROLL]) + (angle[ROLL]  /16)) *servoreverse[3])); //   Right Ail 
-    servo[4]  =(servoMid[4] + (((axisPID[ROLL]) + (angle[ROLL]  /16)) *servoreverse[4])); //   Left Ail  
-    servo[5]  =(servoMid[5] + (((axisPID[YAW])                      ) *servoreverse[5])); //   Rudder
-    servo[6]  =(servoMid[6] + (((axisPID[PITCH] + (angle[PITCH] /16)))*servoreverse[6])); //   Elevator
-     } 
+    servo[3]  =(servoMid[3] + (axisPID[ROLL]  * servoreverse[3])); //   Wing 1 
+    servo[4]  =(servoMid[4] + (axisPID[ROLL]  * servoreverse[4])); //   Wing 2
+    servo[5]  =(servoMid[5] + (axisPID[YAW]   * servoreverse[5])); //   Rudder
+    servo[6]  =(servoMid[6] + (axisPID[PITCH] * servoreverse[6])); //   Elevator
+      } 
      
    // ServoRates
     for(uint8_t i=0;i<8;i++){ 
