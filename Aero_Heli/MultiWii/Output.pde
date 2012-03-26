@@ -57,13 +57,13 @@ void writeServos() {
     #if defined(SEC_SERVO_FROM)   // write secundary servos
       #if defined(SERVO_TILT) && defined(MMSERVOGIMBAL)
         // Moving Average Servo Gimbal by Magnetron1
-        static int16_t mediaMobileServoGimbalADC[2][MMSERVOGIMBALVECTORLENGHT];
-        static int32_t mediaMobileServoGimbalADCSum[2];
+        static int16_t mediaMobileServoGimbalADC[3][MMSERVOGIMBALVECTORLENGHT];
+        static int32_t mediaMobileServoGimbalADCSum[3];
         static uint8_t mediaMobileServoGimbalIDX;
         uint8_t axis;
 
         mediaMobileServoGimbalIDX = ++mediaMobileServoGimbalIDX % MMSERVOGIMBALVECTORLENGHT;
-        for (axis=1; axis < 2; axis++) {
+        for (axis=(SEC_SERVO_FROM-1); axis < SEC_SERVO_TO; axis++) {
           mediaMobileServoGimbalADCSum[axis] -= mediaMobileServoGimbalADC[axis][mediaMobileServoGimbalIDX];
           mediaMobileServoGimbalADC[axis][mediaMobileServoGimbalIDX] = servo[axis];
           mediaMobileServoGimbalADCSum[axis] += mediaMobileServoGimbalADC[axis][mediaMobileServoGimbalIDX];
@@ -354,7 +354,7 @@ void initOutput() {
     #endif
   #endif
   
-  writeAllMotors(1000);
+  writeAllMotors(MINCOMMAND);
   delay(300);
   #if defined(SERVO)
     initializeServo();
@@ -639,6 +639,7 @@ void mixTable() {
     motor[1] = PIDMIX(-1,-2/3, 0); //RIGHT
     motor[2] = PIDMIX(+1,-2/3, 0); //LEFT
     servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+    servo[4]= servo[5];
   #endif
   #ifdef QUADP
     motor[0] = PIDMIX( 0,+1,-1); //REAR
@@ -725,8 +726,12 @@ void mixTable() {
  ************************************************************************************************************/  
 #if defined(AIRPLANE)|| defined(HELICOPTER) 
 // Common functions for Plane and Heli
+static int16_t   servoMid[8];                        // Midpoint on servo
+static uint8_t   servotravel[8] = SERVO_RATES;       // Rates in 0-100% 
+static int8_t    Mid[8] = SERVO_OFFSET;
+static int8_t    servoreverse[8] = SERVO_DIRECTION ; // Inverted servos
 
-static int16_t servolimit[8][2]; // Holds servolimit data
+static uint16_t servolimit[8][2]; // Holds servolimit data
 #define SERVO_MIN 1020           // limit servo travel range must be inside [1020;2000]
 #define SERVO_MAX 2000           // limit servo travel range must be inside [1020;2000]
 
@@ -747,7 +752,8 @@ static int16_t      servoLOW[8] = {1020,1020,1020,1020,1020,1020,1020,1020}; // 
     Set rates with 0 - 100%. 
  ***************************/
  for(i=0; i<8; i++){
-      servolimit[i][0]=servoMid[i]-((servoMid[i]-SERVO_MIN) *(servotravel[i]*0.01));
+      servoMid[i]     =MIDRC + Mid[i];
+      servolimit[i][0]=servoMid[i]-((servoMid[i]-SERVO_MIN)   *(servotravel[i]*0.01));
       servolimit[i][1]=servoMid[i]+((SERVO_MAX - servoMid[i]) *(servotravel[i]*0.01));  
     }
  /***********************************************************************************/
@@ -885,7 +891,7 @@ Handeled in common functions for plane & Heli */
     servo[1] = constrain(TILT_ROLL_MIDDLE + TILT_ROLL_PROP   * angle[ROLL]  /16 + rcCommand[ROLL], TILT_ROLL_MIN, TILT_ROLL_MAX);
   #endif
   #ifdef FLYING_WING
-    motor[0] = rcCommand[THROTTLE]; 	// 490hz ESC 
+    motor[0] = rcCommand[THROTTLE];
     if (passThruMode) {// do not use sensors for correction, simple 2 channel mixing
        servo[0]  = PITCH_DIRECTION_L * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL]-MIDRC);
        servo[1]  = PITCH_DIRECTION_R * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL]-MIDRC);

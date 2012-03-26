@@ -27,13 +27,13 @@
     #define POWERPIN_PINMODE           pinMode (12, OUTPUT);
     #define POWERPIN_ON                PORTB |= 1<<4;
     #define POWERPIN_OFF               PORTB &= ~(1<<4); //switch OFF WMP, digital PIN 12
-    #define I2C_PULLUPS_ENABLE         PORTC |= 1<<4; PORTC |= 1<<5;   // PIN A4&A5 (SDA&SCL)
   #else
     #define POWERPIN_PINMODE           ;
     #define POWERPIN_ON                ;
     #define POWERPIN_OFF               ;
     #define RCAUXPIN
   #endif
+  #define I2C_PULLUPS_ENABLE         PORTC |= 1<<4; PORTC |= 1<<5;   // PIN A4&A5 (SDA&SCL)
   #define I2C_PULLUPS_DISABLE        PORTC &= ~(1<<4); PORTC &= ~(1<<5);
   #define PINMODE_LCD                pinMode(0, OUTPUT);
   #define LCDPIN_OFF                 PORTD &= ~1; //switch OFF digital PIN 0
@@ -320,10 +320,10 @@
   #define SERVO_4_PINMODE            ;                   // Not available
   #define SERVO_4_PIN_HIGH           ;
   #define SERVO_4_PIN_LOW            ;
-  #define SERVO_5_PINMODE            pinMode(3,OUTPUT); // BI LEFT
+  #define SERVO_5_PINMODE            pinMode(11,OUTPUT); // BI LEFT
   #define SERVO_5_PIN_HIGH           PORTD|= 1<<3;
   #define SERVO_5_PIN_LOW            PORTD &= ~(1<<3);
-  #define SERVO_6_PINMODE            pinMode(11,OUTPUT); // TRI REAR
+  #define SERVO_6_PINMODE            pinMode(3,OUTPUT); // TRI REAR
   #define SERVO_6_PIN_HIGH           PORTB |= 1<<3;
   #define SERVO_6_PIN_LOW            PORTB &= ~(1<<3);
   #define SERVO_7_PINMODE            pinMode(10,OUTPUT); // new motor pin 10
@@ -396,6 +396,10 @@
   #endif
 #endif
 
+#if defined(FREEIMUv043)
+ #define FREEIMUv04
+#endif
+
 #if defined(FREEIMUv04)
   #define MPU6050
   #define HMC5883
@@ -453,6 +457,7 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
+  #define BMA180_ADDRESS 0x82
 #endif
 
 #if defined(AEROQUADSHIELDv2) // to confirm
@@ -503,19 +508,26 @@
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
 #endif
 
-#if defined(CITRUSv1_0)
+#if defined(CITRUSv2_1)
   #define ITG3200
   #define ADXL345
   #define BMP085
   #define HMC5883
-  #define ACC_ORIENTATION(Y, X, Z)  {accADC[ROLL]  =  Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
-  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
-  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define ADXL345_ADDRESS 0xA6
+  #define ACC_ORIENTATION(X, Y, Z) {accADC[ROLL] = -X; accADC[PITCH] = -Y; accADC[YAW] = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z) {magADC[ROLL] = Y; magADC[PITCH] = Z; magADC[YAW] = X;}
   #define ITG3200_ADDRESS 0XD0
+  #undef INTERNAL_I2C_PULLUPS
 #endif
 
-#if defined(DROTEK_IMU10DOF) || defined(DROTEK_IMU10DOF_MS)
+#if defined(CHERRY6DOFv1_0)
+  #define MPU6050
+  #define ACC_ORIENTATION(Y, X, Z)  {accADC[ROLL]  = -Y; accADC[PITCH]  = -X; accADC[YAW]  =  Z;}
+  #define GYRO_ORIENTATION(Y, X, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
+#if defined(DROTEK_10DOF) || defined(DROTEK_10DOF_MS)
   #define ITG3200
   #define BMA180
   #define HMC5883
@@ -523,19 +535,26 @@
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
   #define ITG3200_ADDRESS 0XD2
-  #if defined(DROTEK_IMU10DOF_MS)
+  #if defined(DROTEK_10DOF_MS)
     #define MS561101BA
-  #elif defined(DROTEK_IMU10DOF)
+  #elif defined(DROTEK_10DOF)
     #define BMP085
   #endif
 #endif
 
-#if defined(DROTEK_IMU6DOFv2)
+#if defined(DROTEK_6DOFv2)
   #define ITG3200
   #define BMA180
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
   #define ITG3200_ADDRESS 0XD2
+#endif
+
+#if defined(DROTEK_6DOF_MPU)
+  #define MPU6050
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
+  #define MPU6050_ADDRESS 0xD2
 #endif
 
 #if defined(MONGOOSE1_0)
@@ -544,8 +563,8 @@
   #define BMP085
   #define HMC5883
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -Y; gyroADC[PITCH] =  X; gyroADC[YAW] = -Z;}
-  #define ACC_ORIENTATION(Y, X, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
-  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = -Y; magADC[PITCH]  = -X; magADC[YAW]  = -Z;}
+  #define ACC_ORIENTATION(Y, X, Z)  {accADC[ROLL]  =  Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = -X; magADC[PITCH]  = -Y; magADC[YAW]  = -Z;}
   #define ADXL345_ADDRESS 0xA6
   #define ITG3200_ADDRESS 0XD0
   #define BMP085_ADDRESS 0xEE
@@ -556,7 +575,7 @@
   #define ITG3200
   #define ADXL345
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
-  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
 #endif
 
 #if defined(CRIUS_SE)
@@ -569,13 +588,35 @@
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
 #endif
 
+/* NEW RoboBee IMU's from  http://flyduino.net  */
+#if defined(RoboBee_10DOF)
+#define ITG3200
+#define ADXL345
+#define BMP085
+#define HMC5883
+#define ACC_ORIENTATION(X, Y, Z) {accADC[ROLL] = X; accADC[PITCH] = Y; accADC[YAW] = Z;}
+#define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = X; gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
+#define MAG_ORIENTATION(X, Y, Z) {magADC[ROLL] = -Y; magADC[PITCH] = X; magADC[YAW] = Z;}
+#define ADXL345_ADDRESS 0xA6
+#define ITG3200_ADDRESS 0XD0
+#endif
+
+#if defined(RoboBee_6DOF)
+#define ITG3200
+#define ADXL345
+#define ACC_ORIENTATION(X, Y, Z) {accADC[ROLL] = X; accADC[PITCH] = Y; accADC[YAW] = Z;}
+#define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = X; gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
+#define ADXL345_ADDRESS 0xA6
+#define ITG3200_ADDRESS 0XD0
+#endif
+
 #if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(MPU6050)
   #define ACC 1
 #else
   #define ACC 0
 #endif
 
-#if defined(HMC5883) || defined(HMC5843) || defined(AK8975)
+#if defined(HMC5883) || defined(HMC5843) || defined(AK8975) || defined(MAG3110)
   #define MAG 1
 #else
   #define MAG 0
@@ -593,7 +634,7 @@
   #define BARO 0
 #endif
 
-#if defined(GPS_SERIAL)  || defined(I2C_GPS)
+#if defined(GPS_SERIAL)  || defined(I2C_GPS) || defined(GPS_FROM_OSD)
   #define GPS 1
 #else
   #define GPS 0
@@ -765,6 +806,14 @@
   #define I2C_GPS_WP15                            0x93
   #define I2C_GPS_WP_NAV_PAR1                     0x9B   //Waypoint navigation parameter 1
           #define I2C_GPS_WP_NAV_PAR1_REACH_LIMIT 0x0F      //lover 4 bit, waypoint reached distance
+#endif
+
+#if !(defined(DISPLAY_2LINES)) && !(defined(DISPLAY_MULTILINE))
+  #if (defined(LCD_VT100))
+    #define DISPLAY_MULTILINE
+  #else
+    #define DISPLAY_2LINES
+  #endif
 #endif
 
 /**************************/
