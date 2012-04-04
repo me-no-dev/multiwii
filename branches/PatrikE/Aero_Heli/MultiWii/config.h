@@ -14,7 +14,7 @@
 //#define BI
 //#define TRI
 //#define QUADP
-//#define QUADX
+#define QUADX
 //#define Y4
 //#define Y6
 //#define HEX6
@@ -23,22 +23,11 @@
 //#define OCTOFLATP
 //#define OCTOFLATX
 //#define FLYING_WING
-//#define VTAIL4      //experimental The mix is a modified Y4 Mix.
+//#define VTAIL4
+//#define AIRPLANE     // PatrikE Experimental. Howto setup =>>>http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
 
-//***********************************************************************************************//
-//******************************* !!!!  MuliWii Airplane   !!!! *********************************//
-//***********************************************************************************************//
-//Howto setup =>>> http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
-#define AIRPLANE       
-//#define D12_POWER    // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
-
-#define SERVO_OFFSET     {  0,   0,   0, -20,  40,   0,  20,   0 } // MID Offset on servo
-#define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100 } // Rates in 0-100% 
-#define SERVO_DIRECTION  {  1,   1,   1,   -1,  1,   1,   1,   1 } // Invert servos by setting -1 
-//*************************************************************************************************// 
-
-//#define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
-#define YAW_DIRECTION -
+#define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
+//#define YAW_DIRECTION -1
 
 #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
 //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
@@ -71,6 +60,7 @@
 */
 //#define RCAUXPIN8
 //#define RCAUXPIN12
+//#define RCOPTIONSBEEP        //uncomment this if you want the buzzer to beep at any rcOptions change on channel Aux1 to Aux4
 
 /* GPS using a SERIAL port
    only available on MEGA boards (this might be possible on 328 based boards in the future)
@@ -142,7 +132,7 @@
 //#define DROTEK_10DOF_MS // Drotek 10DOF with ITG3200, BMA180, HMC5883, MS5611, LLC
 //#define DROTEK_6DOFv2   // Drotek 6DOF v2
 //#define DROTEK_6DOF_MPU // Drotek 6DOF with MPU6050
-//#define MONGOOSE1_0     // mongoose 1.0    http://www.fuzzydrone.org/
+//#define MONGOOSE1_0     // mongoose 1.0    http://store.ckdevices.com/
 //#define CRIUS_LITE      // Crius MultiWii Lite
 //#define CRIUS_SE        // Crius MultiWii SE
 //#define RoboBee_10DOF   // RoboBee IMU's needs to be verified.
@@ -299,12 +289,9 @@
 #define MINCOMMAND 1000
 
 /* this is the maximum value for the ESCs at full power
-   this value can be increased up to 2000 */
-#if defined(AIRPLANE)|| defined(HELICOPTER)
-#define MAXTHROTTLE  2000        // range must be inside [1020;2000]
-#else
-#define MAXTHROTTLE 1850
-#endif
+   this value can be increased up to 2000 */     
+#define MAXTHROTTLE 1850  // range must be inside [1020;2000]
+
 
 
 /* This is the speed of the serial interface. 115200 kbit/s is the best option for a USB connection.*/
@@ -398,6 +385,7 @@
 
 /* The following lines apply only for a pitch/roll tilt stabilization system
    Uncomment the first line to activate it */
+//#define SERVO_TILT              //  Simple CameraGimbal By Bledy http://youtu.be/zKGr6iR54vM
 //#define SERVO_TILT
 #define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
 #define TILT_PITCH_MAX    2000    //servo travel max, max value=2000
@@ -435,6 +423,18 @@
 #define WING_LEFT_MAX  2000 // limit servo travel range must be inside [1020;2000]
 #define WING_RIGHT_MIN 1020 // limit servo travel range must be inside [1020;2000]
 #define WING_RIGHT_MAX 2000 // limit servo travel range must be inside [1020;2000]
+
+
+//***********************************************************************************************//
+//******************************* !!!!  Airplane Settings  !!!! *********************************//
+//***********************************************************************************************//
+//Howto setup =>>> http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
+//#define D12_POWER    // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
+
+#define SERVO_OFFSET     {  0,   0,   0, -20,  40,   0,  20,   0 } // Servo MID Offset
+#define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100 } // Rates in 0-100% 
+#define SERVO_DIRECTION  {  1,   1,   1,   -1,  1,   1,   1,   1 } // Invert servos by setting -1 
+//*************************************************************************************************// 
 
 /********************************************************************/
 /****           powermeter                                       ****/
