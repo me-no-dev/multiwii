@@ -1,0 +1,11 @@
+#summary One-sentence summary of this page.
+#labels Restrict-View-Commit
+
+= Wiki Index =
+
+This wiki should help you to find answers to the most common questions about MultiWii.
+
+
+= Pages =
+
+  *I Index
