@@ -322,8 +322,6 @@ int mode;
 boolean toggleRead = false,toggleReset = false,toggleCalibAcc = false,toggleCalibMag = false,toggleWrite = false;
 
 
-int frameSize;
-
 void draw() {
   int i,present=0,aa;
   float val,inter,a,b,h;
