@@ -1,7 +1,6 @@
 /*************************************************************************************************/
 /****           CONFIGURABLE PARAMETERS                                                       ****/
 /*************************************************************************************************/
-/*
 
 /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller)
    This is the minimum value that allow motors to run at a idle speed  */
@@ -438,11 +437,15 @@
 //******************************* !!!!  Airplane Settings  !!!! *********************************//
 //***********************************************************************************************//
 //Howto setup =>>> http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
-//#define D12_POWER          // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
-//#define FLAPCHANNEL AUX2   // Define the Channel to controll Flaps with.If used. ## Betafunction not yet confirmed ##
-#define SERVO_OFFSET     {  0,   0,   0, -20,  40,   0,  20,   0 } // Servo MID Offset
+//#define D12_POWER            // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
+
+#define SERVO_OFFSET     {  0,   0,   0, 50,  30,   0,  20,   0 } // Servo MID Offset
 #define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100 } // Rates in 0-100% 
-#define SERVO_DIRECTION  {  1,   1,   1,   -1,  1,   1,   1,   1 } // Invert servos by setting -1 
+#define SERVO_DIRECTION  { -1,   1,   1,   1,  1,   1,   1,   1 } // Invert servos by setting -1 
+
+//#define FLAPCHANNEL     AUX4        // Define the Channel to controll Flaps with.If used.
+#define FLAP_EP      { 1500, 1650 } // Endpooints for flaps on a 2 way switch else set {1020,2000} and program in radio.
+#define InvertFlaps  { 1, -1 }      // Change direction om flaps
 //*************************************************************************************************// 
 
 
