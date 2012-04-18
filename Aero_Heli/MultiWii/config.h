@@ -1,6 +1,7 @@
 /*************************************************************************************************/
 /****           CONFIGURABLE PARAMETERS                                                       ****/
 /*************************************************************************************************/
+/*
 
 /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller)
    This is the minimum value that allow motors to run at a idle speed  */
@@ -24,7 +25,15 @@
 //#define OCTOFLATX
 //#define FLYING_WING
 //#define VTAIL4
-//#define AIRPLANE     // PatrikE Experimental. Howto setup =>>>http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
+//#define AIRPLANE     // Howto setup =>>>http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
+
+
+//*******************************************************
+// HeliMode is still on the testing fase......!
+//*******************************************************
+//#define HELI_120_CCPM	 // PatrikE Experimental 
+//#define HELI_90_DEG	 // PatrikE Experimental 
+//*******************************************************
 
 #define YAW_DIRECTION 1 // if you want to reverse the yaw correction direction
 //#define YAW_DIRECTION -1
@@ -423,18 +432,30 @@
 #define WING_LEFT_MAX  2000 // limit servo travel range must be inside [1020;2000]
 #define WING_RIGHT_MIN 1020 // limit servo travel range must be inside [1020;2000]
 #define WING_RIGHT_MAX 2000 // limit servo travel range must be inside [1020;2000]
-
+#define WING_RIGHT {1020,1500,}
 
 //***********************************************************************************************//
 //******************************* !!!!  Airplane Settings  !!!! *********************************//
 //***********************************************************************************************//
 //Howto setup =>>> http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
-//#define D12_POWER    // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
-
+//#define D12_POWER          // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
+//#define FLAPCHANNEL AUX2   // Define the Channel to controll Flaps with.If used. ## Betafunction not yet confirmed ##
 #define SERVO_OFFSET     {  0,   0,   0, -20,  40,   0,  20,   0 } // Servo MID Offset
 #define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100 } // Rates in 0-100% 
 #define SERVO_DIRECTION  {  1,   1,   1,   -1,  1,   1,   1,   1 } // Invert servos by setting -1 
 //*************************************************************************************************// 
+
+
+//***********************************************************************************************//
+//****************************** !!!!  Hellicopter Settings  !!!! *******************************//
+//***********************************************************************************************//
+#define CollectivePitch THROTTLE  //  ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4
+#define SERVO_ENDPOINT_HIGH {2000,2000,2000,2000,2000,2000,2000,2000};
+#define SERVO_ENDPOINT_LOW  {1020,1020,1020,1020,1020,1020,1020,1020};
+   
+//*************************************************************************************************// 
+
+
 
 /********************************************************************/
 /****           powermeter                                       ****/
