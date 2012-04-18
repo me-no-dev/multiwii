@@ -811,8 +811,8 @@ void mixTable() {
     servo endpoints Heli. 
    ***************************/
     for(i=0; i<8; i++){  //  Set rates using endpoints. 
-      servolimitEP[i][0] = servoHIGH[i];  //Min
-      servolimitEP[i][1] = servoHIGH[i];  //Max   
+      servolimitEP[i][0] = servoLOW[i];  //Min
+      servolimitEP[i][1] = servoHIGH[i]; //Max   
     } 
     
     if (!armed){ 
