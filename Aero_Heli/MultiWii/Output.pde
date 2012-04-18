@@ -838,15 +838,15 @@ void mixTable() {
   #endif
     
     if(passThruMode){   // Direct passthru from RX 
-    servo[5]  = servoMid[3]+((rcCommand[ROLL] + flaps[0]) *servoreverse[3]);     //   Wing 1
+    servo[3]  = servoMid[3]+((rcCommand[ROLL] + flaps[0]) *servoreverse[3]);     //   Wing 1
     servo[4]  = servoMid[4]+((rcCommand[ROLL] + flaps[1]) *servoreverse[4]);     //   Wing 2
-    servo[3]  = servoMid[5]+(rcCommand[YAW]  *servoreverse[5]);     //   Rudder
+    servo[5]  = servoMid[5]+(rcCommand[YAW]  *servoreverse[5]);     //   Rudder
     servo[6]  = servoMid[6]+(rcCommand[PITCH]*servoreverse[6]);     //   Elevator 
    }else{
    // use sensors to correct (gyro only or gyro+acc according to AUX configuration
-    servo[5]  =(servoMid[3] + ((axisPID[ROLL] + flaps[0])* servoreverse[3]));   //   Wing 1 
+    servo[3]  =(servoMid[3] + ((axisPID[ROLL] + flaps[0])* servoreverse[3]));   //   Wing 1 
     servo[4]  =(servoMid[4] + ((axisPID[ROLL] + flaps[1])* servoreverse[4]));   //   Wing 2
-    servo[3]  =(servoMid[5] + (axisPID[YAW]   * servoreverse[5]));   //   Rudder
+    servo[5]  =(servoMid[5] + (axisPID[YAW]   * servoreverse[5]));   //   Rudder
     servo[6]  =(servoMid[6] + (axisPID[PITCH] * servoreverse[6]));   //   Elevator
       } 
     // ServoRates
