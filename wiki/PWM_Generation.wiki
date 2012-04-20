@@ -99,7 +99,7 @@ void loop(){
 }}}
 
 
-=== MWC's PWM generation ===
+=== Use of this PWM methods in Multiwii ===
 
 
 -- to be continued
