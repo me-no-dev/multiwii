@@ -1,0 +1,39 @@
+== This should explain how we genenerate the PWM signals to Control ESC's and Servos ==
+
+=== Waht is a PWM Signal ===
+PWM [http://en.wikipedia.org/wiki/Pulse-width_modulation (Pulse Width Modulation)] is a square wave signal with a variable duty time (High, on time)
+we use it to simulate a PPM [http://en.wikipedia.org/wiki/Pulse-position_modulation (Pulse-position modulation)] signal that is used to tell the ESC's their trottle state or servos their position.
+
+
+
+=== Arduino PWM Pin and Software PWM Basics ===
+
+There are two possibilities to generate PWM signals with an [http://www.arduino.cc/ Arduino] [http://en.wikipedia.org/wiki/Microcontroller MCU]
+
+  #**Hardware PWM (HW PWM)*
+  This is the best way to generate PWM signals because its done by a
+  macro of the MCU. In this case the MCU does it automatically so the
+  main software is not affected. it is also unaffected by software 
+  interrupts that may cause [http://en.wikipedia.org/wiki/Jitter jitter].
+
+  There are two ways to activate and controll the HW PWM. 
+  the easyest is the simplified Arduino function [http://arduino.cc/en/Reference/analogWrite analogWrite(pin, duty time)]. its disadvantage is that it use a large arduino library code and it works only with 8-bit(0-256) resolution.
+  
+
+  The second one (that we use in MWC 2.0) is to access the MCU's PWM register in a direct way. this gives much more possibilities. We can change the resolution and the type of PWM (fast PWM Mode, Phase correct PWM Mode or Phase and frequency correct PWM Mode).
+http://multiwii.googlecode.com/svn/wiki/Images/pwm_mode.jpg
+
+
+  #** Software PWM (SW PWM)
+  ... to be continued
+
+
+
+
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
