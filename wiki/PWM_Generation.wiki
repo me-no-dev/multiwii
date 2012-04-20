@@ -3,6 +3,7 @@
 === Waht is a PWM Signal ===
 PWM [http://en.wikipedia.org/wiki/Pulse-width_modulation (Pulse Width Modulation)] is a square wave signal with a variable duty time (High, on time)
 we use it to simulate a PPM [http://en.wikipedia.org/wiki/Pulse-position_modulation (Pulse-position modulation)] signal that is used to tell the ESC's their trottle state or servos their position.
+to have a valid PPM signal the PWM signals duty time needs to variate between 1 nad 2 millisecons (1000us - 2000us).
 
 
 
@@ -23,12 +24,85 @@ There are two possibilities to generate PWM signals with an [http://www.arduino.
   The second one (that we use in MWC 2.0) is to access the MCU's PWM register in a direct way. this gives much more possibilities. We can change the resolution and the type of PWM (fast PWM Mode, Phase correct PWM Mode or Phase and frequency correct PWM Mode).
 http://multiwii.googlecode.com/svn/wiki/Images/pwm_mode.jpg
 
-
-  #** Software PWM (SW PWM)
-  ... to be continued
+   Hardware PWM works only on some specified pins. that is also the reason why we cant run 8 HW PWMs on the promini.
 
 
 
+
+  #** Software PWM (SW PWM)*
+  We use it in MWC for servos and ESC's but only if there are not enough HW PWM pins available. there are many ways to do it. for example a small sketch that does it with the main loop:
+{{{
+void setup(){
+  pinMode(13,OUTPUT); // set pin 13 witch is no HW PWM pin as output
+}
+
+void loop(){
+
+  digitalWrite(13,HIGH) // set it to High
+
+  delayMicroseconds(1500); //wait for 1500us. this gives a PPM signal of 1500us (50% throttle or servo's middle position)
+
+  digitalWrite(13,LOW) // set it to LOW
+
+  delayMicroseconds(500); // let it stay 500us at low state to have a overall loop time of 2000us (500Hz)
+
+}
+}}}
+  this works well if the arduino has nothing else to do then generating a PWM signal. but we need the main loop to read the RX, calculate the movent and many other things. so we cant use it like this.
+  To be more independent from the main loops code we use [http://en.wikipedia.org/wiki/Interrupts interrupts] thay do (as the name says) an interrupt at the moment thay need to be processed. so thay stop the main loops code as long as it takes to finish the interrupts code. 
+  
+  One problem if the interrupt use is if two or more interrupts want to be processed at the same time. than some of them must wait for the others. that causes [http://en.wikipedia.org/wiki/Jitter jitter] to thair time calculations.
+
+  a small example for a interrupt driven soft PWM code
+{{{
+// i use timer 2 for example it runs with default settings at 488Hz
+// and it resolution is 8 bit (0-255)
+
+int duty_time = 200; // 200 will give at 488hz a PPM value of 1600us
+
+void setup(){
+  pinMode(13,OUTPUT); // set pin 13 to output
+
+  TCCR2A = 0; // clear timer 2's TCCRnA register so it works in normal counting mode
+
+  TIMSK2 |= (1<<OCIE2A); // set timer interrupt mask register to Enable CTC interrupt with timer 2's comperator A
+}
+
+// this is the interrupts "loop" for the comperator A of timer 2
+// it is called everytime the comperator A reaches its loaded value (it counts from 0 to 255 with 488Hz)
+
+// the register for timer 2's comperater A is OCR2A
+ISR(TIMER2_COMPA_vect){
+  static uint8_t state = 0; // we need two states .. one high and one low
+
+  if (state == 0){
+
+    pinMode(13,HIGH); // set pin 13 high (in MWC we use a direct port manipulation instead of digitalWrite but it does the same)
+     
+    OCR2A += duty_time;// load the rigister with the duty time .. the interrupt loop will be called again if this time is over
+
+    state = 1; // set the state to 1 because in the next call we need to set the low time
+
+  }else if(state == 1){
+
+    pinMode(13,LOW); // set the pins state to low
+
+    OCR2A += 255-duty_time;// now we neet to wait for the reminding time to dont have just a high signal
+
+   state = 0; // set the state to 0 so it starts again
+  }
+}
+
+void loop(){
+  // the loop isnt needed for this method
+}
+}}}
+
+
+=== MWC's PWM generation ===
+
+
+-- to be continued
 
 
 = Details =
