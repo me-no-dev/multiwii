@@ -3,7 +3,7 @@
 === Waht is a PWM Signal ===
 PWM [http://en.wikipedia.org/wiki/Pulse-width_modulation (Pulse Width Modulation)] is a square wave signal with a variable duty time (High, on time)
 we use it to simulate a PPM [http://en.wikipedia.org/wiki/Pulse-position_modulation (Pulse-position modulation)] signal that is used to tell the ESC's their trottle state or servos their position.
-to have a valid PPM signal the PWM signals duty time needs to variate between 1 nad 2 millisecons (1000us - 2000us).
+to have a valid PPM signal the PWM signals duty time needs to variate between 1 and 2 millisecons (1000us - 2000us).
 
 
 
