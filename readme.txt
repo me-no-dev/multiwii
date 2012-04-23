@@ -1,4 +1,7 @@
 
+please use the current MWC bversion!
+
+
 WMC with ProMicro support
 
 based on r567
