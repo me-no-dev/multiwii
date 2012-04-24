@@ -48,6 +48,8 @@ WMP is active as long as no other gyro or IMU with gyro is defined
 //=== Single Gyros ===//
 // ITG3200 & ITG3205
 //#include "ITG320X_config.h"
+// L3G4200D
+//#include "L3G4200D_config.h"
 
 
 //=== Single ACC's ===//
