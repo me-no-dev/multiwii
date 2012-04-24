@@ -16,6 +16,13 @@
     PORTE |= (1 << 6); // enable pullups
     EIMSK |= (1 << INT6); // enable interuppt
     EICRB |= (1 << ISC60);    
+    #if defined(RCAUX2PINRXO)
+      //AUX2 on RX pin
+      pinMode(0,INPUT); // set to input
+      PORTD |= (1 << 2); // enable pullups
+      EIMSK |= (1 << INT2); // enable interuppt
+      EICRA |= (1 << ISC20);
+    #endif
   }
   ISR(INT6_vect){ 
     static uint16_t now,diff;
@@ -24,7 +31,7 @@
     diff = now - last;
     last = now;
     if(900<diff && diff<2200){ 
-      rcValue[4] = diff;
+      rcValue[7] = diff; 
       /*
       #if defined(FAILSAFE)
         if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // If pulse present on THROTTLE pin (independent from ardu version), clear FailSafe counter  - added by MIS
@@ -32,6 +39,17 @@
       */
     }  
   }  
+  // Aux 2
+  #if defined(RCAUX2PINRXO)
+    ISR(INT2_vect){
+      static uint16_t now,diff;
+      static uint16_t last = 0; 
+      now = micros();  
+      diff = now - last;
+      last = now;
+      if(900<diff && diff<2200) rcValue[0] = diff;
+    }
+  #endif
   //===================================//
   //======== Output HW & SW PWM =======//
   //===================================//  

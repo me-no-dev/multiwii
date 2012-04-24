@@ -118,28 +118,25 @@
 #define SERVO_8_PIN_HIGH             PORTB |= 1<<5;
 #define SERVO_8_PIN_LOW              PORTB &= ~(1<<5);
 //Standart RX
-#define THROTTLEPIN                  3
+#define THROTTLEPIN                7
 #if defined(A32U4ALLPINS)
-  #define ROLLPIN                    7
-  #define PITCHPIN                   6
-  #define YAWPIN                     4
-  #define AUX1PIN                    5 
-  #define AUX2PIN                    0 
-  
-  #define PCINT_PIN_COUNT            5
-  #define PCINT_RX_BITS              (1<<0),(1<<1),(1<<2),(1<<3),(1<<4) 
+  #define ROLLPIN                    6//5
+  #define PITCHPIN                   2//4
+  #define YAWPIN                     4//6
+  #define AUX1PIN                    5//2
+  #define PCINT_PIN_COUNT            4
+  #define PCINT_RX_BITS              (1<<1),(1<<2),(1<<3),(1<<4)
 #else
-  #define ROLLPIN                    0
-  #define PITCHPIN                   1
+  #define ROLLPIN                    4
+  #define PITCHPIN                   5
   #define YAWPIN                     2
-  #define AUX1PIN                    4 
-  #define AUX2PIN                    5 
-  
+  #define AUX1PIN                    6
   #define PCINT_PIN_COUNT            4
   #define PCINT_RX_BITS              (1<<1),(1<<2),(1<<3),(1<<4)
 #endif
-#define AUX3PIN                      6 // unused 
-#define AUX4PIN                      7 // unused 
+#define AUX2PIN                      0 
+#define AUX3PIN                      1 // unused 
+#define AUX4PIN                      3 // unused 
 #define PCINT_RX_PORT                PORTB
 #define PCINT_RX_MASK                PCMSK0
 #define PCIR_PORT_BIT                (1<<0)

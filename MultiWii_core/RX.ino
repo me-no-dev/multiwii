@@ -1,6 +1,6 @@
 #if !defined(SPECIAL_RX)
   static uint8_t PCInt_RX_Pins[PCINT_PIN_COUNT] = {PCINT_RX_BITS};
-  static uint8_t rcChannel[8]  = {ROLLPIN, PITCHPIN, YAWPIN, THROTTLEPIN, AUX1PIN, AUX2PIN, AUX3PIN, AUX4PIN};
+  static uint8_t rcChannel[8]  = {ROLLPIN, PITCHPIN, YAWPIN, THROTTLEPIN, AUX1PIN,AUX2PIN,AUX3PIN,AUX4PIN};
 #endif
 
 // Configure each rc pin for PCINT
@@ -35,51 +35,52 @@ void configureReceiver() {
     PCintLast = pin;          // we memorize the current state of all PINs [D0-D7]
   
     cTime = micros();         // micros() return a uint32_t, but it is not usefull to keep the whole bits => we keep only 16 bits
-    
-    if (mask & PCInt_RX_Pins[0]) 
-      if (!(pin & PCInt_RX_Pins[0])) {
-        dTime = cTime-edgeTime[0]; if (900<dTime && dTime<2200) rcValue[0] = dTime;
-      } else edgeTime[0] = cTime;
-    #if PCINT_PIN_COUNT > 1
+    #if (PCINT_PIN_COUNT > 0)
+      if (mask & PCInt_RX_Pins[0]) 
+        if (!(pin & PCInt_RX_Pins[0])) {
+          dTime = cTime-edgeTime[0]; if (900<dTime && dTime<2200) rcValue[2] = dTime;
+        } else edgeTime[0] = cTime;
+    #endif
+    #if (PCINT_PIN_COUNT > 1)
       if (mask & PCInt_RX_Pins[1]) 
         if (!(pin & PCInt_RX_Pins[1])) {
-          dTime = cTime-edgeTime[1]; if (900<dTime && dTime<2200) rcValue[1] = dTime;
+          dTime = cTime-edgeTime[1]; if (900<dTime && dTime<2200) rcValue[4] = dTime;
         } else edgeTime[1] = cTime; 
     #endif   
-    #if PCINT_PIN_COUNT > 2
+    #if (PCINT_PIN_COUNT > 2)
       if (mask & PCInt_RX_Pins[2]) 
         if (!(pin & PCInt_RX_Pins[2])) {
-          dTime = cTime-edgeTime[2]; if (900<dTime && dTime<2200) rcValue[2] = dTime;
+          dTime = cTime-edgeTime[2]; if (900<dTime && dTime<2200) rcValue[5] = dTime;
         } else edgeTime[2] = cTime; 
     #endif   
-    #if PCINT_PIN_COUNT > 3
+    #if (PCINT_PIN_COUNT > 3)
       if (mask & PCInt_RX_Pins[3]) 
         if (!(pin & PCInt_RX_Pins[3])) {
-          dTime = cTime-edgeTime[3]; if (900<dTime && dTime<2200) rcValue[3] = dTime;
+          dTime = cTime-edgeTime[3]; if (900<dTime && dTime<2200) rcValue[6] = dTime;
         } else edgeTime[3] = cTime; 
     #endif   
-    #if PCINT_PIN_COUNT > 4
+    #if (PCINT_PIN_COUNT > 4)
       if (mask & PCInt_RX_Pins[4]) 
         if (!(pin & PCInt_RX_Pins[4])) {
-          dTime = cTime-edgeTime[4]; if (900<dTime && dTime<2200) rcValue[4] = dTime;
+          dTime = cTime-edgeTime[4]; if (900<dTime && dTime<2200) rcValue[7] = dTime;
         } else edgeTime[4] = cTime; 
     #endif   
-    #if PCINT_PIN_COUNT > 5
+    #if (PCINT_PIN_COUNT > 5)
       if (mask & PCInt_RX_Pins[5]) 
         if (!(pin & PCInt_RX_Pins[5])) {
-          dTime = cTime-edgeTime[5]; if (900<dTime && dTime<2200) rcValue[5] = dTime;
+          dTime = cTime-edgeTime[5]; if (900<dTime && dTime<2200) rcValue[0] = dTime;
         } else edgeTime[5] = cTime; 
     #endif   
-    #if PCINT_PIN_COUNT > 6
+    #if (PCINT_PIN_COUNT > 6)
       if (mask & PCInt_RX_Pins[6]) 
         if (!(pin & PCInt_RX_Pins[6])) {
-          dTime = cTime-edgeTime[6]; if (900<dTime && dTime<2200) rcValue[6] = dTime;
+          dTime = cTime-edgeTime[6]; if (900<dTime && dTime<2200) rcValue[1] = dTime;
         } else edgeTime[6] = cTime; 
     #endif   
-    #if PCINT_PIN_COUNT > 7
+    #if (PCINT_PIN_COUNT > 7)
       if (mask & PCInt_RX_Pins[7]) 
         if (!(pin & PCInt_RX_Pins[7])) {
-          dTime = cTime-edgeTime[7]; if (900<dTime && dTime<2200) rcValue[7] = dTime;
+          dTime = cTime-edgeTime[7]; if (900<dTime && dTime<2200) rcValue[3] = dTime;
         } else edgeTime[7] = cTime; 
     #endif   
   }
@@ -90,7 +91,7 @@ uint16_t readRawRC(uint8_t chan) {
   uint8_t oldSREG;
   oldSREG = SREG; cli(); // Let's disable interrupts
   data = rcValue[rcChannel[chan]]; // Let's copy the data Atomically
-  #if defined(SPECIAL_RX)
+  #if defined(READ_SPECIAL_RX_WO_IN)
     read_Special_RX_WO_interrupt();
   #endif
   SREG = oldSREG; sei();// Let's enable the interrupts
@@ -105,13 +106,14 @@ void computeRC() {
   static int16_t rcData4Values[8][4], rcDataMean[8];
   static uint8_t rc4ValuesIndex = 0;
   uint8_t chan,a;
-    rc4ValuesIndex++;
-    for (chan = 0; chan < 8; chan++) {
-      rcData4Values[chan][rc4ValuesIndex%4] = readRawRC(chan);
-      rcDataMean[chan] = 0;
-      for (a=0;a<4;a++) rcDataMean[chan] += rcData4Values[chan][a];
-      rcDataMean[chan]= (rcDataMean[chan]+2)/4;
-      if ( rcDataMean[chan] < rcData[chan] -3)  rcData[chan] = rcDataMean[chan]+2;
-      if ( rcDataMean[chan] > rcData[chan] +3)  rcData[chan] = rcDataMean[chan]-2;
-    }
+
+  rc4ValuesIndex++;
+  for (chan = 0; chan < 8; chan++) {
+    rcData4Values[chan][rc4ValuesIndex%4] = readRawRC(chan);
+    rcDataMean[chan] = 0;
+    for (a=0;a<4;a++) rcDataMean[chan] += rcData4Values[chan][a];
+    rcDataMean[chan]= (rcDataMean[chan]+2)/4;
+    if ( rcDataMean[chan] < rcData[chan] -3)  rcData[chan] = rcDataMean[chan]+2;
+    if ( rcDataMean[chan] > rcData[chan] +3)  rcData[chan] = rcDataMean[chan]-2;
+  }
 }
