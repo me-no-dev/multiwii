@@ -639,9 +639,7 @@
   #define GPS 0
 #endif
 
-#if defined (HELI_90_DEG) || defined(HELI_120_CCPM)
-#define HELICOPTER
-#endif
+
 
 #if defined (AIRPLANE) || defined(HELICOPTER) && defined(PROMINI) 
  #if defined(D12_POWER)
@@ -685,8 +683,10 @@
   #define MULTITYPE 14    
 #elif defined (HELI_120_CCPM)   
   #define MULTITYPE 15      // Simple model 
+  #define HELICOPTER
 #elif defined (HELI_90_DEG)   
   #define MULTITYPE 16      // Simple model  
+  #define HELICOPTER
 #elif defined(VTAIL4)
  #define MULTITYPE 17
 #endif
@@ -697,7 +697,7 @@
 
 /* motor and servo numbers */
 
-#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(SERVO_MIX_TILT)|| defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)|| defined(AIRPLANE)|| defined(HELICOPTER)
+#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING) || defined(CAMTRIG)|| defined(AIRPLANE)|| defined(HELICOPTER) || defined(SERVO_MIX_TILT)
   #define SERVO
 #endif
 

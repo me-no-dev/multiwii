@@ -28,7 +28,7 @@
 
 
 //*******************************************************
-// HeliMode is still on the testing fase......!
+// HeliMode is  beta test ......!
 //*******************************************************
 //#define HELI_120_CCPM	 // PatrikE Experimental 
 //#define HELI_90_DEG	 // PatrikE Experimental 
@@ -52,7 +52,7 @@
 
 /* This option should be uncommented if ACC Z is accurate enough when motors are running*/
 /* should now be ok with BMA020 and BMA180 ACC */
-#define TRUSTED_ACCZ
+//#define TRUSTED_ACCZ
 
 /* This will activate the ACC-Inflight calibration if unchecked */  
 //#define InflightAccCalibration
@@ -201,7 +201,7 @@
 /* GYRO_SMOOTHING. In case you cannot reduce vibrations _and_ _after_ you have tried the low pass filter options, you
    may try this gyro smoothing via averaging. Not suitable for multicopters!
    Good results for helicopter, airplanes and flying wings (foamies) with lots of vibrations.*/
-//#define GYRO_SMOOTHING {20, 20, 3}    // separate averaging ranges for roll, pitch, yaw
+//#define GYRO_SMOOTHING {20, 20, 3}    // separate averaging ranges for roll, pitch, yaw( 20 = 20/1, 1=>No smoothing)
 
 // Moving Average Gyros by Magnetron1 (Michele Ardito) ########## beta
 //#define MMGYRO                         // Active Moving Average Function for Gyros
@@ -431,31 +431,40 @@
 #define WING_LEFT_MAX  2000 // limit servo travel range must be inside [1020;2000]
 #define WING_RIGHT_MIN 1020 // limit servo travel range must be inside [1020;2000]
 #define WING_RIGHT_MAX 2000 // limit servo travel range must be inside [1020;2000]
-#define WING_RIGHT {1020,1500,}
 
 //***********************************************************************************************//
 //******************************* !!!!  Airplane Settings  !!!! *********************************//
 //***********************************************************************************************//
-//Howto setup =>>> http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
-//#define D12_POWER            // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
+// Howto setup =>>> http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
 
-#define SERVO_OFFSET     {  0,   0,   0, 50,  30,   0,  20,   0 } // Servo MID Offset
-#define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100 } // Rates in 0-100% 
+#define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100} // Rates in 0-100% 
 #define SERVO_DIRECTION  { -1,   1,   1,   1,  1,   1,   1,   1 } // Invert servos by setting -1 
-
-#define FLAPCHANNEL     AUX4        // Define the Channel to controll Flaps with.If used.
+ 
+#define FLAP_CHANNEL     AUX4       // Define the Channel to controll Flaps with.If used.
 #define FLAP_EP      { 1500, 1650 } // Endpooints for flaps on a 2 way switch else set {1020,2000} and program in radio.
-#define InvertFlaps  { 1, -1 }      // Change direction om flaps
-//*************************************************************************************************// 
+#define FLAP_INVERT    { 1, -1 }    // Change direction om flaps { Wing1, Wing2 }
 
+//***********************************************************************************************//
+//*************************** !!!!  Common for Heli & Airplane  !!!! ****************************//
+//***********************************************************************************************//
+//#define D12_POWER            // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
+#define SERVO_OFFSET     {  0,   0,   0,  50,   -20,   10,  0,   0 } // Adjust Servo MID Offset & Swash angles 
 
 //***********************************************************************************************//
 //****************************** !!!!  Hellicopter Settings  !!!! *******************************//
 //***********************************************************************************************//
-#define CollectivePitch THROTTLE  //  ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4
+
+#define CollectivePitch THROTTLE   //// Selectable channels: ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4
+
+// Set Maximum available movement for the servos with Swash in level
 #define SERVO_ENDPOINT_HIGH {2000,2000,2000,2000,2000,2000,2000,2000};
 #define SERVO_ENDPOINT_LOW  {1020,1020,1020,1020,1020,1020,1020,1020};
-   
+
+// Limit the range of Collective Pitch. 100% is Full Range each way and position for Zero Pitch
+#define CollectiveRange { 80, 1500, 80 }//  {Min%, Zero, Max%}
+
+// Limit Maximum controll for Roll & Nick  in 0-100%  
+#define ControllRange   { 100, 100 }      //  { ROLL,PITCH }
 //*************************************************************************************************// 
 
 

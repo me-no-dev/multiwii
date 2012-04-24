@@ -14,7 +14,7 @@
 #if !defined(PROMICRO) || defined(HWPWM6)
 
 #if defined(AIRPLANE)|| defined(HELICOPTER)
-// To prevent motor to start at reset. atomicServo[7]=5 or 249 if reverseed servo
+// To prevent motor to start at reset. atomicServo[7]=5 or 249 if reversed servo
 volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,5}; 
 #else
    volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,125};
@@ -781,73 +781,58 @@ void mixTable() {
   
  /************************************************************************************************************/  
  #if defined(AIRPLANE)|| defined(HELICOPTER) 
- // Common fuctions for Plane and Heli
-   static int16_t   servoMid[8];                        // Midpoint on servo
-   static uint8_t   servotravel[8] = SERVO_RATES;       // Rates in 0-100% 
-   static int8_t    Mid[8] = SERVO_OFFSET;
-   static int8_t    servoreverse[8] = SERVO_DIRECTION ; // Inverted servos
- 
-  static int16_t   servolimitEP[8][2];
-  static int16_t   servoHIGH[8] = SERVO_ENDPOINT_HIGH; // HIGHpoint on servo
-  static int16_t   servoLOW[8]  = SERVO_ENDPOINT_LOW ; // LOWpoint on servo
- 
- 
-    // Common functions for Plane
-    static int16_t servolimit[8][2]; // Holds servolimit data
+ // Common parts for Plane and Heli
+    static int16_t   servoMid[8];                        // Midpoint on servo
+    static uint8_t   servotravel[8] = SERVO_RATES;       // Rates in 0-100% 
+    static int8_t    Mid[8] = SERVO_OFFSET;
+    static int8_t    servoreverse[8] = SERVO_DIRECTION ; // Inverted servos
+    static int16_t   servoHIGH[8] = SERVO_ENDPOINT_HIGH; // HIGHpoint on servo
+    static int16_t   servoLOW[8]  = SERVO_ENDPOINT_LOW ; // LOWpoint on servo
+    static int16_t   servolimit[8][2]; // Holds servolimit data
+	
     #define SERVO_MIN 1020           // limit servo travel range must be inside [1020;2000]
     #define SERVO_MAX 2000           // limit servo travel range must be inside [1020;2000]
-    
-   /***************************
-    servo endpoints Airplane. 
-   ***************************/
-    for(i=0; i<8; i++){  //  Set rates with 0 - 100%. 
-      servoMid[i]     =MIDRC + Mid[i];
-      servolimit[i][0]=servoMid[i]-((servoMid[i]-SERVO_MIN) *(servotravel[i]*0.01));
-      servolimit[i][1]=servoMid[i]+((SERVO_MAX - servoMid[i]) *(servotravel[i]*0.01));  
-    }
-    
-    
-   /***************************
-    servo endpoints Heli. 
-   ***************************/
-    for(i=0; i<8; i++){  //  Set rates using endpoints. 
-      servolimitEP[i][0] = servoLOW[i];  //Min
-      servolimitEP[i][1] = servoHIGH[i]; //Max   
-    } 
-    
+   
+    // servo[7] is programmed with safty features to avoid motorstarts when ardu reset..  
+    // All other servos go to center at reset..  Half throttle can be dangerus    
+    // Only use servo[7] as motorcontrol if motor is used in the setup            */
+
     if (!armed){ 
       servo[7]=constrain( 900, SERVO_MIN, SERVO_MAX); // Kill throttle when disarmed
     } else {   
       servo[7]  = constrain(rcCommand[THROTTLE], servolimit[7][0], servolimit[7][1]); //   50hz ESC or servo
     }
-
-    // servo[7] is programmed with safty features to avoid motorstarts when ardu reset..  
-    // All other servos go to center at reset..  Half throttle can be dangerus    
-    // Only use servo[7] as motorcontrol if motor is used in the setup            */
-
    #endif
 
-  #ifdef AIRPLANE    
+  #ifdef AIRPLANE          
+   /***************************
+    servo endpoints Airplane. 
+   ***************************/
+    for(i=0; i<8; i++){  //  Set rates with 0 - 100%. 
+      servoMid[i]     =MIDRC + Mid[i];
+      servolimit[i][0]=servoMid[i]-((servoMid[i]-SERVO_MIN)   *(servotravel[i]*0.01));
+      servolimit[i][1]=servoMid[i]+((SERVO_MAX - servoMid[i]) *(servotravel[i]*0.01));  
+    }
+ 
     int16_t flaps[2]={0,0};    
-
-  #if  defined(FLAPCHANNEL) && defined(FLAP_EP) && defined(InvertFlaps)  
-    int8_t flapinv[2] = InvertFlaps; 
-    static int16_t Fep[2] = FLAP_EP;
-    int16_t flap   =(MIDRC- constrain(rcData[FLAPCHANNEL],Fep[0],Fep[1]));
+   #if  defined(FLAP_CHANNEL) && defined(FLAP_EP) && defined(FLAP_INVERT)  
+    int8_t flapinv[2] = FLAP_INVERT; 
+    static int16_t F_Endpoint[2] = FLAP_EP;
+    int16_t flap = (MIDRC- constrain(rcData[FLAP_CHANNEL],F_Endpoint[0],F_Endpoint[1]));
     for(i=0; i<2; i++){ flaps[i] = flap * flapinv[i] ;}
-  #endif
+   #endif
     
     if(passThruMode){   // Direct passthru from RX 
     servo[3]  = servoMid[3]+((rcCommand[ROLL] + flaps[0]) *servoreverse[3]);     //   Wing 1
     servo[4]  = servoMid[4]+((rcCommand[ROLL] + flaps[1]) *servoreverse[4]);     //   Wing 2
-    servo[5]  = servoMid[5]+(rcCommand[YAW]  *servoreverse[5]);     //   Rudder
-    servo[6]  = servoMid[6]+(rcCommand[PITCH]*servoreverse[6]);     //   Elevator 
+    servo[5]  = servoMid[5]+(rcCommand[YAW]               *servoreverse[5]);     //   Rudder
+    servo[6]  = servoMid[6]+(rcCommand[PITCH]             *servoreverse[6]);     //   Elevator 
    }else{
-   // use sensors to correct (gyro only or gyro+acc according to AUX configuration
-    servo[3]  =(servoMid[3] + ((axisPID[ROLL] + flaps[0])* servoreverse[3]));   //   Wing 1 
-    servo[4]  =(servoMid[4] + ((axisPID[ROLL] + flaps[1])* servoreverse[4]));   //   Wing 2
-    servo[5]  =(servoMid[5] + (axisPID[YAW]   * servoreverse[5]));   //   Rudder
-    servo[6]  =(servoMid[6] + (axisPID[PITCH] * servoreverse[6]));   //   Elevator
+   // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
+    servo[3]  =(servoMid[3] + ((axisPID[ROLL] + flaps[0]) *servoreverse[3]));   //   Wing 1 
+    servo[4]  =(servoMid[4] + ((axisPID[ROLL] + flaps[1]) *servoreverse[4]));   //   Wing 2
+    servo[5]  =(servoMid[5] + (axisPID[YAW]               *servoreverse[5]));   //   Rudder
+    servo[6]  =(servoMid[6] + (axisPID[PITCH]             *servoreverse[6]));   //   Elevator
       } 
     // ServoRates
     for(uint8_t i=3;i<8;i++){ 
@@ -859,55 +844,78 @@ void mixTable() {
  
  /************************************************************************************************************/   
 #ifdef HELICOPTER 
- // Common for Helicopters 
- int HeliRoll,HeliNick;
-    
- if(passThruMode){ // Pass Rcdata direct to mixer
+ // Common controlls for Helicopters 
+    int16_t HeliRoll,HeliNick;
+    int16_t collrange[3] = CollectiveRange;
+    uint16_t collective = collrange[1];	
+    static int16_t   servolimitEP[8][2];
+
+       
+   /***************************
+    servo settings Heli. 
+   ***************************/
+    for(i=0; i<8; i++){  //  Set rates using endpoints. 
+      servoMid[i]        = MIDRC + Mid[i];
+      servolimitEP[i][0] = servoLOW[i];  //Min
+      servolimitEP[i][1] = servoHIGH[i]; //Max   
+    }
+	
+   // Collective range up/down 
+ if   (collective - rcData[CollectivePitch]>0) { 
+   collective = (collective - rcData[CollectivePitch])*(collrange[0]/100); 
+ }else{
+   collective = (collective - rcData[CollectivePitch])*(collrange[3]/100); 
+ }  
+  debug3=collective;	
+  
+ if(passThruMode){ // Use Rcdata Without sensors
       HeliRoll=  rcCommand[ROLL] ;
       HeliNick=  rcCommand[PITCH];
-     }else{ 
-       // Stable mode
+     }else{ // Assisted modes
       HeliRoll= axisPID[ROLL];
       HeliNick= axisPID[PITCH];
-    }     
-           
+    }  
+	
+  // Limit rates for Heli
+    int16_t CRange[2]    = ControllRange;
+    HeliRoll*=CRange[0]*0.01;
+    HeliNick*=CRange[1]*0.01;
+	
+  
  /* Throttle 
   ********************
-Handeled in common functions for plane & Heli */
+  Handeled in common functions for plane & Heli */
 
  /************************************************************************************************************/  
-  #ifdef HELI_120_CCPM    
-    /*                     (3000-rcData[AXIS]) Will reverse servos     */
-    servo[3]  = constrain(     rcData[CollectivePitch] - HeliNick*1.1, 1020, 2000);               //    NICK  servo
-    servo[4]  = constrain(     rcData[CollectivePitch] + HeliNick*0.6 + HeliRoll , 1020, 2000);   //    LEFT servo
-    servo[6]  = constrain(3000-rcData[CollectivePitch] - HeliNick*0.6 + HeliRoll , 1020, 2000); //    RIGHT  servo   
+    #ifdef HELI_120_CCPM    
+   
+      servo[3]  =  servoMid[3] + collective - (HeliNick*1.1) ;              //    NICK  servo
+      servo[4]  =  servoMid[4] + collective + (HeliNick*0.6) + HeliRoll ;   //    LEFT servo
+      servo[6]  =  servoMid[5] + collective + (HeliNick*0.6) - HeliRoll ;   //    RIGHT  servo   
+
+     #endif
   
-   #endif
- 
  /************************************************************************************************************/   
-   #ifdef HELI_90_DEG      
-    /*                     (3000-rcData[AXIS]) Will reverse servos     */
-    servo[3]  = 1500 + HeliNick ;                 //     NICK  servo
-    servo[4]  = 1500 + HeliRoll ;                 //     ROLL servo
-    servo[6]  = 3000 - rcData[CollectivePitch] ;  //     COLLECTIVE  servo  
-   #endif    
+     #ifdef HELI_90_DEG      
+      
+      servo[3]  = servoMid[3] + HeliNick ;                                //     NICK  servo
+      servo[4]  = servoMid[4] + HeliRoll ;                                //     ROLL servo
+      servo[6]  = servoMid[5] + collective ;                              //     COLLECTIVE  servo  
+     #endif    
    
    
-// Yaw is common for Heli
+// Yaw is common for Heli and is always in gyroMode
     servo[5] = constrain(tri_yaw_middle + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //   YAW  
     
     for(uint8_t i=0;i<8;i++){
       servo[i]  = constrain( servo[i], servolimitEP[i][0], servolimitEP[i][1] ); 
-     // servo[i]  = constrain( servo[i], SERVO_MIN, SERVO_MAX); 
     }
-   
-#endif
-  
+
+  #endif
+
  /************************************************************************************************************/ 
  // End of PatrikE Experimentals
  /************************************************************************************************************/ 
-  
-  
   
   #if defined(CAMTRIG)
     static uint8_t camCycle = 0;
