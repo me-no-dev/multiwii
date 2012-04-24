@@ -28,6 +28,7 @@
 #define SERIAL_RX
 #define READ_SPECIAL_RX_WO_INT
 #define READ_SPECIAL_RX_W_INT
+#define PRE_COMP_RC
 #define SPEK_MAX_CHANNEL 7
 #define SPEK_FRAME_SIZE 16
 #if (SPEKTRUM == 1024)

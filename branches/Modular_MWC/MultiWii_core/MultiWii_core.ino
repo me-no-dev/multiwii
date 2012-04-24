@@ -209,13 +209,9 @@ void loop () {
   static uint32_t rcTime  = 0;
   static int16_t initialThrottleHold;
   
-  #if defined(SPEKTRUM)
-    if (rcFrameComplete) computeRC();
-  #endif
-  #if defined(OPENLRSv2MULTI) 
-    Read_OpenLRS_RC();
-  #endif 
-  
+  #if defined(PRE_COMP_RC)
+    Pre_computeRC();
+  #endif  
   if (currentTime > rcTime ) { // 50Hz
     rcTime = currentTime + 20000;
     computeRC();
