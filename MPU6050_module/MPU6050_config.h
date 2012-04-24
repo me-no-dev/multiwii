@@ -65,4 +65,3 @@
 #undef INTERNAL_I2C_PULLUPS
 #define ACC 1
 #define GYRO 1
-#define MPU6050 

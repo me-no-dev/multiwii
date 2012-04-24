@@ -110,6 +110,9 @@
   #define GPS 0
 #endif
 
-
+#if defined(SERIAL_SUM_PPM)
+  #define SPECIAL_RX
+  #define SPECIAL_RX_PINLAYOUT SERIAL_SUM_PPM
+#endif
 
 

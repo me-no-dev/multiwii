@@ -70,7 +70,7 @@
 #define STABLEPIN_PINMODE            ;
 #define STABLEPIN_ON                 ;
 #define STABLEPIN_OFF                ;
-#define PPM_PIN_INTERRUPT            //attachInterrupt(3, rxInt, RISING);// not used
+#define PPM_PIN_INTERRUPT            pinMode(7,INPUT);PORTE |= (1 << 6);EIMSK |= (1 << INT6);EICRB |= (1 << ISC61)|(1 << ISC60);
 #define SPEK_SERIAL_VECT             USART1_RX_vect
 #define SPEK_DATA_REG                UDR1
 #define USB_CDC_TX                   3
@@ -120,10 +120,10 @@
 //Standart RX
 #define THROTTLEPIN                7
 #if defined(A32U4ALLPINS)
-  #define ROLLPIN                    6//5
-  #define PITCHPIN                   2//4
-  #define YAWPIN                     4//6
-  #define AUX1PIN                    5//2
+  #define ROLLPIN                    6
+  #define PITCHPIN                   2
+  #define YAWPIN                     4
+  #define AUX1PIN                    5
   #define PCINT_PIN_COUNT            4
   #define PCINT_RX_BITS              (1<<1),(1<<2),(1<<3),(1<<4)
 #else

@@ -37,16 +37,46 @@
 
 
 /********************************************************************/
-/****               Sensors and other modules                   *****/
+/****               Sensors                                     *****/
 /********************************************************************/
 /*
 modules are activated by uncommenting their header files 
 porc's modules are still autodetected in core_def.h
+WMP is active as long as no other gyro or IMU with gyro is defined
 */
+
+//=== Single Gyros ===//
+// ITG3200 & ITG3205
+//#include "ITG320X_config.h"
+
+
+//=== Single ACC's ===//
+// BMA020
+//#include "BMA020_config.h"
+// BMA180
+//#include "BMA180_config.h"
+
+
+//=== IMU's ===//
 // MPU6050
-#include "MPU6050_config.h"
+//#include "MPU6050_config.h"
 
 
+
+/********************************************************************/
+/****               RX's                                        *****/
+/********************************************************************/
+// standard RX is active as long as no special rx is activated
+
+/* The following lines apply only for specific receiver with only one PPM sum signal, on digital PIN 2
+   IF YOUR RECEIVER IS NOT CONCERNED, DON'T UNCOMMENT ANYTHING. Note this is mandatory for a Y6 setup on a promini
+   Select the right line depending on your radio brand. Feel free to modify the order in your PPM order is different */
+//#define SERIAL_SUM_PPM         PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4 //For Graupner/Spektrum
+//#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4 //For Robe/Hitec/Futaba
+//#define SERIAL_SUM_PPM         PITCH,ROLL,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4 //For some Hitec/Sanwa/Others
+
+// spectrum satellite RX
+//#include "Spekt_Sat_config.h"
 
 
 /********************************************************************/
@@ -87,7 +117,7 @@ porc's modules are still autodetected in core_def.h
 
 /* this is the maximum value for the ESCs at full power
    this value can be increased up to 2000 */
-#define MAXTHROTTLE 1950
+#define MAXTHROTTLE 1850
 
 /* This is the speed of the serial interface. 115200 kbit/s is the best option for a USB connection.*/
 #define SERIAL_COM_SPEED 115200

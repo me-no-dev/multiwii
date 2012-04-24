@@ -7,42 +7,44 @@
   volatile uint8_t serialHeadRX[1],serialTailRX[1];
   
   //===================================//
-  //========= RX Trottle INT  =========//
+  //========= EXTRA RX AUX PINS  =========//
   //===================================//  
-  void init_special_pins(){
+  #if !defined(SPECIAL_RX) 
+    void init_special_pins(){
+      #if defined(RCAUXPIN)
+        PCICR  |= (1<<0) ; // PCINT activated also for PINS [D8-D13] on port B
+	 #if defined(RCAUXPIN8)
+           PCMSK0 = (1<<0);
+	 #endif
+	 #if defined(RCAUXPIN12)
+           PCMSK0 = (1<<4);
+	 #endif
+       #endif
+     }
      #if defined(RCAUXPIN)
-       PCICR  |= (1<<0) ; // PCINT activated also for PINS [D8-D13] on port B
-       #if defined(RCAUXPIN8)
-         PCMSK0 = (1<<0);
-       #endif
-       #if defined(RCAUXPIN12)
-         PCMSK0 = (1<<4);
-       #endif
+       /* this ISR is a simplification of the previous one for PROMINI on port D
+        it's simplier because we know the interruption deals only with one PIN:
+        bit 0 of PORT B, ie Arduino PIN 8
+        or bit 4 of PORTB, ie Arduino PIN 12
+        => no need to check which PIN has changed */
+        ISR(PCINT0_vect) {
+  	uint8_t pin;
+  	uint16_t cTime,dTime;
+  	static uint16_t edgeTime;
+  	    
+  	pin = PINB;
+  	sei();
+  	cTime = micros();
+  	#if defined(RCAUXPIN8)
+  	  if (!(pin & 1<<0)) {     //indicates if the bit 0 of the arduino port [B0-B7] is not at a high state (so that we match here only descending PPM pulse)
+  	#endif
+  	#if defined(RCAUXPIN12)
+  	  if (!(pin & 1<<4)) {     //indicates if the bit 4 of the arduino port [B0-B7] is not at a high state (so that we match here only descending PPM pulse)
+  	#endif
+          dTime = cTime-edgeTime; if (900<dTime && dTime<2200) rcValue[0] = dTime; // just a verification: the value must be in the range [1000;2000] + some margin
+  	     } else edgeTime = cTime;    // if the bit 2 is at a high state (ascending PPM pulse), we memorize the time
+        }
      #endif
-  }
-  #if defined(RCAUXPIN)
-    /* this ISR is a simplification of the previous one for PROMINI on port D
-       it's simplier because we know the interruption deals only with one PIN:
-       bit 0 of PORT B, ie Arduino PIN 8
-       or bit 4 of PORTB, ie Arduino PIN 12
-     => no need to check which PIN has changed */
-    ISR(PCINT0_vect) {
-      uint8_t pin;
-      uint16_t cTime,dTime;
-      static uint16_t edgeTime;
-    
-      pin = PINB;
-      sei();
-      cTime = micros();
-      #if defined(RCAUXPIN8)
-       if (!(pin & 1<<0)) {     //indicates if the bit 0 of the arduino port [B0-B7] is not at a high state (so that we match here only descending PPM pulse)
-      #endif
-      #if defined(RCAUXPIN12)
-       if (!(pin & 1<<4)) {     //indicates if the bit 4 of the arduino port [B0-B7] is not at a high state (so that we match here only descending PPM pulse)
-      #endif
-        dTime = cTime-edgeTime; if (900<dTime && dTime<2200) rcValue[0] = dTime; // just a verification: the value must be in the range [1000;2000] + some margin
-      } else edgeTime = cTime;    // if the bit 2 is at a high state (ascending PPM pulse), we memorize the time
-    }
   #endif
   //===================================//
   //======== Output HW & SW PWM =======//
