@@ -1,5 +1,9 @@
 #if !defined(SPECIAL_RX)
   static uint8_t PCInt_RX_Pins[PCINT_PIN_COUNT] = {PCINT_RX_BITS};
+#endif
+#if defined(SPECIAL_RX_PINLAYOUT)
+  static uint8_t rcChannel[8]  = {SPECIAL_RX_PINLAYOUT};
+#else
   static uint8_t rcChannel[8]  = {ROLLPIN, PITCHPIN, YAWPIN, THROTTLEPIN, AUX1PIN,AUX2PIN,AUX3PIN,AUX4PIN};
 #endif
 
@@ -86,17 +90,46 @@ void configureReceiver() {
   }
 #endif
 
+
+#if defined(SERIAL_SUM_PPM)
+  void init_special_RX(){
+    PPM_PIN_INTERRUPT;  
+  }
+  
+  void rxInt(){
+    uint16_t now,diff;
+    static uint16_t last = 0;
+    static uint8_t chan = 0;
+    now = micros();
+    diff = now - last;
+    last = now;
+    if(diff>3000) chan = 0;
+    else {
+      if(900<diff && diff<2200 && chan<8 ) {   //Only if the signal is between these values it is valid, otherwise the failsafe counter should move up
+        rcValue[chan] = diff;
+        /*
+        #if defined(FAILSAFE)
+          if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // clear FailSafe counter - added by MIS  //incompatible to quadroppm
+        #endif
+        */
+      }
+    chan++;
+    }
+  }
+#endif
+
+
 uint16_t readRawRC(uint8_t chan) {
   uint16_t data;
   uint8_t oldSREG;
   oldSREG = SREG; cli(); // Let's disable interrupts
   data = rcValue[rcChannel[chan]]; // Let's copy the data Atomically
-  #if defined(READ_SPECIAL_RX_WO_IN)
-    read_Special_RX_WO_interrupt();
+  #if defined(READ_SPECIAL_RX_WO_INT)
+    data = read_Sp_RX_WO_int(data,chan);
   #endif
   SREG = oldSREG; sei();// Let's enable the interrupts
-  #if defined(SPECIAL_RX)
-    read_Special_RX_W_interrupt();
+  #if defined(READ_SPECIAL_RX_W_INT)
+    data = read_Sp_RX_W_int(data,chan);
   #endif
   return data; // We return the value correctly copied when the IRQ's where disabled
 }
@@ -106,14 +139,13 @@ void computeRC() {
   static int16_t rcData4Values[8][4], rcDataMean[8];
   static uint8_t rc4ValuesIndex = 0;
   uint8_t chan,a;
-
-  rc4ValuesIndex++;
-  for (chan = 0; chan < 8; chan++) {
-    rcData4Values[chan][rc4ValuesIndex%4] = readRawRC(chan);
-    rcDataMean[chan] = 0;
-    for (a=0;a<4;a++) rcDataMean[chan] += rcData4Values[chan][a];
-    rcDataMean[chan]= (rcDataMean[chan]+2)/4;
-    if ( rcDataMean[chan] < rcData[chan] -3)  rcData[chan] = rcDataMean[chan]+2;
-    if ( rcDataMean[chan] > rcData[chan] +3)  rcData[chan] = rcDataMean[chan]-2;
-  }
+    rc4ValuesIndex++;
+    for (chan = 0; chan < 8; chan++) {
+      rcData4Values[chan][rc4ValuesIndex%4] = readRawRC(chan);
+      rcDataMean[chan] = 0;
+      for (a=0;a<4;a++) rcDataMean[chan] += rcData4Values[chan][a];
+      rcDataMean[chan]= (rcDataMean[chan]+2)/4;
+      if ( rcDataMean[chan] < rcData[chan] -3)  rcData[chan] = rcDataMean[chan]+2;
+      if ( rcDataMean[chan] > rcData[chan] +3)  rcData[chan] = rcDataMean[chan]-2;
+    }
 }

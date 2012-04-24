@@ -29,7 +29,11 @@ void computeIMU () {
       ACC_getADC();
       getEstimatedAttitude();
     #endif
-    Gyro_getADC();
+    #if GYRO
+      Gyro_getADC();
+    #else
+      WMP_getRawADC();
+    #endif
     for (axis = 0; axis < 3; axis++)
       gyroADCp[axis] =  gyroADC[axis];
     timeInterleave=micros();
@@ -39,7 +43,11 @@ void computeIMU () {
     } else {
        while((micros()-timeInterleave)<650) ; //empirical, interleaving delay between 2 consecutive reads
     }
-    Gyro_getADC();
+    #if GYRO
+      Gyro_getADC();
+    #else
+      WMP_getRawADC();
+    #endif
     for (axis = 0; axis < 3; axis++) {
       gyroADCinter[axis] =  gyroADC[axis]+gyroADCp[axis];
       // empirical, we take a weighted value of the current and the previous values

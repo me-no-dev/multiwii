@@ -9,45 +9,55 @@
   //===================================//
   //========= RX Trottle INT  =========//
   //===================================//  
-  void init_special_pins(){
-    //attachinterrupt dosent works with atmega32u4 ATM.
-    //Trottle on pin 7
-    pinMode(7,INPUT); // set to input
-    PORTE |= (1 << 6); // enable pullups
-    EIMSK |= (1 << INT6); // enable interuppt
-    EICRB |= (1 << ISC60);    
-    #if defined(RCAUX2PINRXO)
-      //AUX2 on RX pin
-      pinMode(0,INPUT); // set to input
-      PORTD |= (1 << 2); // enable pullups
-      EIMSK |= (1 << INT2); // enable interuppt
-      EICRA |= (1 << ISC20);
-    #endif
-  }
-  ISR(INT6_vect){ 
-    static uint16_t now,diff;
-    static uint16_t last = 0;
-    now = micros();  
-    diff = now - last;
-    last = now;
-    if(900<diff && diff<2200){ 
-      rcValue[7] = diff; 
-      /*
-      #if defined(FAILSAFE)
-        if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // If pulse present on THROTTLE pin (independent from ardu version), clear FailSafe counter  - added by MIS
-      #endif 
-      */
-    }  
-  }  
-  // Aux 2
-  #if defined(RCAUX2PINRXO)
-    ISR(INT2_vect){
+  #if !defined(SPECIAL_RX)  
+    void init_special_pins(){
+      //attachinterrupt dosent works with atmega32u4 ATM.
+      //Trottle on pin 7
+      pinMode(7,INPUT); // set to input
+      PORTE |= (1 << 6); // enable pullups
+      EIMSK |= (1 << INT6); // enable interuppt
+      EICRB |= (1 << ISC60);    
+      #if defined(RCAUX2PINRXO)
+        //AUX2 on RX pin
+        pinMode(0,INPUT); // set to input
+        PORTD |= (1 << 2); // enable pullups
+        EIMSK |= (1 << INT2); // enable interuppt
+        EICRA |= (1 << ISC20);
+      #endif
+    }
+    ISR(INT6_vect){ 
       static uint16_t now,diff;
-      static uint16_t last = 0; 
+      static uint16_t last = 0;
       now = micros();  
       diff = now - last;
       last = now;
-      if(900<diff && diff<2200) rcValue[0] = diff;
+      if(900<diff && diff<2200){ 
+        rcValue[7] = diff; 
+        /*
+        #if defined(FAILSAFE)
+          if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // If pulse present on THROTTLE pin (independent from ardu version), clear FailSafe counter  - added by MIS
+        #endif 
+        */
+      }  
+    }  
+    // Aux 2
+    #if defined(RCAUX2PINRXO)
+      ISR(INT2_vect){
+        static uint16_t now,diff;
+        static uint16_t last = 0; 
+        now = micros();  
+        diff = now - last;
+        last = now;
+        if(900<diff && diff<2200) rcValue[0] = diff;
+      }
+    #endif
+  #endif
+  //===================================//
+  //=========== RX PPM INT  ===========//
+  //===================================//  
+  #if defined(SERIAL_SUM_PPM)
+    ISR(INT6_vect){
+      rxInt();
     }
   #endif
   //===================================//
@@ -279,7 +289,7 @@
       UCSR1B &= ~((1<<RXEN1)|(1<<TXEN1)|(1<<RXCIE1));
     }
   }
-  #if !defined(SPEKTRUM)
+  #if !defined(SERIAL_RX)
     ISR(USART1_RX_vect){
       uint8_t d = UDR1;
       uint8_t i = serialHeadRX[1] + 1;

@@ -55,14 +55,15 @@ static uint8_t  calibratingG = 0;
 static uint8_t  calibratedACC = 0;
 static int16_t  acc_25deg;
 static uint16_t acc_1G;             // this is the 1G measured acceleration
+static uint8_t  nunchuk = 0;
 static int16_t  gyroADC[3],accADC[3],accSmooth[3],magADC[3];
 static uint8_t  okToArm = 0;
 static uint8_t  rcOptions[CHECKBOXITEMS];
 static int16_t  debug1,debug2,debug3,debug4;
 static int16_t  accTrim[2] = {0, 0};
 static uint8_t  accMode = 0;        // if level mode is a activated
-static uint8_t headTX,tailTX;
-static uint8_t bufTX[256];      // 256 is choosen to avoid modulo operations on 8 bits pointers
+static uint8_t  headTX,tailTX;
+static uint8_t  bufTX[256];      // 256 is choosen to avoid modulo operations on 8 bits pointers
 
 // ******************
 // rc functions
@@ -161,7 +162,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
   }
   rcCommand[THROTTLE] = MINTHROTTLE + (int32_t)(MAXTHROTTLE-MINTHROTTLE)* (rcData[THROTTLE]-MINCHECK)/(2000-MINCHECK);
   
-  if ( (calibratingA>0 && ACC ) || (calibratingG>0) ) { // Calibration phasis
+  if ( (calibratingA>0 && (ACC || nunchuk) ) || (calibratingG>0) ) { // Calibration phasis
     LEDPIN_TOGGLE;
   } else {
     if (calibratedACC == 1) {LEDPIN_OFF;}
