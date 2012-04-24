@@ -11,6 +11,10 @@ void init_special_RX(){
   SerialOpen(1,115200);
 }
 
+void Pre_computeRC(){
+  if (rcFrameComplete) computeRC();
+}
+
 ISR(SPEK_SERIAL_VECT) {
   uint32_t spekTime;
   static uint32_t spekTimeLast, spekTimeInterval;
