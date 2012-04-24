@@ -51,7 +51,7 @@ static uint32_t currentTime = 0;
 static uint16_t previousTime = 0;
 static uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 static uint16_t calibratingA = 0;  // the calibration is done in the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
-static uint8_t  calibratingG = 0;
+static uint16_t calibratingG;
 static uint8_t  calibratedACC = 0;
 static int16_t  acc_25deg;
 static uint16_t acc_1G;             // this is the 1G measured acceleration
