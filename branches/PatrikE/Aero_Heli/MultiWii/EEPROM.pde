@@ -30,7 +30,7 @@ static eep_entry_t eep_entry[] = {
 , {&wing_left_mid,  sizeof(wing_left_mid)}
 , {&wing_right_mid, sizeof(wing_right_mid)}
 #endif
-#if defined(TRI)|| defined(HELICOPTER)
+#ifdef TRI
 , {&tri_yaw_middle,  sizeof(tri_yaw_middle)}
 #endif
 
@@ -51,8 +51,8 @@ void readEEPROM() {
     wing_left_mid  = constrain(wing_left_mid, WING_LEFT_MIN,  WING_LEFT_MAX); //LEFT 
     wing_right_mid = constrain(wing_right_mid, WING_RIGHT_MIN, WING_RIGHT_MAX); //RIGHT
   #endif
-  #if defined(TRI)|| defined(HELICOPTER)
-    tri_yaw_middle = constrain(tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //Tailservo
+  #ifdef TRI
+    tri_yaw_middle = constrain(tri_yaw_middle, TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
   #endif
 }
 
@@ -88,7 +88,7 @@ void checkFirstTime() {
     wing_left_mid  = WING_LEFT_MID; 
     wing_right_mid = WING_RIGHT_MID; 
   #endif
-  #if defined(TRI)|| defined(HELICOPTER)
+  #ifdef TRI
     tri_yaw_middle = TRI_YAW_MIDDLE; 
   #endif
   writeParams();

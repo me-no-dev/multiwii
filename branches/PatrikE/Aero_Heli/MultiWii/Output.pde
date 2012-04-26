@@ -815,7 +815,7 @@ void mixTable() {
     int8_t flapinv[2] = FLAP_INVERT; 
     static int16_t F_Endpoint[2] = FLAP_EP;
     int16_t flap = (MIDRC- constrain(rcData[FLAP_CHANNEL],F_Endpoint[0],F_Endpoint[1]));
-     for(i=0; i<2; i++){ flaps[i] = flap * flapinv[i] ;}
+    for(i=0; i<2; i++){ flaps[i] = flap * flapinv[i] ;}
   #endif
     
     if(passThruMode){   // Direct passthru from RX 
@@ -860,11 +860,11 @@ void mixTable() {
     }
     
    // Limit Collective range up/down    
- int16_t collect = collrange[1] - rcData[CollectivePitch];
+ int16_t collect = rcData[CollectivePitch]-collrange[1];
  if   (collect>0) { 
-   collective = collect * (collrange[0]*0.01); 
- }else{
    collective = collect * (collrange[2]*0.01); 
+ }else{
+   collective = collect * (collrange[0]*0.01); 
  } 
   
  if(passThruMode){ // Use Rcdata Without sensors
@@ -916,7 +916,6 @@ void mixTable() {
     }
 
   #endif
-
  /************************************************************************************************************/ 
  // End of PatrikE Experimentals
  /************************************************************************************************************/ 

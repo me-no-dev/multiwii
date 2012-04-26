@@ -438,7 +438,7 @@
 #define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100} // Rates in 0-100% 
 #define SERVO_DIRECTION  { -1,   1,   1,   1,  1,   1,   1,   1 } // Invert servos by setting -1 
  
-#define FLAP_CHANNEL     AUX4       // Define the Channel to controll Flaps with.If used.
+//#define FLAP_CHANNEL     AUX4       // Define the Channel to controll Flaps with.If used.
 #define FLAP_EP      { 1500, 1650 } // Endpooints for flaps on a 2 way switch else set {1020,2000} and program in radio.
 #define FLAP_INVERT    { 1, -1 }    // Change direction om flaps { Wing1, Wing2 }
 
@@ -466,8 +466,6 @@
 // Limit Maximum controll for Roll & Nick  in 0-100%  
 #define ControllRange   { 50, 50 }      //  { ROLL,PITCH }
 //*************************************************************************************************// 
-
-
 
 /********************************************************************/
 /****           powermeter                                       ****/
