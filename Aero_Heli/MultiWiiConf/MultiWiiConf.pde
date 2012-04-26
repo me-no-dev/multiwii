@@ -493,13 +493,18 @@ float scalesize=size*0.8;
     text("Heli 120 CCPM", -42,-50);camera();popMatrix();
 	
  // Sliders
- 
-   
+      servoSliderV[7].setPosition(xMot,yMot)       ;servoSliderV[7].setCaptionLabel("Thro");servoSliderV[7].show();     
+     servoSliderV[4].setPosition(xMot+40,yMot-15) ;servoSliderV[4].setCaptionLabel("LEFT");servoSliderV[4].show(); 
+     servoSliderV[3].setPosition(xMot+70,yMot+10) ;servoSliderV[3].setCaptionLabel("Nick");servoSliderV[3].show();
+     servoSliderH[5].setPosition(xMot+15,yMot+130);servoSliderH[5].setCaptionLabel("Yaw") ;servoSliderH[5].show();
+     servoSliderV[6].setPosition(xMot+100,yMot-15);servoSliderV[6].setCaptionLabel("RIGHT");servoSliderV[6].show();
+/*   
     servoSliderH[3].setPosition(xMot,yMot-5) ;servoSliderH[3].setCaptionLabel("Nick");servoSliderH[3].show();
     servoSliderH[4].setPosition(xMot,yMot+25);servoSliderH[4].setCaptionLabel("Left");servoSliderH[4].show();
     servoSliderH[5].setPosition(xMot,yMot+55);servoSliderH[5].setCaptionLabel("Yaw");servoSliderH[5].show();
     servoSliderH[6].setPosition(xMot,yMot+85);servoSliderH[6].setCaptionLabel("Right");servoSliderH[6].show();
     servoSliderH[7].setPosition(xMot,yMot+115);servoSliderH[7].setCaptionLabel("Thro");servoSliderH[7].show();  
+*/
   } else if (multiType == 16) { //Heli 90 
 // HeliGraphics    
 float scalesize=size*0.8;
@@ -523,11 +528,18 @@ float scalesize=size*0.8;
     text("Heli 90", -16,-50);camera();popMatrix();
 	
  // Sliders
-     servoSliderH[3].setPosition(xMot,yMot-5) ;servoSliderH[3].setCaptionLabel("NICK");servoSliderH[3].show();
+     servoSliderV[7].setPosition(xMot,yMot-15)    ;servoSliderV[7].setCaptionLabel("Thro");servoSliderV[7].show();     
+     servoSliderV[4].setPosition(xMot+120,yMot-15);servoSliderV[4].setCaptionLabel("ROLL");servoSliderV[4].show(); 
+     servoSliderV[3].setPosition(xMot+80,yMot+10) ;servoSliderV[3].setCaptionLabel("Nick");servoSliderV[3].show();
+     servoSliderH[5].setPosition(xMot+15,yMot+130);servoSliderH[5].setCaptionLabel("Yaw") ;servoSliderH[5].show();
+     servoSliderV[6].setPosition(xMot+40,yMot)    ;servoSliderV[6].setCaptionLabel("COLL");servoSliderV[6].show();
+ /*
+    servoSliderH[3].setPosition(xMot,yMot-5) ;servoSliderH[3].setCaptionLabel("NICK");servoSliderH[3].show();
     servoSliderH[4].setPosition(xMot,yMot+25);servoSliderH[4].setCaptionLabel("ROLL");servoSliderH[4].show();
     servoSliderH[5].setPosition(xMot,yMot+55);servoSliderH[5].setCaptionLabel("YAW");servoSliderH[5].show();
     servoSliderH[6].setPosition(xMot,yMot+85);servoSliderH[6].setCaptionLabel("COLL");servoSliderH[6].show();
     servoSliderH[7].setPosition(xMot,yMot+115);servoSliderH[7].setCaptionLabel("THRO");servoSliderH[7].show();  
+  */
   }  else if (multiType == 17) { //Vtail   
     ellipse(-0.55*size,size,size,size); ellipse(+0.55*size,size,size,size);
     line(-0.55*size,size,0,0);line(+0.55*size,size,0,0);    
