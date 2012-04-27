@@ -149,7 +149,7 @@ void setup(){
    TCCR2A |= _BV(COM2A1); // this connects Comperator 2A to its pin
     // note the _BV(REGISTER) is the same as (1<<REGISTER) its just a Arduino wise
     
-   OCR2A = dutytime // sets the dutytime of the PWM to 125 of 255
+   OCR2A = dutytime 
 }
 
 void loop(){
