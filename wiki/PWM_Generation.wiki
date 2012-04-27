@@ -190,7 +190,7 @@ void loop(){
  use of a 11-bit timer  ...timer 4 comperator A for example (for now just the ATmega32u4 -> promicro has a 11-bit timer)
   {{{
 // this 11-bit timer is some kind of different to the others because it is made to work with very high frequencys 
-//but use it with 488Hz just as the other ones.
+// but we use it with 488Hz just as the other ones.
 // because it is 11-bit we dont need to divide or multiply .. we take the MWC's values just as thay are
   
 int dutytime = 1500; // this wloud give us a half throttle signal
@@ -204,7 +204,7 @@ void setup(){
    TCCR4D |= (1<<WGM40); //set it to phase and frequency correct mode
    
    // now there is one special thing with timer 4... it counts with 11-bit resolution but the compare registers are just 8-bit
-   // so we cant set a 11 bit value to them with jusr register = 2000..
+   // so we cant set a 11 bit value to them with just register = 2000..
    // it has a special 3 bit register for the high byte. means we need to split the 11-bit value to one 3-bit and one 8-bit
    // to set its top value to 2048 (hex 3FF) we set its high byte bit to hex 3
    TC4H = 0x3;
