@@ -149,7 +149,7 @@ void setup(){
    TCCR2A |= _BV(COM2A1); // this connects Comperator 2A to its pin
     // note the _BV(REGISTER) is the same as (1<<REGISTER) its just a Arduino wise
     
-   OCR2A = dutytime 
+   OCR2A = dutytime;
 }
 
 void loop(){
@@ -179,7 +179,7 @@ void setup(){
    ICR1 |= 0x3FFF; // set timers to count to 16383 (hex 3FFF)
    TCCR1A |= _BV(COM1A1); // connect pin 9 to timer 1 channel A
     
-   OCR1A = dutytime // sets the dutytime of the PWM to 125 of 255
+   OCR1A = dutytime;
 }
 
 void loop(){
@@ -218,7 +218,7 @@ void setup(){
    static uint8_t pwm4_HBA;
    static uint16_t pwm4_LBA; // high and low byte for timer 4 A
    
-   pwm4_LBA = 2047-dutytime; 
+   pwm4_LBA = 2047-dutytime; // timer 4 A is inverted
    pwm4_HBA = 0; 
    
    while(pwm4_LBA > 255){
