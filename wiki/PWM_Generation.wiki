@@ -11,7 +11,7 @@ to have a valid PPM signal the PWM signals duty time needs to variate between 1 
 
 There are two possibilities to generate PWM signals with an [http://www.arduino.cc/ Arduino] [http://en.wikipedia.org/wiki/Microcontroller MCU]
 
-  #**Hardware PWM (HW PWM)*
+  ***Hardware PWM (HW PWM)*
   This is the best way to generate PWM signals because its done by a
   macro of the MCU. In this case the MCU does it automatically so the
   main software is not affected. it is also unaffected by software 
@@ -29,7 +29,7 @@ http://multiwii.googlecode.com/svn/wiki/Images/pwm_mode.jpg
 
 
 
-  #** Software PWM (SW PWM)*
+  *** Software PWM (SW PWM)*
   We use it in MWC for servos and ESC's but only if there are not enough HW PWM pins available. there are many ways to do it. for example a small sketch that does it with the main loop:
 {{{
 void setup(){
@@ -38,11 +38,11 @@ void setup(){
 
 void loop(){
 
-  digitalWrite(13,HIGH) // set it to High
+  digitalWrite(13,HIGH); // set it to High
 
   delayMicroseconds(1500); //wait for 1500us. this gives a PPM signal of 1500us (50% throttle or servo's middle position)
 
-  digitalWrite(13,LOW) // set it to LOW
+  digitalWrite(13,LOW); // set it to LOW
 
   delayMicroseconds(500); // let it stay 500us at low state to have a overall loop time of 2000us (500Hz)
 
@@ -55,7 +55,7 @@ void loop(){
 
   a small example for a interrupt driven soft PWM code
 {{{
-// i use timer 2 for example it runs with default settings at 488Hz
+// i use timer 0 for example it runs with default settings at 976Hz
 // and it resolution is 8 bit (0-255)
 
 int duty_time = 200; // 200 will give at 488hz a PPM value of 1600us
@@ -63,33 +63,39 @@ int duty_time = 200; // 200 will give at 488hz a PPM value of 1600us
 void setup(){
   pinMode(13,OUTPUT); // set pin 13 to output
 
-  TCCR2A = 0; // clear timer 2's TCCRnA register so it works in normal counting mode
+  TCCR0A = 0; // clear timer 0's TCCRnA register so it works in normal counting mode
 
-  TIMSK2 |= (1<<OCIE2A); // set timer interrupt mask register to Enable CTC interrupt with timer 2's comperator A
+  TIMSK0 |= (1<<OCIE0A); // set timer interrupt mask register to Enable CTC interrupt with timer 0's comperator A
 }
 
-// this is the interrupts "loop" for the comperator A of timer 2
+// this is the interrupts "loop" for the comperator A of timer 0
 // it is called everytime the comperator A reaches its loaded value (it counts from 0 to 255 with 488Hz)
 
-// the register for timer 2's comperater A is OCR2A
-ISR(TIMER2_COMPA_vect){
-  static uint8_t state = 0; // we need two states .. one high and one low
+// the register for timer 0's comperater A is OCR0A
+ISR(TIMER0_COMPA_vect){
+  static uint8_t state = 0; // we need 4 states .. two high and two low to have a 488Hz Frequency
 
   if (state == 0){
 
-    pinMode(13,HIGH); // set pin 13 high (in MWC we use a direct port manipulation instead of digitalWrite but it does the same)
+    PORTB |= (1<<5); // set pin 13 high 
      
-    OCR2A += duty_time;// load the rigister with the duty time .. the interrupt loop will be called again if this time is over
+    OCR0A += duty_time;// load the rigister with the duty time .. the interrupt loop will be called again if this time is over
 
-    state = 1; // set the state to 1 because in the next call we need to set the low time
-
+    state = 1; 
+  
   }else if(state == 1){
+    OCR0A += duty_time;// load it again because we simulate a fast PWM mode
+    state = 2;// set the state to 2 because in the next call we need to set the low time
+  }else if(state == 2){
 
-    pinMode(13,LOW); // set the pins state to low
+    PORTB &= ~(1<<5);// set the pins state to low
 
-    OCR2A += 255-duty_time;// now we neet to wait for the reminding time to dont have just a high signal
+    OCR0A += 255-duty_time;// now we neet to wait for the reminding time to dont have just a high signal
 
-   state = 0; // set the state to 0 so it starts again
+    state = 3;
+  }else if(state == 3){
+    OCR0A += 255-duty_time;// load it again because we simulate a fast PWM mode
+    state = 0; // set the state to 0 so it starts again
   }
 }
 
@@ -101,8 +107,9 @@ void loop(){
 
 === Use of this PWM methods in Multiwii ===
 
+... to be continued
 
--- to be continued
+  
 
 
 = Details =
