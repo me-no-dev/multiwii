@@ -71,7 +71,7 @@ void setup(){
 // this is the interrupts "loop" for the comperator A of timer 0
 // it is called everytime the comperator A reaches its loaded value (it counts from 0 to 255 with 488Hz)
 
-// the register for timer 0's comperater A is OCR0A
+// the register for timer 0's comperator A is OCR0A
 ISR(TIMER0_COMPA_vect){
   static uint8_t state = 0; // we need 4 states .. two high and two low to have a 488Hz Frequency
 
@@ -107,8 +107,143 @@ void loop(){
 
 === Use of this PWM methods in Multiwii ===
 
-... to be continued
+  In MultiWii we need to do it for 3 different MCU types (ATmega328P ([http://arduino.cc/it/Main/ArduinoBoardProMini Arduino ProMini]), Atmega32u4 ([http://www.sparkfun.com/products/10998 arduino ProMicro]) and the [http://arduino.cc/en/Main/ArduinoBoardMega Arduino Mega] MCU's)
+  
+  =the HW PWM capabilities of the MCU's we use=
+  
+  - The Promini has two 8-bit timers  (0 and 2)  each with two compare registers (A & B) and one 16-bit timer (1) with two compare registers (A & B)
+  
+  - The Promicro has one 8-bit timer (0) with two compare registers (A & B), two 16-bit timer(1 and 3) with three compare registers (A, B & C) and one 11-bit timer (4) with thee compare registers (A, C & D)
+  
+  - The Mega  has two 8-bit timers  (0 and 2)  each with two compare registers (A & B), three 16-bit timers (3, 4 & 5) with three compare registers (A, B & C) and one 16-bit timer (1) with two compare registers (A & B)
+  
+  the moust compare registers have a fixed pin that can be used with it.
+  
+  this also explains why we can use a 11-bit HW PWM only on the Poromicro and the Mega. (two motors with 11-bit on the Promini would be possible).
+  
+  =Why we use which timer for what=
+  
+  Timer 0 can only be used for software PWM because its frequency is too high (976Hz) and we cant change it because Arduino uses Timer0 for its time calculation (Delay, Micros ...)
+  Timer 3 has on the Promicro just one pin 5 (timer 3 A) that it also shares with timer 4 A. so we use it for 11-Bit Software PWM
+  
+  in the normal case we use timer 0 with SW PMW for the servos and all others for motors.
+  in some special cases (promini in a hexa with servos or octo setup) we use one or both timer 0 comperators for doing SW PWM for motors.
+  
+  
+  =Code examples of the initialisation and use in MultiWii=
+  
+  use of a 8 bit Timer.  ...timer 2 comperator A for example  (wont work on the promicro because there is no timer 2)
+  {{{
+  
+// MultiWii uses values from 1000 to 2000 for the motor and servo calculation (because of the PPM singnal range of 1000-2000us)
+// this means that we would need 11-bit to keep this resolution. some timers have just 8-bit (0-255) so wee need to divide the value by 8 
+// 1000/8 = 125,  2000/8 = 250 this matches also the dutytimes to have 1000-2000us
+// because our MCU's dont likes to divide (it takes very long to be processed) we do it by a bit shift
+  
+int dutytime = (1500>>3); // this wloud give us a half throttle signal
+// X>>1 = X/2, X>>2 = X/4 and X>>3 = X/8...
+  
+void setup(){
+   pinMode(11, OUTPUT); // set pin 11 to output
+     
+   TCCR2A |= _BV(COM2A1); // this connects Comperator 2A to its pin
+    // note the _BV(REGISTER) is the same as (1<<REGISTER) its just a Arduino wise
+    
+   OCR2A = dutytime // sets the dutytime of the PWM to 125 of 255
+}
 
+void loop(){
+    // to change the dutytime we just need to write a value to the OCR2A Register
+}
+  }}}
+  
+  
+  use of a 16-bit timer  ...timer 1 comperator A for example
+  {{{
+// using a 16-bit timer in arduino is a bit more complex because arduinos standad setup stets them to 8 bit
+// the higher the resolution is the slower is the timer .. (it counts always in the same speed .. so it takes 3* longer to count till 30 then it takes to count to10)
+// because of this and the fact that MultiiWii dont uses 16-bit for the motor calculations we dont need to set them to thair full resolution
+// we set it to 0 - 16383 with that value and the  phase and frequency correct mode we dont need a prescaler.
+// to use the MWC's values of 1000-2000 we need to multiply the value by 8 .. (1000*8 = 8000, 2000*8 = 16000)  
+// we do it also with bit shifting .. but in the other direction
+  
+int dutytime = (1500<<3); // this wloud give us a half throttle signal
+// X<<1 = X*2, X<<2 = X*4 and X<<3 = X*8.... 
+  
+void setup(){
+   pinMode(9, OUTPUT); // set pin 9 to output
+     
+   TCCR1A |= (1<<WGM11); TCCR1A &= ~(1<<WGM10); TCCR1B |= (1<<WGM13);  // phase correct mode.. to know how to set which register please see the datasheets of the MCU's
+   
+   TCCR1B &= ~(1<<CS11); // no prescaler
+   ICR1 |= 0x3FFF; // set timers to count to 16383 (hex 3FFF)
+   TCCR1A |= _BV(COM1A1); // connect pin 9 to timer 1 channel A
+    
+   OCR1A = dutytime // sets the dutytime of the PWM to 125 of 255
+}
+
+void loop(){
+    // to change the dutytime we just need to write a value to the OCR1A Register
+}
+  }}}
+  
+ use of a 11-bit timer  ...timer 4 comperator A for example (for now just the ATmega32u4 -> promicro has a 11-bit timer)
+  {{{
+// this 11-bit timer is some kind of different to the others because it is made to work with very high frequencys 
+//but use it with 488Hz just as the other ones.
+// because it is 11-bit we dont need to divide or multiply .. we take the MWC's values just as thay are
+  
+int dutytime = 1500; // this wloud give us a half throttle signal
+
+  
+void setup(){
+   pinMode(5, OUTPUT); // set pin 5 to output
+     
+   TCCR4E |= (1<<ENHC4); // this enables the enhanced mode of the atmega32u4's timer 4. it gives one more bit of resolution (without is has just 10-bit)
+   TCCR4B &= ~(1<<CS41); TCCR4B |= (1<<CS42)|(1<<CS40); // sets the prescaler to 16 .. this is needed because it it a high frequency timer
+   TCCR4D |= (1<<WGM40); //set it to phase and frequency correct mode
+   
+   // now there is one special thing with timer 4... it counts with 11-bit resolution but the compare registers are just 8-bit
+   // so we cant set a 11 bit value to them with jusr register = 2000..
+   // it has a special 3 bit register for the high byte. means we need to split the 11-bit value to one 3-bit and one 8-bit
+   // to set its top value to 2048 (hex 3FF) we set its high byte bit to hex 3
+   TC4H = 0x3;
+   // and the the 8 bit register to hex FF
+   OCR4C = 0xFF;
+   // the Timer combines this values to hex 3FF (2048)
+   
+   // we need to do the same thing to write 11-bit values to the comperators
+   // but we can do the split automaticly ;)
+   
+   static uint8_t pwm4_HBA;
+   static uint16_t pwm4_LBA; // high and low byte for timer 4 A
+   
+   pwm4_LBA = 2047-dutytime; 
+   pwm4_HBA = 0; 
+   
+   while(pwm4_LBA > 255){
+     pwm4_HBA++;
+     pwm4_LBA-=256;
+   }
+   
+   TC4H = pwm4_HBA; 
+   OCR4A = pwm4_LBA; //  pin 5
+   
+   
+}
+
+void loop(){
+  // to change the dutytime we just need to write the high and the low byte to TC4H(high byte) and OCR4A (low byte)
+}
+  }}}
+  
+
+   =Servo software PWM in MultiWii=
+   ... to be continued
+  
+  
+  
+  
   
 
 
