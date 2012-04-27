@@ -109,7 +109,7 @@ void loop(){
 
   In MultiWii we need to do it for 3 different MCU types (ATmega328P ([http://arduino.cc/it/Main/ArduinoBoardProMini Arduino ProMini]), Atmega32u4 ([http://www.sparkfun.com/products/10998 arduino ProMicro]) and the [http://arduino.cc/en/Main/ArduinoBoardMega Arduino Mega] MCU's)
   
-  =the HW PWM capabilities of the MCU's we use=
+  ***the HW PWM capabilities of the MCU's we use*
   
   - The Promini has two 8-bit timers  (0 and 2)  each with two compare registers (A & B) and one 16-bit timer (1) with two compare registers (A & B)
   
@@ -121,7 +121,7 @@ void loop(){
   
   this also explains why we can use a 11-bit HW PWM only on the Poromicro and the Mega. (two motors with 11-bit on the Promini would be possible).
   
-  =Why we use which timer for what=
+  ***Why we use which timer for what*
   
   Timer 0 can only be used for software PWM because its frequency is too high (976Hz) and we cant change it because Arduino uses Timer0 for its time calculation (Delay, Micros ...)
   Timer 3 has on the Promicro just one pin 5 (timer 3 A) that it also shares with timer 4 A. so we use it for 11-Bit Software PWM
@@ -130,7 +130,7 @@ void loop(){
   in some special cases (promini in a hexa with servos or octo setup) we use one or both timer 0 comperators for doing SW PWM for motors.
   
   
-  =Code examples of the initialisation and use in MultiWii=
+  ***Code examples of the initialisation and use in MultiWii*
   
   use of a 8 bit Timer.  ...timer 2 comperator A for example  (wont work on the promicro because there is no timer 2)
   {{{
@@ -238,7 +238,7 @@ void loop(){
   }}}
   
 
-   =Servo software PWM in MultiWii=
+   ***Servo software PWM in MultiWii*
    ... to be continued
   
   
