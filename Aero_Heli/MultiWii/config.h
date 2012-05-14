@@ -10,13 +10,12 @@
 //#define MINTHROTTLE 1220
 #define MINTHROTTLE 1150 
 
-
 /**************************    The type of multicopter    ****************************/
 //#define GIMBAL
 //#define BI
 //#define TRI
 //#define QUADP
-#define QUADX
+//#define QUADX
 //#define Y4
 //#define Y6
 //#define HEX6
@@ -32,7 +31,7 @@
 // Heli is  beta test ......!
 // Howto setup =>>> http://fotoflygarn.blogspot.se/2012/04/multiwii-helicopter.html
 //*******************************************************
-//#define HELI_120_CCPM	 // PatrikE Experimental 
+#define HELI_120_CCPM	 // PatrikE Experimental 
 //#define HELI_90_DEG	 // PatrikE Experimental 
 //*******************************************************
 
@@ -368,7 +367,8 @@
    the GPS must be configured to output NMEA sentences (which is generally the default conf for most GPS devices)
    uncomment the first line to select the GPS serial port of the arduino */
 //#define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
-#define GPS_BAUD   115200
+//#define GPS_BAUD   115200
+#define GPS_BAUD   56700
 
 /* I2C GPS device made with an independant arduino + GPS device
    including some navigation functions
@@ -538,6 +538,7 @@
 #define TRI_YAW_CONSTRAINT_MAX 2000
 #define TRI_YAW_MIDDLE 1500 // tail servo center pos. - use this for initial trim; later trim midpoint via LCD
 
+/***********************          Flying Wing: Settings             ***********************/
 /* Flying Wing: you can change change servo orientation and servo min/max values here */
 /* valid for all flight modes, even passThrough mode */
 /* need to setup servo directions here; no need to swap servos amongst channels at rx */ 
@@ -557,7 +558,6 @@
 //***********************************************************************************************//
 // Howto setup =>>> http://fotoflygarn.blogspot.com/2012/03/how-to-setup-multiwii-airplane-same.html
 
-#define SERVO_OFFSET     {  0,   0,   0,  0,   0,   0,  0,   0 } // Adjust Servo MID Offset & Swash angles 
 #define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100} // Rates in 0-100% 
 #define SERVO_DIRECTION  { -1,   1,   1,   -1,  1,   1,   1,   1 } // Invert servos by setting -1 
  
@@ -569,7 +569,9 @@
 //*************************** !!!!  Common for Heli & Airplane  !!!! ****************************//
 //***********************************************************************************************//
 
+#define SERVO_OFFSET     {  0,   0,   0,  0,   -0,   0,  0,   0 } // Adjust Servo MID Offset & Swash. 
 //#define D12_POWER      // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12 
+
 // Selectable channels:=    ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4
 
 //***********************************************************************************************//
@@ -584,7 +586,18 @@
 // Limit the range of Collective Pitch. 100% is Full Range each way and position for Zero Pitch
 #define COLLECTIVE_RANGE { 80, 1500, 80 }// {Min%, ZeroPitch, Max%}.
 #define YAW_CENTER             1500      // Use servo[5] SERVO_ENDPOINT_HIGH/LOW for the endpoits.
-#define YAWMOTOR                0       // If a motor is use as YAW Set to 1 else set to 0.
+#define YAWMOTOR                0        // If a motor is use as YAW Set to 1 else set to 0.
+
+// Servo mixing for heli 120 Use 1/10 fractions (ex.5 = 5/10 = 1/2)
+//                {Collective,Nick,Roll}
+#define SERVO_NICK   { +10, -10, -0 }
+#define SERVO_LEFT   { +10, +5, +10 } 
+#define SERVO_RIGHT  { +10, +5, -10 } 
+
+// Servo mixing for heli 90 
+//                   {Collective,Nick,Roll}
+#define SERVO_DIRECTIONS { +1, -1, -1 } // -1 will invert servo
+
 
 // Limit Maximum controll for Roll & Nick  in 0-100%  
 #define CONTROLL_RANGE   { 100, 100 }      //  { ROLL,PITCH }
