@@ -14,7 +14,7 @@ volatile uint16_t rcValue[18] = {1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502,
   static uint8_t rcChannel[18] = {PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4,8,9,10,11,12,13,14,15,16,17};
   static uint16_t sbusIndex=0;
 #elif defined(SPEKTRUM)
-  static uint8_t rcChannel[7] = {PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3};  // 1, 2, 3, 0, 4, 5, 6  
+  static uint8_t rcChannel[7] = {PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3};
 #else // Standard Channel order
   static uint8_t rcChannel[8]  = {ROLLPIN, PITCHPIN, YAWPIN, THROTTLEPIN, AUX1PIN,AUX2PIN,AUX3PIN,AUX4PIN};
   static uint8_t PCInt_RX_Pins[PCINT_PIN_COUNT] = {PCINT_RX_BITS}; // if this slowes the PCINT readings we can switch to a define for each pcint bit
@@ -289,18 +289,12 @@ void  readSBus(){
   volatile uint32_t spekTimeLast;
 void readSpektrum() {
   if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
-    uint8_t sp = SerialPeek(SPEK_SERIAL_PORT);
-<<<<<<< .mine
       #if defined(FAILSAFE)
-    if ((failsafeCnt > 5) && (sp == '$')) {serialCom(); spekFrameFlags = 0; return;} //GUI?
+        uint8_t sp = SerialPeek(SPEK_SERIAL_PORT);
+        if ((failsafeCnt > 5) && (sp == '$')) {serialCom(); spekFrameFlags = 0; return;} //GUI?
       #endif
-=======
-    #if defined(FAILSAFE)
-      if ((failsafeCnt > 5) && (sp == 'M' || sp == 'W' || sp == 'S' || sp == 'E')) {serialCom(); spekFrameFlags = 0; return;} //GUI?
-    #endif
->>>>>>> .r784
     if (SerialAvailable(SPEK_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //Frame is complete. If not, we'll catch it next time we are called. 
-      uint8_t oldSREG = SREG; cli();
+//      uint8_t oldSREG = SREG; cli();
       SerialRead(SPEK_SERIAL_PORT); SerialRead(SPEK_SERIAL_PORT);        //Eat the header bytes 
       for (uint8_t b = 2; b < SPEK_FRAME_SIZE; b += 2) {
         uint8_t bh = SerialRead(SPEK_SERIAL_PORT);
@@ -309,7 +303,7 @@ void readSpektrum() {
         if (spekChannel < SPEK_MAX_CHANNEL) rcValue[spekChannel] = 988 + (((uint16_t)(bh & SPEK_CHAN_MASK) << 8) + bl) SPEK_DATA_SHIFT;
       }
       spekFrameFlags = 0x00;
-      SREG = oldSREG; 
+//      SREG = oldSREG; 
       #if defined(FAILSAFE)
         if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // Valid frame, clear FailSafe counter
       #endif
@@ -474,7 +468,6 @@ void Read_OpenLRS_RC() {
   }
   Red_LED_OFF;
 }
-<<<<<<< .mine
 
 // **********************************************************
 // **      RFM22B/Si4432 control functions for OpenLRS     **
@@ -723,6 +716,4 @@ void checkPots() {
   pot_I = pot_I / 25; //+-20
 }
 #endif
-=======
 
->>>>>>> .r784

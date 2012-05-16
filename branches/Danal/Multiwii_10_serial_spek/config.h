@@ -217,21 +217,10 @@
 
   //*************************** !!!!  Common for Heli & Airplane  !!!! ****************************//
 
-<<<<<<< .mine
     //#define D12_POWER      // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12
 	
     #define SERVO_OFFSET     {  0,   0,   0,  0,   0,   0,  0,   0 } // Adjust Servo MID Offset & Swash angles
     // Selectable channels:=    ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4
-=======
-/* I2C accelerometer */
-//#define MMA745
-//#define ADXL345
-#define BMA020
-//#define BMA180
-//#define NUNCHACK  // if you want to use the nunckuk as a standalone I2C ACC without WMP
-//#define LIS3LV02
-//#define LSM303DLx_ACC
->>>>>>> .r784
 
   //****************************** !!!!  Hellicopter Settings  !!!! *******************************//
     // Channel to control CollectivePitch
@@ -469,15 +458,9 @@
     //#define LED_FLASHER_SEQUENCE ( (uint8_t) (1<<0 | 1<<2) )
 
 
-<<<<<<< .mine
   /*************************    INFLIGHT ACC Calibration    *****************************/
     /* This will activate the ACC-Inflight calibration if unchecked */
     //#define INFLIGHT_ACC_CALIBRATION
-=======
-/* this is the maximum value for the ESCs at full power
-   this value can be increased up to 2000 */
-#define MAXTHROTTLE 1900
->>>>>>> .r784
 
 
   /**************************    rc option-change beep    *******************************/
@@ -608,8 +591,8 @@
     /* set it to the sequence of telemetry pages you want to see */
     /* 2 line displays support pages 1-9 */
     /* multiline displays support pages 1-5 */
-    //#define LCD_TELEMETRY_AUTO "123452679" // pages 1 to 7 in ascending order
-#define LCD_TELEMETRY_AUTO  "212232425262729" // strong emphasis on page 2
+#define LCD_TELEMETRY_AUTO "123452679" // pages 1 to 7 in ascending order
+    //#define LCD_TELEMETRY_AUTO  "212232425262729" // strong emphasis on page 2
 
     /* on telemetry page B (2) it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
     /* so we try do define a meaningful range. For a 3S battery we define full=12,6V and calculate how much it is above first warning level */
@@ -643,24 +626,6 @@
     #define VBATLEVEL3_3S 99  // 9.9V
     #define NO_VBAT       16 // Avoid beeping without any battery
 
-<<<<<<< .mine
-=======
-/* to monitor system values (battery level, loop time etc. with LCD enable this */
-/* note: for now you must send single characters 'A', 'B', 'C', 'D' to request 4 different pages */
-/* Buttons toggle request for page on/off */
-/* The active page on the LCD does get updated automatically */
-/* Easy to use with Terminal application or display like LCD - uses the 4 buttons are preconfigured to send 'A', 'B', 'C', 'D' */
-#define LCD_TELEMETRY
-/* to enable automatic hopping between a choice of telemetry pages uncomment this. */
-/* This may be useful if your LCD has no buttons or the sending is broken */
-/* hopping is activated and deactivated in unarmed mode with throttle=low & roll=left & pitch=forward */
-/* set it to the sequence of telemetry pages you want to see */
-//#define LCD_TELEMETRY_AUTO "12345267" // pages 1 to 7 in ascending order
-#define LCD_TELEMETRY_AUTO  "2122324252627" // strong emphasis on page 2
-/* Use this to trigger telemetry without a TX - only for debugging - do NOT fly with this activated */
-//#define LCD_TELEMETRY_DEBUG  //This form rolls between all screens, LCD_TELEMETRY_AUTO must also be defined.
-//#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
->>>>>>> .r784
 
   /********************************************************************/
   /****           powermeter (battery capacity monitoring)         ****/
@@ -722,7 +687,6 @@
   /********                      Special Throttle settings             ********************/
   /**************************************************************************************/
 
-<<<<<<< .mine
     /* this is the value for the ESCs when they are not armed
        in some cases, this value must be lowered down to 900 for some specific ESCs */
     #define MINCOMMAND 1000
@@ -802,17 +766,3 @@
 /*************************************************************************************************/
 /****           END OF CONFIGURABLE PARAMETERS                                                ****/
 /*************************************************************************************************/
-=======
- 
-/* frequenies for rare cyclic actions in the main loop, depend on cycle time! */
-/* time base is main loop cycle time - a value of 6 means to trigger the action every 6th run through the main loop */
-/* example: with cycle time of approx 3ms, do action every 6*3ms=18ms */
-/* value must be [1; 65535] */
-#define LCD_TELEMETRY_FREQ 23       // to send telemetry data over serial 23 <=> 60ms <=> 16Hz (only sending interlaced, so 8Hz update rate)
-#define LCD_TELEMETRY_AUTO_FREQ 667 // to step to next telemetry page 667 <=> 2s
-#define PSENSORFREQ 6               // to read hardware powermeter sensor 6 <=> 18ms
-#define VBATFREQ PSENSORFREQ        // to read battery voltage - keep equal to PSENSORFREQ unless you know what you are doing
-/**************************************/
-/****END OF CONFIGURABLE PARAMETERS****/
-/**************************************/
->>>>>>> .r784
