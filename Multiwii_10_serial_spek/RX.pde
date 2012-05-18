@@ -288,11 +288,19 @@ void  readSBus(){
   volatile uint8_t  spekFrameFlags;
   volatile uint32_t spekTimeLast;
 void readSpektrum() {
+  if ((!armed) && 
+     #if defined(FAILSAFE) 
+        (failsafeCnt > 5) &&
+     #endif
+      ( SerialPeek(SPEK_SERIAL_PORT) == '$')) {
+    while (SerialAvailable(SPEK_SERIAL_PORT)) {
+      serialCom();
+      delay (10);
+    }
+  //      spekFrameFlags = 1;
+    return;
+  } //GUI
   if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
-      #if defined(FAILSAFE)
-        uint8_t sp = SerialPeek(SPEK_SERIAL_PORT);
-        if ((failsafeCnt > 5) && (sp == '$')) {serialCom(); spekFrameFlags = 0; return;} //GUI?
-      #endif
     if (SerialAvailable(SPEK_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //Frame is complete. If not, we'll catch it next time we are called. 
 //      uint8_t oldSREG = SREG; cli();
       SerialRead(SPEK_SERIAL_PORT); SerialRead(SPEK_SERIAL_PORT);        //Eat the header bytes 
