@@ -164,7 +164,9 @@
   #define STABLEPIN_ON               ;
   #define STABLEPIN_OFF              ;
   #define PPM_PIN_INTERRUPT          DDRE &= ~(1 << 6);PORTE |= (1 << 6);EIMSK |= (1 << INT6);EICRB |= (1 << ISC61)|(1 << ISC60);
-  #define SPEK_SERIAL_PORT           1
+  #if !defined(SPEK_SERIAL_PORT)
+    #define SPEK_SERIAL_PORT         1
+  #endif
   #define USB_CDC_TX                 3
   #define USB_CDC_RX                 2
   
@@ -282,7 +284,9 @@
   #define STABLEPIN_OFF              PORTC &= ~(1<<6);
 
   #define PPM_PIN_INTERRUPT          attachInterrupt(4, rxInt, RISING);  //PIN 19, also used for Spektrum satellite option
-  #define SPEK_SERIAL_PORT           1
+  #if !defined(SPEK_SERIAL_PORT)
+    #define SPEK_SERIAL_PORT         1
+  #endif
   //RX PIN assignment inside the port //for PORTK
   #define THROTTLEPIN                0  //PIN 62 =  PIN A8
   #define ROLLPIN                    1  //PIN 63 =  PIN A9
@@ -342,8 +346,7 @@
   #define LEDPIN_OFF                 PORTD &= ~(1<<4);  
   #define LEDPIN_ON                  PORTD |= (1<<4);     
   #define SPEK_BAUD_SET              UCSR0A  = (1<<U2X0); UBRR0H = ((F_CPU  / 4 / 115200 -1) / 2) >> 8; UBRR0L = ((F_CPU  / 4 / 115200 -1) / 2);
-  #define SPEK_SERIAL_INTERRUPT      UCSR0B |= (1<<RXEN0)|(1<<RXCIE0);
-  #define SPEK_DATA_REG              UDR0
+  #define SPEK_SERIAL_PORT           0
 
   /* Unavailable pins on MONGOOSE1_0 */
   #define BUZZERPIN_PINMODE          ; // D8

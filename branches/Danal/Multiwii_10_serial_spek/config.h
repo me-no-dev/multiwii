@@ -24,7 +24,7 @@
     //#define BI
     //#define TRI
     //#define QUADP
-#define QUADX
+    #define QUADX
     //#define Y4
     //#define Y6
     //#define HEX6
@@ -48,8 +48,8 @@
        This is the minimum value that allow motors to run at a idle speed  */
     //#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
     //#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
-    //#define MINTHROTTLE 1220
-    #define MINTHROTTLE 1150
+    #define MINTHROTTLE 1220
+    //#define MINTHROTTLE 1150
 
   /**********************************    I2C speed   ************************************/
     #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
@@ -57,7 +57,7 @@
 
   /***************************    Internal i2c Pullups   ********************************/
     //enable internal I2C pull ups (in most cases it is better to use external pullups)
-#define INTERNAL_I2C_PULLUPS
+    //#define INTERNAL_I2C_PULLUPS
 
   /**************************************************************************************/
   /*****************          boards and sensor definitions            ******************/
@@ -399,15 +399,17 @@
          Spektrum Satellites are 3V devices.  DO NOT connect to 5V!
          For MEGA boards, attach sat grey wire to RX1, pin 19. Sat black wire to ground. Sat orange wire to Mega board's 3.3V (or any other 3V to 3.3V source).
          For PROMINI, attach sat grey to RX0.  Attach sat black to ground.
-           There is no 3.3V source on a pro mini; you can either use a different 3V source, or attach orange to 5V with a 3V regulator in-line (such as http://search.digikey.com/scripts/DkSearch/dksus.dll?Detail&name=MCP1700-3002E/TO-ND)
+           There is no 3.3V source on a Pro Mini; you can either use a different 3V source, or attach orange to 5V with a 3V regulator in-line (such as http://search.digikey.com/scripts/DkSearch/dksus.dll?Detail&name=MCP1700-3002E/TO-ND)
            If you use an inline-regulator, a standard 3-pin servo connector can connect to ground, +5V, and RX0; solder the correct wires (and the 3V regulator!) to a Spektrum baseRX-to-Sat cable that has been cut in half.
-           NOTE: Because there is only one serial port on the Pro Mini, using a Spektrum Satellite implies you CANNOT use the PC based configuration tool. Further, you cannot use on-aircraft serial LCD as the baud rates are incompatible. You can configure by one of two methods:
-             1) Use an on-aircraft i2c LCD (such as Eagle Tree or LCD03) for setting gains, reading sensors, etc.
-             2) Available now: Comment out the Spektrum definition, upload, plug in PC, configure; uncomment the Spektrum definition, upload, plug in RX, and fly.  Repeat as required to configure. */
+           NOTE: Because there is only one serial port on the Pro Mini, the code auto-senses and auto-switches between RX mode and GUI mode.
+                 You MUST be in a DISARMED state before unplugging the RX to plug in the GUI FTDI cable!
+                 Otherwise motors will start when you unplug the RX, due to failsafe, and eat your fingers! */
+                 
 #define SPEKTRUM 1024
       //#define SPEKTRUM 2048
-
-    /*******************************    SBUS RECIVER    ************************************/
+      //#define SPEK_SERIAL_PORT 0    // Forced to 0 on Pro Mini and single serial boards; Set to your choice of 0, 1, or 2 on any Mega based board (defaults to 1 on Mega).  
+  
+      /*******************************    SBUS RECIVER    ************************************/
       /* EXPERIMENTAL !!
          cf http://www.multiwii.com/forum/viewtopic.php?f=7&t=289
          The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1).
@@ -440,7 +442,7 @@
        Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
        If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
        If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
-#define FAILSAFE                                  // uncomment  to activate the failsafe function
+  //#define FAILSAFE                                  // uncomment  to activate the failsafe function
     #define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
     #define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
     #define FAILSAVE_THR0TTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
@@ -517,7 +519,7 @@
   /**************************************************************************************/
 
     /* uncomment this line if you plan to use a LCD or OLED */
-#define LCD_CONF
+  //#define LCD_CONF
 
     /* to include setting the aux switches for AUX1 -> AUX4 via LCD */ //to review (activate[] is now 16 bit long)
       //#define LCD_CONF_AUX
@@ -533,7 +535,7 @@
       //#define LCD_TEXTSTAR    // Cat's Whisker LCD_TEXTSTAR Module CW-LCD-02 (Which has 4 input keys for selecting menus)
       //#define LCD_VT100       // vt100 compatible terminal emulation (blueterm, putty, etc.)
       /* i2c devices */
-#define LCD_ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
+      //#define LCD_ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
       //#define LCD_LCD03       // LCD03, which is i2c
       //#define OLED_I2C_128x64 // OLED http://www.multiwii.com/forum/viewtopic.php?f=7&t=1350
 
@@ -583,7 +585,7 @@
     /* The active page on the LCD does get updated automatically */
     /* Easy to use with Terminal application or display like LCD - if available uses the 4 preconfigured buttons  to send 'A', 'B', 'C', 'D' */
     /********************************    Activation     ***********************************/
-#define LCD_TELEMETRY
+    //#define LCD_TELEMETRY
 
     /* to enable automatic hopping between a choice of telemetry pages uncomment this. */
     /* This may be useful if your LCD has no buttons or the sending is broken */
@@ -591,7 +593,7 @@
     /* set it to the sequence of telemetry pages you want to see */
     /* 2 line displays support pages 1-9 */
     /* multiline displays support pages 1-5 */
-#define LCD_TELEMETRY_AUTO "123452679" // pages 1 to 7 in ascending order
+    //#define LCD_TELEMETRY_AUTO "123452679" // pages 1 to 7 in ascending order
     //#define LCD_TELEMETRY_AUTO  "212232425262729" // strong emphasis on page 2
 
     /* on telemetry page B (2) it gives a bar graph which shows how much voltage battery has left. Range from 0 to 12 Volt is not very informative */
@@ -739,7 +741,7 @@
 
     /* Use this to trigger telemetry without a TX - only for debugging - do NOT fly with this activated */
     //#define LCD_TELEMETRY_DEBUG  //This form rolls between all screens, LCD_TELEMETRY_AUTO must also be defined.
-#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
+    //#define LCD_TELEMETRY_DEBUG 6  //This form stays on the screen specified.
 
   /********************************************************************/
   /****           ESCs calibration                                 ****/
