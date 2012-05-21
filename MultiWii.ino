@@ -11,7 +11,7 @@ March  2012     V2.0
 #include "config.h"
 #include "def.h"
 #include <avr/pgmspace.h>
-#define  VERSION  200
+#define  VERSION  201
 
 /*********** RC alias *****************/
 #define ROLL       0
@@ -44,6 +44,7 @@ March  2012     V2.0
 #define CHECKBOXITEMS 11
 #define PIDITEMS 8
 
+static uint32_t timer1OV = 0; // used for time measurement
 static uint32_t currentTime = 0;
 static uint16_t previousTime = 0;
 static uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
@@ -74,7 +75,6 @@ static int32_t  EstAlt;             // in cm
 static int16_t  BaroPID = 0;
 static int32_t  AltHold;
 static int16_t  errorAltitudeI = 0;
-static uint8_t  buzzerState = 0;
 static uint8_t  toggleBeep = 0;
 static int16_t  debug1,debug2,debug3,debug4;
 static int16_t  sonarAlt; //to think about the unit
@@ -169,13 +169,13 @@ static uint16_t activate[CHECKBOXITEMS];
 // GPS
 // **********************
 static int32_t  GPS_latitude,GPS_longitude;
-static int32_t  GPS_latitude_home,GPS_longitude_home;
-static int32_t  GPS_latitude_hold,GPS_longitude_hold;
+static int32_t  GPS_latitude_home,GPS_longitude_home,GPS_altitude_home;
+static int32_t  GPS_latitude_hold,GPS_longitude_hold,GPS_altitude_hold;
 static uint8_t  GPS_fix , GPS_fix_home = 0;
 static uint8_t  GPS_numSat;
 static uint16_t GPS_distanceToHome,GPS_distanceToHold;       // distance to home or hold point in meters
 static int16_t  GPS_directionToHome,GPS_directionToHold;     // direction to home or hol point in degrees
-static uint16_t GPS_altitude,GPS_speed;                      // altitude in 0.1m and speed in 0.1m/s
+static int16_t  GPS_altitude,GPS_speed;                      // altitude in 0.1m and speed in 0.1m/s
 static uint8_t  GPS_update = 0;                              // it's a binary toogle to distinct a GPS position update
 static int16_t  GPS_angle[2] = { 0, 0};                      // it's the angles that must be applied for GPS correction
 
@@ -188,10 +188,10 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
     for(i=0;i<num;i++) {
       LEDPIN_TOGGLE; // switch LEDPIN state
       BUZZERPIN_ON;
-      delay(wait);
+      delay1(wait);
       BUZZERPIN_OFF;
     }
-    delay(60);
+    delay1(60);
   }
 }
 
@@ -200,7 +200,6 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
   uint16_t tmp,tmp2;
   static uint8_t  buzzerFreq;         // delay between buzzer ring
   uint8_t axis,prop1,prop2;
-
   #define BREAKPOINT 1500
   // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
   if   (rcData[THROTTLE]<BREAKPOINT) {
@@ -279,7 +278,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     #endif
                        )  || (NO_VBAT>vbat)                              ) // ToLuSe
     {                                          // VBAT ok AND powermeter ok, buzzer off
-      buzzerFreq = 0; buzzerState = 0;
+      buzzerFreq = 0;
     #if defined(POWERMETER)
     } else if (pMeter[PMOTOR_SUM] > pAlarm) {                             // sound alarm for powermeter
       buzzerFreq = 4;
@@ -370,6 +369,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
 }
 
 void setup() {
+  initOutput(); // its important do init it at first because of the timer 1 time calculations
   SerialOpen(0,SERIAL_COM_SPEED);
   LEDPIN_PINMODE;
   POWERPIN_PINMODE;
@@ -379,16 +379,15 @@ void setup() {
   #if defined(ESC_CALIB_CANNOT_FLY) // <- to move in Output.pde, nothing to do here
     /* this turns into a special version of MultiWii. Its only purpose it to try and calib all attached ESCs */
     writeAllMotors(ESC_CALIB_HIGH);
-    delay(3000);
+    delay1(3000);
     writeAllMotors(ESC_CALIB_LOW);
-    delay(500);
+    delay1(500);
     while (1) {
-      delay(5000);
+      delay1(5000);
       blinkLED(2,20, 2);
     }
     exit; // statement never reached
   #endif
-  initOutput();
   readEEPROM();
   checkFirstTime();
   configureReceiver();
@@ -396,7 +395,7 @@ void setup() {
     initOpenLRS();
   #endif
   initSensors();
-  previousTime = micros();
+  previousTime = micros32();
   #if defined(GIMBAL)
    calibratingA = 400;
   #endif
@@ -491,7 +490,7 @@ void loop () {
           #if defined(LCD_CONF)
             configurationLoop(); // beginning LCD configuration
           #endif
-          previousTime = micros();
+          previousTime = micros32();
         }
       }
       #if defined(INFLIGHT_ACC_CALIBRATION)  
@@ -517,14 +516,25 @@ void loop () {
 	  headFreeModeHold = heading;
         } else if (armed) armed = 0;
         rcDelayCommand = 0;
-      } else if ( (rcData[YAW] < MINCHECK || rcData[ROLL] < MINCHECK)  && armed == 1) {
+      #ifdef ALLOW_ARM_DISARM_VIA_TX_YAW
+      } else if ( (rcData[YAW] < MINCHECK )  && armed == 1) {
         if (rcDelayCommand == 20) armed = 0; // rcDelayCommand = 20 => 20x20ms = 0.4s = time to wait for a specific RC command to be acknowledged
-      } else if ( (rcData[YAW] > MAXCHECK || rcData[ROLL] > MAXCHECK) && rcData[PITCH] < MAXCHECK && armed == 0 && calibratingG == 0 && calibratedACC == 1) {
+      } else if ( (rcData[YAW] > MAXCHECK ) && rcData[PITCH] < MAXCHECK && armed == 0 && calibratingG == 0 && calibratedACC == 1) {
         if (rcDelayCommand == 20) {
-	  armed = 1;
-	  headFreeModeHold = heading;
+          armed = 1;
+          headFreeModeHold = heading;
         }
-     #ifdef LCD_TELEMETRY_AUTO
+      #endif
+      #ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL
+      } else if ( (rcData[ROLL] < MINCHECK)  && armed == 1) {
+        if (rcDelayCommand == 20) armed = 0; // rcDelayCommand = 20 => 20x20ms = 0.4s = time to wait for a specific RC command to be acknowledged
+      } else if ( (rcData[ROLL] > MAXCHECK) && rcData[PITCH] < MAXCHECK && armed == 0 && calibratingG == 0 && calibratedACC == 1) {
+        if (rcDelayCommand == 20) {
+          armed = 1;
+          headFreeModeHold = heading;
+        }
+#endif
+      #ifdef LCD_TELEMETRY_AUTO
       } else if (rcData[ROLL] < MINCHECK && rcData[PITCH] > MAXCHECK && armed == 0) {
         if (rcDelayCommand == 20) {
            if (telemetry_auto) {
@@ -641,7 +651,11 @@ void loop () {
       }
     #endif
     if (rcOptions[BOXPASSTHRU]) {passThruMode = 1;}
-    else passThruMode = 0;
+    else {passThruMode = 0;}
+    
+    #ifdef FIXEDWING 
+      headFreeMode = 0;
+    #endif
   } else { // not in rc loop
     static uint8_t taskOrder=0; // never call all functions in the same loop, to avoid high delay spikes
     switch (taskOrder++ % 5) {
@@ -675,7 +689,7 @@ void loop () {
  
   computeIMU();
   // Measure loop rate just afer reading the sensors
-  currentTime = micros();
+  currentTime = micros32();
   cycleTime = currentTime - previousTime;
   previousTime = currentTime;
 
