@@ -451,7 +451,8 @@ void initOutput() {
   ICR1   |= 0xFFF; // TOP to 4095;  
   TIMSK1 |= (1<<TOIE1); // Enable Timer 1 overflow interrupt 
   
-  timer1OV = 0;
+  timer1_OV32 = 0;
+  timer1_OV8 = 0;
   TCNT1 = 0;
   sei();
 }
@@ -463,21 +464,22 @@ void initOutput() {
 // ****16 Bit TIMER1 based timer routines with prescaler set to 8 --> 16MHz / 8 => 0.5us per tick
 // Replacing ARDUINOs 8 Bit (TIMER0) based API routine micro(). For use outside of ISR.
 // advantage: 8 times more precision and a lot less interrupt blocking.
-// **********************************************************************************************
+// *************************************************************************************
 
-uint32_t micros32() {                // 32-bit TIMER1/5 routine suitable for intervals up to 2147sec (36min)    
-  uint32_t t_hi;
-  uint16_t t;
-  uint8_t temp=SREG;  
+
+unsigned long micros32() {   // 32-bit TIMER1/5 routine suitable for intervals up to 4294sec (71min)    
+  unsigned long   t_hi;
+  static uint16_t t;
+  static uint8_t tempSerg=SREG;  
   cli(); 
-  t_hi = timer1OV;
+  t_hi = timer1_OV32;
   t = TCNT1;      
-  SREG = temp;
-  return ((t_hi << 12) + t) >> 1;  
+  SREG = tempSerg;
+  return (t_hi << 11) + (t >> 1);
 }  
 
-uint32_t millis32() {               // 32-bit TIMER1/5 routine suitable for intervals up to 2147sec (36min)    
-  return micros32() / 1000;
+unsigned long millis32() {               // 32-bit TIMER1/5 routine suitable for intervals up to 4294sec (71min)    
+  //return micros32() / 1000; 
 }  
 
 void delay1(uint16_t ms) {         // modified delay routine with polled API delayMicroseconds(). delayMicroseconds is usable because it dont uses Timer0 at all
@@ -489,7 +491,8 @@ void delay1(uint16_t ms) {         // modified delay routine with polled API del
 
 
 ISR(TIMER1_OVF_vect) {           
-   timer1OV++;
+   timer1_OV32++;
+   timer1_OV8++;
 }
 
 
