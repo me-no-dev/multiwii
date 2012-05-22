@@ -44,7 +44,8 @@ March  2012     V2.0
 #define CHECKBOXITEMS 11
 #define PIDITEMS 8
 
-static uint32_t timer1OV = 0; // used for time measurement
+unsigned long   timer1_OV32 = 0; // used for long periodes (micros32)
+unsigned char   timer1_OV8 = 0; // used for short periodes (micros16)
 static uint32_t currentTime = 0;
 static uint16_t previousTime = 0;
 static uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
