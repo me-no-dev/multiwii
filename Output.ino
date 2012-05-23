@@ -479,7 +479,7 @@ unsigned long micros32() {   // 32-bit TIMER1/5 routine suitable for intervals u
 }  
 
 unsigned long millis32() {               // 32-bit TIMER1/5 routine suitable for intervals up to 4294sec (71min)    
-  //return micros32() / 1000; 
+  return micros32() / 1000; 
 }  
 
 void delay1(uint16_t ms) {         // modified delay routine with polled API delayMicroseconds(). delayMicroseconds is usable because it dont uses Timer0 at all
