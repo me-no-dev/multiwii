@@ -479,9 +479,13 @@ void delay1(uint16_t ms) {         // modified delay routine with polled API del
 }
 
 // timer 1 overflowes every 2047us
-ISR(TIMER1_OVF_vect) {           
+ISR(TIMER1_OVF_vect) {      
    timer1_OV32++;
    timer1_OV8++;
+   if(timer1_OV8 == 10){
+     rxReadDone = 0;
+     timer1_OV8 = 0;
+   }
 }
 
 #if defined(SERVO)
