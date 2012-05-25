@@ -101,17 +101,21 @@
       //#define BOARD_PROTO_1   // with MPU6050 + HMC5883L + MS baro
       //#define BOARD_PROTO_2   // with MPU6050 + slave  MAG3110 + MS baro
       //#define GY_80           // Chinese 10 DOF with  L3G4200D ADXL345 HMC5883L BMP085, LLC
-	  //#define GY_85           // Chinese 9 DOF with  ITG3205 ADXL345 HMC5883L LLC
+      //#define GY_85           // Chinese 9 DOF with  ITG3205 ADXL345 HMC5883L LLC
       //#define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
+      //#define INNOVWORKS_10DOF // with ITG3200, BMA180, HMC5883, BMP085 available here http://www.diymulticopter.com
+      //#define INNOVWORKS_6DOF // with ITG3200, BMA180 available here http://www.diymulticopter.com
 
     /***************************    independent sensors    ********************************/
       //leave it commented if you already checked a specific board above
       /* I2C gyroscope */
+      //#define WMP
       //#define ITG3200
       //#define L3G4200D
       //#define MPU6050       //combo + ACC
 
       /* I2C accelerometer */
+      //#define NUNCHUCK  // if you want to use the nunckuk connected to a WMP
       //#define MMA745
       //#define ADXL345
       //#define BMA020
@@ -719,6 +723,32 @@
        for use with digital servos
        dont use it with analog servos! thay may get damage. (some will work but be careful)*/
     //#define SERVO_RFR_300HZ
+
+  /********************************************************************/
+  /****           IMU complimentary filter tuning                  ****/
+  /********************************************************************/
+
+    /* Set the Low Pass Filter factor for ACC */
+    /* Increasing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time*/
+    /* Comment this if  you do not want filter at all.*/
+    //#define ACC_LPF_FACTOR 100
+
+    /* Set the Low Pass Filter factor for Magnetometer */
+    /* Increasing this value would reduce Magnetometer noise (not visible in GUI), but would increase Magnetometer lag time*/
+    /* Comment this if  you do not want filter at all.*/
+    /* Default WMC value: n/a*/
+    //#define MG_LPF_FACTOR 4
+
+    /* Set the Gyro Weight for Gyro/Acc complementary filter */
+    /* Increasing this value would reduce and delay Acc influence on the output of the filter*/
+    /* Default WMC value: 300*/
+    //#define GYR_CMPF_FACTOR 400.0f
+
+    /* Set the Gyro Weight for Gyro/Magnetometer complementary filter */
+    /* Increasing this value would reduce and delay Magnetometer influence on the output of the filter*/
+    /* Default WMC value: n/a*/
+    //#define GYR_CMPFM_FACTOR 200.0f
+
 
 
   /********************************************************************/
