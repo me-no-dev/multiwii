@@ -45,7 +45,8 @@ March  2012     V2.0
 #define PIDITEMS 8
 
 unsigned long   timer1_OV32 = 0; // used for long periodes (micros32)
-unsigned char   timer1_OV8 = 0; // used for short periodes like RX input
+static uint8_t  timer1_OV8 = 0; // counts form 0 till 9 (50Hz) used for short periodes like RX input
+static uint8_t  rxReadDone = 0; // indicates that the RC data was readed 
 static uint32_t currentTime = 0;
 static uint16_t previousTime = 0;
 static uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
@@ -449,18 +450,17 @@ void loop () {
   static int16_t delta1[3],delta2[3];
   static int16_t errorGyroI[3] = {0,0,0};
   static int16_t errorAngleI[2] = {0,0};
-  static uint32_t rcTime  = 0;
   static int16_t initialThrottleHold;
-
+  
   #if defined(SPEKTRUM)
     if (rcFrameComplete) computeRC();
   #endif
   #if defined(OPENLRSv2MULTI) 
     Read_OpenLRS_RC();
   #endif 
-
-  if (currentTime > rcTime ) { // 50Hz
-    rcTime = currentTime + 20000;
+  
+  if(!rxReadDone){ // 50Hz
+    rxReadDone = 1;
     computeRC();
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
