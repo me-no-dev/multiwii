@@ -110,10 +110,9 @@ void configureReceiver() {
     pin = RX_PCINT_PIN_PORT; // RX_PCINT_PIN_PORT indicates the state of each PIN for the arduino port dealing with Ports digital pins
    
     mask = pin ^ PCintLast;   // doing a ^ between the current interruption and the last one indicates wich pin changed
+    cTime = (timer1_OV8 << 11) + (TCNT1 >> 1);
     sei();                    // re enable other interrupts at this point, the rest of this interrupt is not so time critical and can be interrupted safely
     PCintLast = pin;          // we memorize the current state of all PINs [D0-D7]
-  
-    cTime = ((timer1_OV8 << 12) + TCNT1) >> 1;
     
     #if (PCINT_PIN_COUNT > 0)
       RX_PIN_CHECK(0,2);
@@ -160,7 +159,7 @@ void configureReceiver() {
     
       pin = PINB;
       sei();
-      cTime = ((timer1_OV8 << 12) + TCNT1) >> 1;
+      cTime = (timer1_OV8 << 11) + (TCNT1 >> 1);
       #if defined(RCAUXPIN8)
        if (!(pin & 1<<0)) {     //indicates if the bit 0 of the arduino port [B0-B7] is not at a high state (so that we match here only descending PPM pulse)
       #endif
@@ -179,25 +178,27 @@ void configureReceiver() {
     ISR(INT6_vect){ 
       static uint16_t now,diff;
       static uint16_t last = 0;
-      now = ((timer1_OV8 << 12) + TCNT1) >> 1;
+      now = ((timer1_OV8 << 12) + TCNT1) >> 1; 
       diff = now - last;
-      last = now;
-      if(900<diff && diff<2200){ 
-        rcValue[3] = diff;
-        #if defined(FAILSAFE)
-          if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // If pulse present on THROTTLE pin (independent from ardu version), clear FailSafe counter  - added by MIS
-        #endif 
-      }  
+      if(!(PINE & (1<<6))){
+        if(900<diff && diff<2200){
+          rcValue[3] = diff;
+          #if defined(FAILSAFE)
+            if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // If pulse present on THROTTLE pin (independent from ardu version), clear FailSafe counter  - added by MIS
+          #endif 
+        }
+      }else last = now;
     }
     // Aux 2
     #if defined(RCAUX2PINRXO)
       ISR(INT2_vect){
         static uint16_t now,diff;
         static uint16_t last = 0; 
-        now = ((timer1_OV8 << 12) + TCNT1) >> 1;
-        diff = now - last;
-        last = now;
-        if(900<diff && diff<2200) rcValue[7] = diff;
+        now = (timer1_OV8 << 11) + (TCNT1 >> 1);
+        if(!(PIND & (1<<2))){
+          diff = now - last;
+          if(900<diff && diff<2200) rcValue[7] = diff;
+        }else last = now;
       }
     #endif  
   #endif
@@ -219,7 +220,7 @@ void configureReceiver() {
     static uint16_t last = 0;
     static uint8_t chan = 0;
   
-    now = ((timer1_OV8 << 12) + TCNT1) >> 1;
+    now = (timer1_OV8 << 11) + (TCNT1 >> 1);
     diff = now - last;
     last = now;
     if(diff>3000) chan = 0;
@@ -243,7 +244,7 @@ void configureReceiver() {
     uint32_t spekTime;
     static uint32_t spekTimeLast, spekTimeInterval;
     static uint8_t  spekFramePosition;
-    spekTime = ((timer1_OV8 << 12) + TCNT1) >> 1;
+    spekTime = (timer1_OV8 << 11) + (TCNT1 >> 1);
     spekTimeInterval = spekTime - spekTimeLast;
     spekTimeLast = spekTime;
     if (spekTimeInterval > 5000) spekFramePosition = 0;
@@ -664,7 +665,7 @@ void rx_reset(void) {
 
 void to_rx_mode(void) {  
   to_ready_mode(); 
-  delay1( 50); 
+  delay1(  50); 
   rx_reset(); 
   NOP(); 
 }  

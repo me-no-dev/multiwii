@@ -712,6 +712,27 @@
   #undef INTERNAL_I2C_PULLUPS
 #endif
 
+#if defined(INNOVWORKS_10DOF)
+  #define ITG3200
+  #define BMA180
+  #define BMP085
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = X; magADC[PITCH]  = Y; magADC[YAW]  = -Z;}
+  #define ITG3200_ADDRESS 0XD0
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
+#if defined(INNOVWORKS_6DOF)
+  #define ITG3200
+  #define BMA180
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define ITG3200_ADDRESS 0XD0
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
 #if defined(OPENLRSv2MULTI)
   #define ITG3200
   #define ADXL345
@@ -775,7 +796,7 @@
 /***************              Sensor Type definitions              ********************/
 /**************************************************************************************/
 
-#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(MPU6050)
+#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(MPU6050) || defined(NUNCHUCK)
   #define ACC 1
 #else
   #define ACC 0
@@ -787,7 +808,7 @@
   #define MAG 0
 #endif
 
-#if defined(ITG3200) || defined(L3G4200D) || defined(MPU6050)
+#if defined(ITG3200) || defined(L3G4200D) || defined(MPU6050) || defined(WMP)
   #define GYRO 1
 #else
   #define GYRO 0
