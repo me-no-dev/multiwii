@@ -961,7 +961,7 @@
 #endif
 
 
-#if (defined(SERVO_TILT)|| defined(SERVO_MIX_TILT))&& defined(CAMTRIG)
+#if (defined(SERVO_TILT) || defined(SERVO_MIX_TILT))&& defined(CAMTRIG)
   #define SEC_SERVO_FROM   1 // use servo from 1 to 3
   #define SEC_SERVO_TO     3
 #else
@@ -971,8 +971,10 @@
       #define SEC_SERVO_FROM   3 // use servo from 3 to 4
       #define SEC_SERVO_TO     4
     #else
-      #define SEC_SERVO_FROM   1 // use servo from 1 to 2
-      #define SEC_SERVO_TO     2
+      #if !defined(MEGA_HW_GIMBAL)
+        #define SEC_SERVO_FROM   1 // use servo from 1 to 2
+        #define SEC_SERVO_TO     2
+      #endif
     #endif
   #endif
   #if defined(CAMTRIG)
