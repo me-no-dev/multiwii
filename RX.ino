@@ -178,7 +178,7 @@ void configureReceiver() {
     ISR(INT6_vect){ 
       static uint16_t now,diff;
       static uint16_t last = 0;
-      now = ((timer1_OV8 << 12) + TCNT1) >> 1; 
+      now = (timer1_OV8 << 11) + (TCNT1 >> 1); 
       diff = now - last;
       if(!(PINE & (1<<6))){
         if(900<diff && diff<2200){
@@ -220,7 +220,7 @@ void configureReceiver() {
     static uint16_t last = 0;
     static uint8_t chan = 0;
   
-    now = (timer1_OV8 << 11) + (TCNT1 >> 1);
+    now = (timer1_OV32 << 11) + (TCNT1 >> 1);
     diff = now - last;
     last = now;
     if(diff>3000) chan = 0;
