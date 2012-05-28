@@ -119,9 +119,32 @@ void writeServos() {
         }
       #endif
     #endif
+    // write HW PWM gimbal servos for the mega
     #if defined(MEGA) && defined(MEGA_HW_GIMBAL)
       OCR5C = servo[0];
       OCR5B = servo[1];
+    #endif
+    // write HW PWM servos fo a Bi copter
+    #if defined(HW_PWM_BI_SERVOS)
+      // on timer 4 for the promicto
+      #if defined(PROMICRO)
+        #if defined(SERVO_RFR_50HZ)
+          TC4H = (2047-(servo[5]>>3))>>8; OCR4A = ((2047-(servo[5]>>3))&0xFF); //  pin 5
+          TC4H = (servo[4]>>3)>>8; OCR4D = ((servo[4]>>3)&0xFF); //  pin 6   
+        #endif
+        #if defined(SERVO_RFR_160HZ)
+          TC4H = (1564-(servo[5]>>2))>>8; OCR4A = ((1564-(servo[5]>>2))&0xFF); //  pin 5
+          TC4H = (servo[4]>>2)>>8; OCR4D = ((servo[4]>>2)&0xFF); //  pin 6         
+        #endif
+        #if defined(SERVO_RFR_300HZ)
+          TC4H = (1660-(servo[5]>>1))>>8; OCR4A = ((1660-(servo[5]>>1))&0xFF); //  pin 5
+          TC4H = (servo[4]>>1)>>8; OCR4D = ((servo[4]>>1)&0xFF); //  pin 6         
+        #endif
+      #endif
+      #if defined(MEGA)
+        OCR4A = servo[4];
+        OCR4B = servo[5];      
+      #endif
     #endif
   #endif
 }
@@ -214,7 +237,7 @@ void writeMotors() { // [1000;2000] => [125;250]
           atomicPWM_PIN6_lowState = 15743-atomicPWM_PIN6_highState;        
         #endif
       #else
-        OCR1C = motor[4]<<3; //  pin 11
+        OCR1C = motor[4]<<1; //  pin 11
         TC4H = motor[5]>>8; OCR4A = (motor[5]&0xFF); //  pin 13    
       #endif
     #endif
@@ -371,9 +394,9 @@ void initOutput() {
     #if (NUMBER_MOTOR > 2)
       #if !defined(HWPWM6) // timer 4A
         TCCR4E |= (1<<ENHC4); // enhanced pwm mode
+        TCCR4A |= (1<<COM4A0)|(1<<PWM4A); // connect pin 5 to timer 4 channel A 
         TCCR4B &= ~(1<<CS41); TCCR4B |= (1<<CS42)|(1<<CS40); // prescaler to 16
         TCCR4D |= (1<<WGM40); TC4H = 0x3; OCR4C = 0xFF; // phase and frequency correct mode & top to 1023 but with enhanced pwm mode we have 2047
-        TCCR4A |= (1<<COM4A0)|(1<<PWM4A); // connect pin 5 to timer 4 channel A 
       #else // timer 3A
         TCCR3A |= (1<<WGM31); // phase correct mode & no prescaler
         TCCR3A &= ~(1<<WGM30);
@@ -460,7 +483,7 @@ void initOutput() {
 // advantage: 8 times more precision and a lot less interrupt blocking.
 // *************************************************************************************
 
-unsigned long micros32() {   // 32-bit TIMER1/5 routine suitable for intervals up to 4294sec (71min)    
+unsigned long micros32() {        // 32-bit TIMER1 routine suitable for intervals up to 4294sec (71min)    
   unsigned long   t_hi;
   static uint16_t t;
   static uint8_t tempSerg=SREG;  
@@ -471,7 +494,7 @@ unsigned long micros32() {   // 32-bit TIMER1/5 routine suitable for intervals u
   return (t_hi << 11) + (t >> 1);
 }  
 
-unsigned long millis32() {               // 32-bit TIMER1/5 routine suitable for intervals up to 4294sec (71min)    
+unsigned long millis32() {         // 32-bit TIMER1 routine suitable for intervals up to 4294sec (71min)    
   return micros32() / 1000; 
 }  
 
@@ -522,31 +545,34 @@ void initializeServo() {
     SERVO_8_PINMODE;
   #endif
   
-  #if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6)) || (defined(MEGA) && defined(MEGA_HW_GIMBAL)) // uses timer 0 Comperator A (8 bit)
-    TCCR0A = 0; // normal counting mode
-    TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
-    #define SERVO_ISR TIMER0_COMPA_vect
-    #define SERVO_CHANNEL OCR0A
-    #define SERVO_1K_US 250
+  #if defined(SERVO_1_HIGH)
+    #if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6)) || (defined(MEGA) && defined(MEGA_HW_GIMBAL)) // uses timer 0 Comperator A (8 bit)
+      TCCR0A = 0; // normal counting mode
+      TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
+      #define SERVO_ISR TIMER0_COMPA_vect
+      #define SERVO_CHANNEL OCR0A
+      #define SERVO_1K_US 250
+    #endif
+    #if (defined(PROMICRO) && !defined(HWPWM6)) // uses timer 3 Comperator A (11 bit)
+      TCCR3A &= ~(1<<WGM30) & ~(1<<WGM31); //normal counting & no prescaler
+      TCCR3B &= ~(1<<WGM32) & ~(1<<CS31) & ~(1<<CS32) & ~(1<<WGM33);
+      TCCR3B |= (1<<CS30);   
+      TIMSK3 |= (1<<OCIE3A); // Enable CTC interrupt 
+      #define SERVO_ISR TIMER3_COMPA_vect
+      #define SERVO_CHANNEL OCR3A
+      #define SERVO_1K_US 16000 
+    #endif
+    #if defined(MEGA) && !defined(MEGA_HW_GIMBAL) // uses timer 5 Comperator A (11 bit)
+      TCCR5A &= ~(1<<WGM50) & ~(1<<WGM51); //normal counting & no prescaler
+      TCCR5B &= ~(1<<WGM52) & ~(1<<CS51) & ~(1<<CS52) & ~(1<<WGM53);
+      TCCR5B |= (1<<CS50);   
+      TIMSK5 |= (1<<OCIE5A); // Enable CTC interrupt  
+      #define SERVO_ISR TIMER5_COMPA_vect
+      #define SERVO_CHANNEL OCR5A
+      #define SERVO_1K_US 16000 
+    #endif
   #endif
-  #if (defined(PROMICRO) && !defined(HWPWM6)) // uses timer 3 Comperator A (11 bit)
-    TCCR3A &= ~(1<<WGM30) & ~(1<<WGM31); //normal counting & no prescaler
-    TCCR3B &= ~(1<<WGM32) & ~(1<<CS31) & ~(1<<CS32) & ~(1<<WGM33);
-    TCCR3B |= (1<<CS30);   
-    TIMSK3 |= (1<<OCIE3A); // Enable CTC interrupt 
-    #define SERVO_ISR TIMER3_COMPA_vect
-    #define SERVO_CHANNEL OCR3A
-    #define SERVO_1K_US 16000 
-  #endif
-  #if defined(MEGA) && !defined(MEGA_HW_GIMBAL) // uses timer 5 Comperator A (11 bit)
-    TCCR5A &= ~(1<<WGM50) & ~(1<<WGM51); //normal counting & no prescaler
-    TCCR5B &= ~(1<<WGM52) & ~(1<<CS51) & ~(1<<CS52) & ~(1<<WGM53);
-    TCCR5B |= (1<<CS50);   
-    TIMSK5 |= (1<<OCIE5A); // Enable CTC interrupt  
-    #define SERVO_ISR TIMER5_COMPA_vect
-    #define SERVO_CHANNEL OCR5A
-    #define SERVO_1K_US 16000 
-  #endif
+  // init Timer 5 of the mega for hw PWM gimbal servos
   #if defined(MEGA) && defined(MEGA_HW_GIMBAL)
     TCCR5A |= (1<<WGM51); // phase correct mode & prescaler to 8
     TCCR5A &= ~(1<<WGM50);
@@ -559,12 +585,58 @@ void initializeServo() {
       ICR5   |= 6200; // TOP to 6200; 
     #endif
     #if defined(SERVO_RFR_300HZ) 
-      ICR5   |= 3300; // TOP to 3000; 
+      ICR5   |= 3330; // TOP to 3330;  
     #endif
     pinMode(44,OUTPUT);
     TCCR5A |= (1<<COM5C1); // pin 44
     pinMode(45,OUTPUT);
     TCCR5A |= (1<<COM5B1); // pin 45
+  #endif
+  // HW PWM bi copter servos
+  #if defined(HW_PWM_BI_SERVOS)
+    // on timer 4 for the promicto
+    #if defined(PROMICRO)
+      DDRC |= (1<<6);// pin 5 -> output
+      DDRD |= (1<<7);// pin 6 -> output
+      TCCR4E |= (1<<ENHC4); // enhanced pwm mode
+      TCCR4D |= (1<<WGM40); // fase and frequency correct mode
+      TCCR4A |= (1<<COM4A0); // connect pin 5 to timer 4 channel A
+      TCCR4C |= (1<<COM4D1)|(1<<PWM4D); // connect pin 6 to timer 4 channel D
+      #if defined(SERVO_RFR_50HZ)
+        TCCR4B &= ~(1<<CS40) & ~(1<<CS41) & ~(1<<CS42); 
+        TCCR4B |= (1<<CS43); // prescaler to 128
+        TC4H = 0x3; OCR4C = 0xFF; //top to 1024 (width enhanced PWM 2047)
+      #endif
+      #if defined(SERVO_RFR_160HZ)
+        TCCR4B |= (1<<CS40) | (1<<CS41) | (1<<CS42); 
+        TCCR4B &= ~(1<<CS43); // prescaler to 64
+        TC4H = 0x3; OCR4C = 0x08; //top to 782 (width enhanced PWM 1564)     
+      #endif
+      #if defined(SERVO_RFR_300HZ)
+        TCCR4B |= (1<<CS41) | (1<<CS42); 
+        TCCR4B &= ~(1<<CS43) & ~(1<<CS40); // prescaler to 32
+        TC4H = 0x3; OCR4C = 0x3E; //top to 830 (width enhanced PWM 1660)     
+      #endif
+    #endif
+    #if defined(MEGA)
+      pinMode(6,OUTPUT);
+      TCCR4A |= (1<<COM4A1); // pin 6
+      pinMode(7,OUTPUT);
+      TCCR4A |= (1<<COM4B1); // pin 7
+      TCCR4A |= (1<<WGM41); // phase correct mode & prescaler to 8
+      TCCR4A &= ~(1<<WGM40);
+      TCCR4B &= ~(1<<WGM42) &  ~(1<<CS40) & ~(1<<CS42);
+      TCCR4B |= (1<<WGM43) | (1<<CS41);
+      #if defined(SERVO_RFR_50HZ) 
+        ICR4   |= 16700; // TOP to 16700; 
+      #endif
+      #if defined(SERVO_RFR_160HZ) 
+        ICR4   |= 6200; // TOP to 6200; 
+      #endif
+      #if defined(SERVO_RFR_300HZ) 
+        ICR4   |= 3330; // TOP to 3330; 
+      #endif 
+    #endif 
   #endif
 }
 
@@ -578,18 +650,18 @@ void initializeServo() {
 
 // for servo 2-8
 // its almost the same as for servo 1
-#define SERVO_PULSE(PIN_HIGH,ACT_STATE,SERVO_NUM,LAST_PIN_LOW) \
-  }else if(state == ACT_STATE){                                \
-    LAST_PIN_LOW;                                              \
-    PIN_HIGH;                                                  \
-    SERVO_CHANNEL+=SERVO_1K_US;                                \
-    state++;                                                   \
-  }else if(state == ACT_STATE+1){                              \
-    SERVO_CHANNEL+=atomicServo[SERVO_NUM];                     \
-    state++;                                                   \
-
-ISR(SERVO_ISR) {
-  #if defined(SERVO_1_HIGH)
+#if defined(SERVO_1_HIGH)
+  #define SERVO_PULSE(PIN_HIGH,ACT_STATE,SERVO_NUM,LAST_PIN_LOW) \
+    }else if(state == ACT_STATE){                                \
+      LAST_PIN_LOW;                                              \
+      PIN_HIGH;                                                  \
+      SERVO_CHANNEL+=SERVO_1K_US;                                \
+      state++;                                                   \
+    }else if(state == ACT_STATE+1){                              \
+      SERVO_CHANNEL+=atomicServo[SERVO_NUM];                     \
+      state++;                                                   \
+  
+  ISR(SERVO_ISR) {
     static uint8_t state = 0; // indicates the current state of the chain
     if(state == 0){
       SERVO_1_HIGH; // set servo 1's pin high 
@@ -656,8 +728,8 @@ ISR(SERVO_ISR) {
         }     
       #endif
     }
+  } 
   #endif
-} 
 #endif
 
 /**************************************************************************************/

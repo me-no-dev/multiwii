@@ -942,8 +942,10 @@
   #define PRI_SERVO_TO     8
 #elif defined(BI)
   #define NUMBER_MOTOR     2
-  #define PRI_SERVO_FROM   5 // use servo from 5 to 6
-  #define PRI_SERVO_TO     6
+  #if !defined(HW_PWM_BI_SERVOS)
+    #define PRI_SERVO_FROM   5 // use servo from 5 to 6
+    #define PRI_SERVO_TO     6
+  #endif
 #elif defined(TRI)
   #define NUMBER_MOTOR     3
   #define PRI_SERVO_FROM   6 // use only servo 6

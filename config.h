@@ -24,7 +24,7 @@
     //#define BI
     //#define TRI
     //#define QUADP
-    #define QUADX
+    //#define QUADX
     //#define Y4
     //#define Y6
     //#define HEX6
@@ -176,7 +176,7 @@
     /* The following lines apply only for a pitch/roll tilt stabilization system
        Uncomment the first line to activate it */
     //#define SERVO_MIX_TILT              //  Simple CameraGimbal By Bledy http://youtu.be/zKGr6iR54vM
-    #define SERVO_TILT
+    //#define SERVO_TILT
     #define TILT_PITCH_MIN    1020    //servo travel min, don't set it below 1020
     #define TILT_PITCH_MAX    2000    //servo travel max, max value=2000
     #define TILT_PITCH_MIDDLE 1500    //servo neutral value
@@ -743,6 +743,13 @@
     //Roll  = pin 45
 
     //#define MEGA_HW_GIMBAL
+    
+
+    /* HW PWM Bi Servos
+    only for Promicro(atmega32u4's) and Mega. dont activate it on a promini*/
+    // on the promicro the bi servo pins stays the same.. pin 5(bi_right) & 6(bi_left)
+    // on the mega the pin 2 moves to pin 7.. pin 7(bi_right) & 6(bi_left)
+    //#define HW_PWM_BI_SERVOS
     
 
   /********************************************************************/
