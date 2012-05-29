@@ -346,7 +346,7 @@ uint16_t readRawRC(uint8_t chan) {
 /**************************************************************************************/
 
 void computeRC() {
-  static int16_t rcData4Values[8][2], rcDataMean[8];
+  static int16_t rcData4Values[8][4], rcDataMean[8];
   static uint8_t rc4ValuesIndex = 0;
   uint8_t chan,a;
   #if !(defined(RCSERIAL) || defined(OPENLRSv2MULTI)) // dont know if this is right here
@@ -355,16 +355,15 @@ void computeRC() {
     #endif
     rc4ValuesIndex++;
     for (chan = 0; chan < 8; chan++) {
-      rcData4Values[chan][rc4ValuesIndex%2] = readRawRC(chan);
+      rcData4Values[chan][rc4ValuesIndex%4] = readRawRC(chan);
       rcDataMean[chan] = 0;
-      for (a=0;a<2;a++) rcDataMean[chan] += rcData4Values[chan][a];
-      rcDataMean[chan]= (rcDataMean[chan]+1)/2;
+      for (a=0;a<4;a++) rcDataMean[chan] += rcData4Values[chan][a];
+      rcDataMean[chan]= (rcDataMean[chan]+2)/4;
       if ( rcDataMean[chan] < rcData[chan] -3)  rcData[chan] = rcDataMean[chan]+2;
       if ( rcDataMean[chan] > rcData[chan] +3)  rcData[chan] = rcDataMean[chan]-2;
     }
   #endif
 }
-
 
 /**************************************************************************************/
 /***************                     OPENLRS                       ********************/
