@@ -702,6 +702,19 @@
   #undef INTERNAL_I2C_PULLUPS
 #endif
 
+#if defined(DESQUARED6DOFV2A)
+  #define ITG3200
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
+#if defined(DESQUARED6DOFV4)
+  #define MPU6050
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
 #if defined(OPENLRSv2MULTI)
   #define ITG3200
   #define ADXL345

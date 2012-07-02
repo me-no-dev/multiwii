@@ -47,8 +47,8 @@
     /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller)
        This is the minimum value that allow motors to run at a idle speed  */
     //#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
-    //#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
-    #define MINTHROTTLE 1220
+    #define MINTHROTTLE 1120 // for Super Simple ESCs 10A
+    //#define MINTHROTTLE 1220
     //#define MINTHROTTLE 1150
 
   /**********************************    I2C speed   ************************************/
@@ -102,11 +102,13 @@
       //#define BOARD_PROTO_2   // with MPU6050 + slave  MAG3110 + MS baro
       //#define GY_80           // Chinese 10 DOF with  L3G4200D ADXL345 HMC5883L BMP085, LLC
       //#define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
+      //#define DESQUARED6DOFV2A   // DEsquared V4 with ITG3200 only 
+      #define DESQUARED6DOFV4   // DEsquared V4 with MPU6050 
 
     /***************************    independent sensors    ********************************/
       //leave it commented if you already checked a specific board above
       /* I2C gyroscope */
-#define ITG3200
+      //#define ITG3200
       //#define L3G4200D
       //#define MPU6050       //combo + ACC
 
