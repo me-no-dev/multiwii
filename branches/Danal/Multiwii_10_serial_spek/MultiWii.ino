@@ -380,7 +380,7 @@ void setup() {
   #if defined(ESC_CALIB_CANNOT_FLY) // <- to move in Output.pde, nothing to do here
     /* this turns into a special version of MultiWii. Its only purpose it to try and calib all attached ESCs */
     writeAllMotors(ESC_CALIB_HIGH);
-    delay(3000);
+    delay(5000);
     writeAllMotors(ESC_CALIB_LOW);
     delay(500);
     while (1) {
