@@ -255,9 +255,10 @@ void getEstimatedAttitude(){
   #endif
 }
 
-#define UPDATE_INTERVAL 25000    // 40hz update rate (20hz LPF on acc)
-#define INIT_DELAY      4000000  // 4 sec initialization delay
+#define UPDATE_INTERVAL 15000    // 40hz update rate (20hz LPF on acc)
+#define INIT_DELAY      6000000  // 4 sec initialization delay
 #define BARO_TAB_SIZE   40
+// #define ALT_ACC_ONLY          // disables the Baro's values so alt hold works just with ACC-z .. for debug
 
 
 void getEstimatedAltitude(){
@@ -265,13 +266,8 @@ void getEstimatedAltitude(){
   static uint32_t deadLine = INIT_DELAY;
   
   
-  static int16_t autoCalValue;  
-  static int8_t i;
-  static int8_t autoCalStack1[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
-  static int8_t autoCalStack2[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
-  static int16_t BaroSmooth1[5] = {0,0,0,0,0};
-  static int16_t BaroSmooth2[5] = {0,0,0,0,0};
-  static int16_t accCorrX,accCorrY,preAccCorrX,preAccCorrY,accAlt,accUseAlt;
+  static int8_t i, autoCalIndex, BaroSmoothIndex, autoCalStack[20];
+  static int16_t accCorrX, accCorrY, preAccCorrX, preAccCorrY, accAlt, accUseAlt, BaroSmooth[10], autoCalValue;
   static int16_t accMin = 1000;
   static int16_t accMax = -1000;
   
@@ -305,15 +301,12 @@ void getEstimatedAltitude(){
   //EstAlt = BaroHigh*10/(BARO_TAB_SIZE/2);
   
   // smooth Baro readings
-  for(i = 1; i<5;i++){
-    BaroSmooth1[i-1] = BaroSmooth2[i];
-  }
-  BaroSmooth2[4] = BaroHigh*10/(BARO_TAB_SIZE/2);
+  BaroSmooth[BaroSmoothIndex] = BaroHigh*10/(BARO_TAB_SIZE/2);
+  BaroSmoothIndex++;
+  if(BaroSmoothIndex==10) BaroSmoothIndex = 0;
   EstAlt = 0;
-  for(i = 0; i<5;i++){
-    EstAlt += BaroSmooth2[i];
-    BaroSmooth1[i] = BaroSmooth2[i];
-  }
+  for(i = 0; i<10;i++)
+    EstAlt += BaroSmooth[i];
   
   // a simple way do get some angle correction (not ideal or perfect)
   preAccCorrX = abs(accSmooth[ROLL]);
@@ -326,43 +319,39 @@ void getEstimatedAltitude(){
   accAlt = accSmooth[YAW]+accCorrX+accCorrY-acc_1G-autoCalValue;  
   
   //use just the extremes
-  if(accAlt>accMax){
+  if(accAlt>accMax)
     accMax = accAlt;
-  }
-  if(accAlt<accMin){
-    accMin = accAlt; 
-  }
+
+  if(accAlt<accMin)
+    accMin = accAlt;
+
   
-  accUseAlt = accMin+accMax;  
+  accUseAlt = accMin+accMax*(512/acc_1G);  // should scale other acc's resolutions
   
   // only active in small angle 
-  if(f.SMALL_ANGLES_25 == 1){
-    EstAlt = (EstAlt/4)+(accUseAlt/2); // acc value /2 is empirical .. tested with MPU6050 needs to be adjusted for other acc's
-  }else{
-    EstAlt = EstAlt/4;
-  }
-  
-  //EstAlt = 4000+accUseAlt;
+  #if !defined(ALT_ACC_ONLY)
+    if(f.SMALL_ANGLES_25 == 1){
+      EstAlt = (EstAlt/20)+(accUseAlt*2); // acc value *2 is empirical .. 
+    }else{
+      EstAlt = EstAlt/20;
+    }
+  #else
+    EstAlt = 4000+(accUseAlt*2);
+  #endif
   
   // a autocalibration (zeros slowly acc accAlt)
-  for(i = 1; i<20;i++){
-    autoCalStack2[i-1] = autoCalStack1[i];
-  }
-  autoCalStack2[19] = accSmooth[YAW]+accCorrX+accCorrY-acc_1G;
+  autoCalStack[autoCalIndex] = accSmooth[YAW]+accCorrX+accCorrY-acc_1G;
+  autoCalIndex++;
+  if(autoCalIndex == 20) autoCalIndex=0;
   autoCalValue = 0;
-  for(i=0; i<20; i++){
-    autoCalValue += autoCalStack2[i];
-    autoCalStack1[i] = autoCalStack2[i];
-  } 
-  autoCalValue = autoCalValue/19;
+  for(i=0; i<20; i++)
+    autoCalValue += autoCalStack[i]; 
+  autoCalValue = autoCalValue/20;
   
   // show the debug
-  debug[0] = accSmooth[YAW]+accCorrX+accCorrY-acc_1G; // RAW accAlt
   debug[1] = accMin; //minAccAlt
   debug[2] = accMax; //maxAccAlt 
-  debug[3] = autoCalValue; // auto calibration value
-  
-  
+
   // slowly decrease the used extremes 
   // also to prevent the acc's "fallback" a little.. /25 is totaly empirical
   
