@@ -255,10 +255,36 @@ void getEstimatedAttitude(){
   #endif
 }
 
-#define UPDATE_INTERVAL 15000    // 40hz update rate (20hz LPF on acc)
-#define INIT_DELAY      6000000  // 4 sec initialization delay
+#define UPDATE_INTERVAL 25000    // 40hz update rate (20hz LPF on acc)
+#define INIT_DELAY      4000000  // 4 sec initialization delay
 #define BARO_TAB_SIZE   40
-// #define ALT_ACC_ONLY          // disables the Baro's values so alt hold works just with ACC-z .. for debug
+
+
+
+
+
+
+
+
+/*****************************************************************************/
+
+                        // ACC Z Alt Settings //
+
+/*****************************************************************************/
+
+//#define ALT_ACC_ONLY          // disables the Baro's values so alt hold works just with ACC-Z .. for debug
+//#define ALT_BARO_ONLY         // disables ACC z runs just like it was without any mod
+
+int16_t accAltP = 30; // 10-99... 30 is default
+int16_t accAltI = 30; // 10-99... 30 is default
+int16_t accAltD = 15; // 10-99... 15 is default
+
+
+/*****************************************************************************/
+
+                     // End of ACC Z Alt Settings //
+
+/*****************************************************************************/
 
 
 void getEstimatedAltitude(){
@@ -267,7 +293,7 @@ void getEstimatedAltitude(){
   
   
   static int8_t i, autoCalIndex, BaroSmoothIndex, autoCalStack[20];
-  static int16_t accCorrX, accCorrY, preAccCorrX, preAccCorrY, accAlt, accUseAlt, BaroSmooth[10], autoCalValue;
+  static int16_t accCorrX, accCorrY, preAccCorrX, preAccCorrY, accAlt, accUseAlt, BaroSmooth[10], autoCalValue, maxDC, minDC;
   static int16_t accMin = 1000;
   static int16_t accMax = -1000;
   
@@ -307,6 +333,7 @@ void getEstimatedAltitude(){
   EstAlt = 0;
   for(i = 0; i<10;i++)
     EstAlt += BaroSmooth[i];
+    
   
   // a simple way do get some angle correction (not ideal or perfect)
   preAccCorrX = abs(accSmooth[ROLL]);
@@ -319,26 +346,40 @@ void getEstimatedAltitude(){
   accAlt = accSmooth[YAW]+accCorrX+accCorrY-acc_1G-autoCalValue;  
   
   //use just the extremes
-  if(accAlt>accMax)
-    accMax = accAlt;
-
-  if(accAlt<accMin)
-    accMin = accAlt;
-
+  if((accAlt*10)>accMax){
+    maxDC = 0;
+    accMax = accAlt*10;
+  }
+  if((accAlt*10)<accMin){
+    minDC = 0;
+    accMin = accAlt*10;
+  }
   
-  accUseAlt = accMin+accMax*(512/acc_1G);  // should scale other acc's resolutions
+  if(accAlt>0){
+    minDC+=accAltD/10;
+  }
+  if(accAlt<0){
+    maxDC+=accAltD/10;
+  }
+  
+  accUseAlt = ((accMin+accMax)/((100-accAltP)/10))*(512/acc_1G);  // should scale other acc's resolutions
   
   // only active in small angle 
-  #if !defined(ALT_ACC_ONLY)
+  #if !defined(ALT_ACC_ONLY) && !defined(ALT_BARO_ONLY)
     if(f.SMALL_ANGLES_25 == 1){
-      EstAlt = (EstAlt/20)+(accUseAlt*2); // acc value *2 is empirical .. 
+      EstAlt = (EstAlt/10)+accUseAlt; 
     }else{
-      EstAlt = EstAlt/20;
+      EstAlt = EstAlt/10;
     }
-  #else
-    EstAlt = 4000+(accUseAlt*2);
   #endif
   
+  #if defined(ALT_ACC_ONLY)
+    EstAlt = 5000+accUseAlt;
+  #endif
+  
+  #if defined(ALT_BARO_ONLY)
+    EstAlt = BaroHigh*10/(BARO_TAB_SIZE/2);
+  #endif
   // a autocalibration (zeros slowly acc accAlt)
   autoCalStack[autoCalIndex] = accSmooth[YAW]+accCorrX+accCorrY-acc_1G;
   autoCalIndex++;
@@ -351,25 +392,19 @@ void getEstimatedAltitude(){
   // show the debug
   debug[1] = accMin; //minAccAlt
   debug[2] = accMax; //maxAccAlt 
-
+  
   // slowly decrease the used extremes 
   // also to prevent the acc's "fallback" a little.. /25 is totaly empirical
   
-  if(accMin<0){
-    if((abs(accMin)/25) <= 1){
-      accMin++; 
-    }else{ 
-      accMin+= abs(accMin)/25;
-    }
-  }
+  if(accMax>0){
+    accMax-= maxDC/(accAltI/10);
+  }else accMax = 0;
   
-  if(accMax>0){ 
-    if((accMax/25) <= 1){
-      accMax--; 
-    }else{
-      accMax-= accMax/25;
-    }
-  }
+  if(accMin<0){
+    accMin+= minDC/(accAltI/10);
+  }else accMin = 0;
+  
+  
   
   temp32 = AltHold - EstAlt;
   //if (abs(temp32) < 10 && abs(BaroPID) < 10) BaroPID = 0;  //remove small D parametr to reduce noise near zero position
