@@ -268,9 +268,9 @@ void getEstimatedAttitude(){
 //#define ALT_ACC_ONLY          // disables the Baro's values so alt hold works just with ACC-Z .. for debug
 //#define ALT_BARO_ONLY         // disables ACC z runs just like it was without any mod
 
-int8_t accAltP = 40; // 10-100... 40 is default
+int8_t accAltP = 60; // 10-100... 60 is default
 int8_t accAltI = 40; // 10-100... 40 is default
-int8_t accAltD = 15; // 10-100... 15 is default
+int8_t accAltD = 10; // 10-100... 10 is default
 
 
 /*****************************************************************************/
