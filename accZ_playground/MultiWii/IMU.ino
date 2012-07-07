@@ -259,13 +259,6 @@ void getEstimatedAttitude(){
 #define INIT_DELAY      4000000  // 4 sec initialization delay
 #define BARO_TAB_SIZE   40
 
-
-
-
-
-
-
-
 /*****************************************************************************/
 
                         // ACC Z Alt Settings //
@@ -275,9 +268,9 @@ void getEstimatedAttitude(){
 //#define ALT_ACC_ONLY          // disables the Baro's values so alt hold works just with ACC-Z .. for debug
 //#define ALT_BARO_ONLY         // disables ACC z runs just like it was without any mod
 
-int16_t accAltP = 30; // 10-99... 30 is default
-int16_t accAltI = 30; // 10-99... 30 is default
-int16_t accAltD = 15; // 10-99... 15 is default
+int8_t accAltP = 40; // 10-100... 40 is default
+int8_t accAltI = 40; // 10-100... 40 is default
+int8_t accAltD = 15; // 10-100... 15 is default
 
 
 /*****************************************************************************/
@@ -286,17 +279,33 @@ int16_t accAltD = 15; // 10-99... 15 is default
 
 /*****************************************************************************/
 
+float InvSqrt (float x)
+{ 
+  union
+  {  
+    int32_t i;  
+    float   f; 
+  }
+  conv; 
+  conv.f = x; 
+  conv.i = 0x5f3759df - (conv.i >> 1); 
+  return 0.5f * conv.f * (3.0f - x * conv.f * conv.f);
+} 
+
+int32_t isq(int32_t x)
+{
+return x * x;
+}
 
 void getEstimatedAltitude(){
   uint8_t index;
   static uint32_t deadLine = INIT_DELAY;
   
-  
-  static int8_t i, autoCalIndex, BaroSmoothIndex, autoCalStack[20];
-  static int16_t accCorrX, accCorrY, preAccCorrX, preAccCorrY, accAlt, accUseAlt, BaroSmooth[10], autoCalValue, maxDC, minDC;
+  static int8_t i, BaroSmoothIndex, sumZeroCounter, zZeroCounter;
+  static int16_t AccScale, ACCZ, accAlt, accUseAlt, BaroSmooth[100], zZeroStack[40], zZero, minDC, maxDC;
   static int16_t accMin = 1000;
   static int16_t accMax = -1000;
-  
+
   static int16_t BaroHistTab[BARO_TAB_SIZE];
   static int8_t BaroHistIdx;
   static int32_t BaroHigh,BaroLow;
@@ -329,48 +338,45 @@ void getEstimatedAltitude(){
   // smooth Baro readings
   BaroSmooth[BaroSmoothIndex] = BaroHigh*10/(BARO_TAB_SIZE/2);
   BaroSmoothIndex++;
-  if(BaroSmoothIndex==10) BaroSmoothIndex = 0;
+  if(BaroSmoothIndex==100) BaroSmoothIndex = 0;
   EstAlt = 0;
-  for(i = 0; i<10;i++)
+  for(i = 0; i<100;i++)
     EstAlt += BaroSmooth[i];
     
-  
-  // a simple way do get some angle correction (not ideal or perfect)
-  preAccCorrX = abs(accSmooth[ROLL]);
-  preAccCorrY = abs(accSmooth[PITCH]);
+  // ACC Z angle correction of 1.9  
+  ACCZ = accADC[YAW];
+  AccScale = 980.665f/acc_1G;
+  accAlt = (ACCZ * (1 - acc_1G * InvSqrt(isq(accADC[ROLL]) + isq(accADC[PITCH]) + isq(ACCZ)))) * AccScale; 
 
-  accCorrX = preAccCorrX-(preAccCorrY/2);
-  accCorrY = preAccCorrY-(preAccCorrX/2);
+  // ACC Z zero trimm? errors a little 
+  zZeroStack[zZeroCounter] = accAlt;
+  zZeroCounter++;
+  if(zZeroCounter == 40) zZeroCounter=0;
+  zZero = 0;
+  for(i=0;i<40;i++) zZero += zZeroStack[i];
+  accAlt-=zZero/40;
   
-  // the resulting alt value (RAW)
-  accAlt = accSmooth[YAW]+accCorrX+accCorrY-acc_1G-autoCalValue;  
-  
-  //use just the extremes
-  if((accAlt*10)>accMax){
+  if(accAlt>accMax){
+    accMax = accAlt;
     maxDC = 0;
-    accMax = accAlt*10;
   }
-  if((accAlt*10)<accMin){
+  if(accAlt<accMin){
+    accMin = accAlt;
     minDC = 0;
-    accMin = accAlt*10;
-  }
+  }  
   
-  if(accAlt>0){
-    minDC+=accAltD/10;
-  }
-  if(accAlt<0){
-    maxDC+=accAltD/10;
-  }
+  // ACC Z count up the "curve counter"
+  maxDC += accAltD/10;
+  minDC += accAltD/10;
   
-  accUseAlt = ((accMin+accMax)/((100-accAltP)/10))*(512/acc_1G);  // should scale other acc's resolutions
   
-  // only active in small angle 
+  
+  // ACC Z add P
+  accUseAlt = ((accMax+accMin)*5)/(10-(accAltP/10));
+  
+  // ACC Z combine with baro data
   #if !defined(ALT_ACC_ONLY) && !defined(ALT_BARO_ONLY)
-    if(f.SMALL_ANGLES_25 == 1){
-      EstAlt = (EstAlt/10)+accUseAlt; 
-    }else{
-      EstAlt = EstAlt/10;
-    }
+    EstAlt = (BaroHigh*10/(BARO_TAB_SIZE/2))+accUseAlt; 
   #endif
   
   #if defined(ALT_ACC_ONLY)
@@ -380,31 +386,15 @@ void getEstimatedAltitude(){
   #if defined(ALT_BARO_ONLY)
     EstAlt = BaroHigh*10/(BARO_TAB_SIZE/2);
   #endif
-  // a autocalibration (zeros slowly acc accAlt)
-  autoCalStack[autoCalIndex] = accSmooth[YAW]+accCorrX+accCorrY-acc_1G;
-  autoCalIndex++;
-  if(autoCalIndex == 20) autoCalIndex=0;
-  autoCalValue = 0;
-  for(i=0; i<20; i++)
-    autoCalValue += autoCalStack[i]; 
-  autoCalValue = autoCalValue/20;
   
   // show the debug
+  debug[0] = accAlt;
   debug[1] = accMin; //minAccAlt
   debug[2] = accMax; //maxAccAlt 
   
-  // slowly decrease the used extremes 
-  // also to prevent the acc's "fallback" a little.. /25 is totaly empirical
-  
-  if(accMax>0){
-    accMax-= maxDC/(accAltI/10);
-  }else accMax = 0;
-  
-  if(accMin<0){
-    accMin+= minDC/(accAltI/10);
-  }else accMin = 0;
-  
-  
+  // ACC Z decrease the used extremes 
+  if(accMax>0) accMax -= maxDC/(accAltI/10);
+  if(accMin<0) accMin += minDC/(accAltI/10);
   
   temp32 = AltHold - EstAlt;
   //if (abs(temp32) < 10 && abs(BaroPID) < 10) BaroPID = 0;  //remove small D parametr to reduce noise near zero position
