@@ -274,21 +274,18 @@ int32_t isq(int32_t x){
 }
 
 
-
 void getACCalt(){
-  static int16_t AccScale, ACCZ, accZ, AccZLast;
+  static int16_t ACCZ, AccZ, AccZLast;
+  static float AccScale = 920.0f/acc_1G;
   
   // ACC Z angle correction of 1.9  
   ACCZ = accSmooth[YAW];
-  AccScale = 680.0f/acc_1G;
-  accZ = (ACCZ * (1 - acc_1G * InvSqrt(isq(accSmooth[ROLL]) + isq(accSmooth[PITCH]) + isq(ACCZ)))) * AccScale; 
-  
-  AccZSum += AccZLast - accZ;
-  AccZLast = accZ;
+  AccZ = (ACCZ * (1 - acc_1G * InvSqrt(isq(accSmooth[ROLL]) + isq(accSmooth[PITCH]) + isq(ACCZ)))) * AccScale; 
+    
+  AccZSum += AccZLast - AccZ;
+  AccZLast = AccZ;
 
 }
-
-
 
 // Altitude hold with ACC Z by Marcin (marbalon)
 
