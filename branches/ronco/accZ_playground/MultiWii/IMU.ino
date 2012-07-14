@@ -253,36 +253,14 @@ void getEstimatedAttitude(){
     if ( heading > 180)      heading = heading - 360;
     else if (heading < -180) heading = heading + 360;
   #endif
+  getACCalt();
 }
 
-#define UPDATE_INTERVAL 25000    // 40hz update rate (20hz LPF on acc)
-#define INIT_DELAY      4000000  // 4 sec initialization delay
-#define BARO_TAB_SIZE   40
-
-/*****************************************************************************/
-
-                        // ACC Z Alt Settings //
-
-/*****************************************************************************/
-
-//#define ALT_ACC_ONLY          // disables the Baro's values so alt hold works just with ACC-Z .. for debug
-//#define ALT_BARO_ONLY         // disables ACC z runs just like it was without any mod
-
-int8_t accAltP = 60; // 10-100... 60 is default
-int8_t accAltI = 40; // 10-100... 40 is default
-int8_t accAltD = 10; // 10-100... 10 is default
 
 
-/*****************************************************************************/
 
-                     // End of ACC Z Alt Settings //
-
-/*****************************************************************************/
-
-float InvSqrt (float x)
-{ 
-  union
-  {  
+float InvSqrt (float x){ 
+  union{  
     int32_t i;  
     float   f; 
   }
@@ -291,121 +269,90 @@ float InvSqrt (float x)
   conv.i = 0x5f3759df - (conv.i >> 1); 
   return 0.5f * conv.f * (3.0f - x * conv.f * conv.f);
 } 
-
-int32_t isq(int32_t x)
-{
-return x * x;
+int32_t isq(int32_t x){ 
+  return x * x;
 }
 
-void getEstimatedAltitude(){
-  uint8_t index;
-  static uint32_t deadLine = INIT_DELAY;
+
+
+void getACCalt(){
+  static int16_t AccScale, ACCZ, accZ, AccZLast;
   
-  static int8_t i, BaroSmoothIndex, sumZeroCounter, zZeroCounter;
-  static int16_t AccScale, ACCZ, accAlt, accUseAlt, BaroSmooth[100], zZeroStack[40], zZero, minDC, maxDC;
-  static int16_t accMin = 1000;
-  static int16_t accMax = -1000;
-
-  static int16_t BaroHistTab[BARO_TAB_SIZE];
-  static int8_t BaroHistIdx;
-  static int32_t BaroHigh,BaroLow;
-  int32_t temp32;
-  int16_t last;
-
-  if (currentTime < deadLine) return;
-  deadLine = currentTime + UPDATE_INTERVAL; 
-
-  //**** Alt. Set Point stabilization PID ****
-  //calculate speed for D calculation
-  last = BaroHistTab[BaroHistIdx];
-  BaroHistTab[BaroHistIdx] = BaroAlt/10;
-  BaroHigh += BaroHistTab[BaroHistIdx];
-  index = (BaroHistIdx + (BARO_TAB_SIZE/2))%BARO_TAB_SIZE;
-  BaroHigh -= BaroHistTab[index];
-  BaroLow  += BaroHistTab[index];
-  BaroLow  -= last;
-
-  BaroHistIdx++;
-  if (BaroHistIdx == BARO_TAB_SIZE) BaroHistIdx = 0;
-
-  BaroPID = 0;
-  //D
-  temp32 = conf.D8[PIDALT]*(BaroHigh - BaroLow) / 40;
-  BaroPID-=temp32;
-
-  //EstAlt = BaroHigh*10/(BARO_TAB_SIZE/2);
-  
-  // smooth Baro readings
-  BaroSmooth[BaroSmoothIndex] = BaroHigh*10/(BARO_TAB_SIZE/2);
-  BaroSmoothIndex++;
-  if(BaroSmoothIndex==100) BaroSmoothIndex = 0;
-  EstAlt = 0;
-  for(i = 0; i<100;i++)
-    EstAlt += BaroSmooth[i];
-    
   // ACC Z angle correction of 1.9  
-  ACCZ = accADC[YAW];
-  AccScale = 980.665f/acc_1G;
-  accAlt = (ACCZ * (1 - acc_1G * InvSqrt(isq(accADC[ROLL]) + isq(accADC[PITCH]) + isq(ACCZ)))) * AccScale; 
+  ACCZ = accSmooth[YAW];
+  AccScale = 680.0f/acc_1G;
+  accZ = (ACCZ * (1 - acc_1G * InvSqrt(isq(accSmooth[ROLL]) + isq(accSmooth[PITCH]) + isq(ACCZ)))) * AccScale; 
+  
+  AccZSum += AccZLast - accZ;
+  AccZLast = accZ;
 
-  // ACC Z zero trimm? errors a little 
-  zZeroStack[zZeroCounter] = accAlt;
-  zZeroCounter++;
-  if(zZeroCounter == 40) zZeroCounter=0;
-  zZero = 0;
-  for(i=0;i<40;i++) zZero += zZeroStack[i];
-  accAlt-=zZero/40;
-  
-  if(accAlt>accMax){
-    accMax = accAlt;
-    maxDC = 0;
-  }
-  if(accAlt<accMin){
-    accMin = accAlt;
-    minDC = 0;
-  }  
-  
-  // ACC Z count up the "curve counter"
-  maxDC += accAltD/10;
-  minDC += accAltD/10;
-  
-  
-  
-  // ACC Z add P
-  accUseAlt = ((accMax+accMin)*5)/(10-(accAltP/10));
-  
-  // ACC Z combine with baro data
-  #if !defined(ALT_ACC_ONLY) && !defined(ALT_BARO_ONLY)
-    EstAlt = (BaroHigh*10/(BARO_TAB_SIZE/2))+accUseAlt; 
-  #endif
-  
-  #if defined(ALT_ACC_ONLY)
-    EstAlt = 5000+accUseAlt;
-  #endif
-  
-  #if defined(ALT_BARO_ONLY)
-    EstAlt = BaroHigh*10/(BARO_TAB_SIZE/2);
-  #endif
-  
-  // show the debug
-  debug[0] = accAlt;
-  debug[1] = accMin; //minAccAlt
-  debug[2] = accMax; //maxAccAlt 
-  
-  // ACC Z decrease the used extremes 
-  if(accMax>0) accMax -= maxDC/(accAltI/10);
-  if(accMin<0) accMin += minDC/(accAltI/10);
-  
-  temp32 = AltHold - EstAlt;
-  //if (abs(temp32) < 10 && abs(BaroPID) < 10) BaroPID = 0;  //remove small D parametr to reduce noise near zero position
-  
-  //P
-  BaroPID += conf.P8[PIDALT]*constrain(temp32,(-2)*conf.P8[PIDALT],2*conf.P8[PIDALT])/100;   
-  BaroPID = constrain(BaroPID,-150,+150); //sum of P and D should be in range 150
-
-  //I
-  errorAltitudeI += temp32*conf.I8[PIDALT]/50;
-  errorAltitudeI = constrain(errorAltitudeI,-30000,30000);
-  temp32 = errorAltitudeI / 500; //I in range +/-60
-  BaroPID+=temp32;
 }
+
+
+
+// Altitude hold with ACC Z by Marcin (marbalon)
+
+#define UPDATE_INTERVAL 25000
+#define INIT_DELAY 4000000
+#define DELTA_TAB_SIZE  30
+
+void getEstimatedAltitude() {
+   static uint8_t inited = 0;
+   static uint32_t deadLine = INIT_DELAY;
+   static int8_t deltaHistTab[DELTA_TAB_SIZE];
+   static int8_t deltaHistIdx=0;
+   static int16_t deltaSum=0, deltaSumSmooth=0;
+   int16_t tempPID = 0;
+   static int32_t lastAlt, AccZSumSmooth;
+   int32_t temp32;
+   int16_t AltError;
+
+  if (abs(currentTime - deadLine) < UPDATE_INTERVAL) return;
+  deadLine = currentTime; 
+   // Soft start
+   if (!inited) {
+      inited = 1;
+      EstAlt = BaroAlt;
+   }
+
+   //**** Alt. Set Point stabilization PID ****
+   //calculate delta using last 20 samples of delta
+
+   deltaSum-= deltaHistTab[deltaHistIdx]; //remove oldest value
+   deltaHistTab[deltaHistIdx] = constrain(BaroAlt - lastAlt,-120,+120);
+   deltaSum+= deltaHistTab[deltaHistIdx]; //add new value
+   deltaHistIdx++;
+   lastAlt = BaroAlt;
+
+   if (deltaHistIdx >= DELTA_TAB_SIZE)
+      deltaHistIdx = 0;
+
+   //little filtering for AccZ 
+   AccZSumSmooth =  + AccZSumSmooth * 0.8 + AccZSum * 0.2;
+
+   //now try to smooth deltaSum and Est Altiture using ACC Z readings
+   temp32 = constrain(abs(AccZSumSmooth),1,31);
+   deltaSumSmooth = (deltaSum*temp32 + deltaSumSmooth*(32 - temp32))/32;
+   EstAlt = (BaroAlt*temp32 + EstAlt*(32 - temp32))/32;
+
+   //D
+   temp32 = conf.P8[PIDALT]*(deltaSumSmooth) / (DELTA_TAB_SIZE*2);
+   tempPID-=temp32;
+
+   AltError = constrain( AltHold - EstAlt, -1000, 1000);
+
+   //P
+   tempPID += conf.P8[PIDALT]*constrain(AltError,(-2)*conf.P8[PIDALT],2*conf.P8[PIDALT])/100;
+   tempPID = constrain(tempPID,-150,+150); //sum of P and D should be in range 150
+
+   //I
+   errorAltitudeI += temp32*conf.P8[PIDALT]/50;
+   errorAltitudeI = constrain(errorAltitudeI,-30000,30000);
+   temp32 = errorAltitudeI / 500; //I in range +/-60
+   tempPID+=temp32;
+
+   BaroPID = tempPID;
+
+   AccZSum = 0;
+}
+
