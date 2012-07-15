@@ -28,7 +28,7 @@
 /**************************************************************************************/
 /***************         Software PWM & Servo variables            ********************/
 /**************************************************************************************/
-#if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6))
+#if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6)) || (defined(MEGA) && defined(MEGA_HW_GIMBAL))
   #if defined(SERVO)
     #if defined(AIRPLANE)|| defined(HELICOPTER)
       // To prevent motor to start at reset. atomicServo[7]=5 or 249 if reversed servo
@@ -83,7 +83,7 @@ void writeServos() {
   #if defined(SERVO)
     #if defined(PRI_SERVO_FROM)    // write primary servos
       for(uint8_t i = (PRI_SERVO_FROM-1); i < PRI_SERVO_TO; i++){
-        #if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6))
+        #if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6)) || (defined(MEGA) && defined(MEGA_HW_GIMBAL))
           atomicServo[i] = (servo[i]-1000)>>2;
         #else
           atomicServo[i] = (servo[i]-1000)<<4;
@@ -111,13 +111,18 @@ void writeServos() {
         }
       #else
         for(uint8_t i = (SEC_SERVO_FROM-1); i < SEC_SERVO_TO; i++){
-          #if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6))
+          #if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6)) || (defined(MEGA) && defined(MEGA_HW_GIMBAL))
             atomicServo[i] = (servo[i]-1000)>>2;
           #else
             atomicServo[i] = (servo[i]-1000)<<4;
           #endif
         }
       #endif
+    #endif
+    // write HW PWM gimbal servos for the mega (needs to be also implemented to the MMSERVOGIMBAL)
+    #if defined(MEGA) && defined(MEGA_HW_GIMBAL)
+      OCR5C = servo[0];
+      OCR5B = servo[1];
     #endif
   #endif
 }
@@ -180,21 +185,41 @@ void writeMotors() { // [1000;2000] => [125;250]
 /******** Specific PWM Timers & Registers for the atmega32u4 (Promicro)   ************/
   #if defined(PROMICRO)
     #if (NUMBER_MOTOR > 0) // Timer 1 A & B [1000:2000] => [8000:16000]
-      OCR1A = motor[0]<<3; //  pin 9
+      #ifndef EXT_MOTOR_RANGE 
+        OCR1A = motor[0]<<3; //  pin 9
+      #else
+        OCR1A = ((motor[0]<<4) - 16000) + 128;
+      #endif
     #endif
     #if (NUMBER_MOTOR > 1)
-      OCR1B = motor[1]<<3; //  pin 10
+      #ifndef EXT_MOTOR_RANGE 
+        OCR1B = motor[1]<<3; //  pin 10
+      #else
+        OCR1B = ((motor[1]<<4) - 16000) + 128;
+      #endif
     #endif
     #if (NUMBER_MOTOR > 2) // Timer 4 A & D [1000:2000] => [1000:2000]
       #if !defined(HWPWM6)
         // to write values > 255 to timer 4 A/B we need to split the bytes
-        TC4H = (2047-motor[2])>>8; OCR4A = ((2047-motor[2])&0xFF); //  pin 5
+        #ifndef EXT_MOTOR_RANGE 
+          TC4H = (2047-motor[2])>>8; OCR4A = ((2047-motor[2])&0xFF); //  pin 5
+        #else
+          TC4H = 2047-(((motor[2]-1000)<<1)+16)>>8; OCR4A = (2047-(((motor[2]-1000)<<1)+16)&0xFF); //  pin 5
+        #endif
       #else
-        OCR3A = motor[2]<<3; //  pin 5
+        #ifndef EXT_MOTOR_RANGE 
+          OCR3A = motor[2]<<3; //  pin 5
+        #else
+          OCR3A = ((motor[2]<<4) - 16000) + 128;
+        #endif
       #endif
     #endif
     #if (NUMBER_MOTOR > 3)
-      TC4H = motor[3]>>8; OCR4D = (motor[3]&0xFF); //  pin 6
+      #ifndef EXT_MOTOR_RANGE 
+        TC4H = motor[3]>>8; OCR4D = (motor[3]&0xFF); //  pin 6
+      #else
+        TC4H = (((motor[3]-1000)<<1)+16)>>8; OCR4D = ((((motor[3]-1000)<<1)+16)&0xFF); //  pin 6
+      #endif
     #endif    
     #if (NUMBER_MOTOR > 4)
       #if !defined(HWPWM6)
@@ -210,8 +235,13 @@ void writeMotors() { // [1000;2000] => [125;250]
           atomicPWM_PIN6_lowState = 15743-atomicPWM_PIN6_highState;        
         #endif
       #else
-        OCR1C = motor[4]<<3; //  pin 11
-        TC4H = motor[5]>>8; OCR4A = (motor[5]&0xFF); //  pin 13    
+        #ifndef EXT_MOTOR_RANGE 
+          OCR1C = motor[4]<<3; //  pin 11
+          TC4H = motor[5]>>8; OCR4A = (motor[5]&0xFF); //  pin 13  
+        #else
+          OCR1C = ((motor[4]<<4) - 16000) + 128;
+          TC4H = (((motor[5]-1000)<<1)+16)>>8; OCR4A = ((((motor[5]-1000)<<1)+16)&0xFF); //  pin 13       
+        #endif  
       #endif
     #endif
     #if (NUMBER_MOTOR > 6)
@@ -290,8 +320,9 @@ void writeMotors() { // [1000;2000] => [125;250]
 /************          Writes the mincommand to all Motors           ******************/
 /**************************************************************************************/
 void writeAllMotors(int16_t mc) {   // Sends commands to all motors
-  for (uint8_t i =0;i<NUMBER_MOTOR;i++)
+  for (uint8_t i =0;i<NUMBER_MOTOR;i++) {
     motor[i]=mc;
+  }
   writeMotors();
 }
 
@@ -301,8 +332,9 @@ void writeAllMotors(int16_t mc) {   // Sends commands to all motors
 void initOutput() {
   
 /****************            mark all PWM pins as Output             ******************/
-  for(uint8_t i=0;i<NUMBER_MOTOR;i++)
+  for(uint8_t i=0;i<NUMBER_MOTOR;i++) {
     pinMode(PWM_PIN[i],OUTPUT);
+  }
     
 /****************  Specific PWM Timers & Registers for the MEGA's    ******************/
   #if defined(MEGA)
@@ -416,6 +448,19 @@ void initOutput() {
       #endif
     #endif
   #endif
+
+ /********  special version of MultiWii to calibrate all attached ESCs ************/
+  #if defined(ESC_CALIB_CANNOT_FLY)
+    writeAllMotors(ESC_CALIB_HIGH);
+    delay(3000);
+    writeAllMotors(ESC_CALIB_LOW);
+    delay(500);
+    while (1) {
+      delay(5000);
+      blinkLED(2,20, 2);
+    }
+    exit; // statement never reached
+  #endif
   
   writeAllMotors(MINCOMMAND);
   delay(300);
@@ -454,31 +499,53 @@ void initializeServo() {
   #if (PRI_SERVO_FROM <= 8 && PRI_SERVO_TO >= 8) || (SEC_SERVO_FROM <= 8 && SEC_SERVO_TO >= 8) 
     SERVO_8_PINMODE;
   #endif
-  
-  #if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6)) // uses timer 0 Comperator A (8 bit)
-    TCCR0A = 0; // normal counting mode
-    TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
-    #define SERVO_ISR TIMER0_COMPA_vect
-    #define SERVO_CHANNEL OCR0A
-    #define SERVO_1K_US 250
+
+  #if defined(SERVO_1_HIGH)  
+    #if defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6)) // uses timer 0 Comperator A (8 bit)
+      TCCR0A = 0; // normal counting mode
+      TIMSK0 |= (1<<OCIE0A); // Enable CTC interrupt
+      #define SERVO_ISR TIMER0_COMPA_vect
+      #define SERVO_CHANNEL OCR0A
+      #define SERVO_1K_US 250
+    #endif
+    #if (defined(PROMICRO) && !defined(HWPWM6)) // uses timer 3 Comperator A (11 bit)
+      TCCR3A &= ~(1<<WGM30) & ~(1<<WGM31); //normal counting & no prescaler
+      TCCR3B &= ~(1<<WGM32) & ~(1<<CS31) & ~(1<<CS32) & ~(1<<WGM33);
+      TCCR3B |= (1<<CS30);   
+      TIMSK3 |= (1<<OCIE3A); // Enable CTC interrupt 
+      #define SERVO_ISR TIMER3_COMPA_vect
+      #define SERVO_CHANNEL OCR3A
+      #define SERVO_1K_US 16000 
+    #endif
+    #if defined(MEGA) // uses timer 5 Comperator A (11 bit)
+      TCCR5A &= ~(1<<WGM50) & ~(1<<WGM51); //normal counting & no prescaler
+      TCCR5B &= ~(1<<WGM52) & ~(1<<CS51) & ~(1<<CS52) & ~(1<<WGM53);
+      TCCR5B |= (1<<CS50);   
+      TIMSK5 |= (1<<OCIE5A); // Enable CTC interrupt  
+      #define SERVO_ISR TIMER5_COMPA_vect
+      #define SERVO_CHANNEL OCR5A
+      #define SERVO_1K_US 16000 
+    #endif
   #endif
-  #if (defined(PROMICRO) && !defined(HWPWM6)) // uses timer 3 Comperator A (11 bit)
-    TCCR3A &= ~(1<<WGM30) & ~(1<<WGM31); //normal counting & no prescaler
-    TCCR3B &= ~(1<<WGM32) & ~(1<<CS31) & ~(1<<CS32) & ~(1<<WGM33);
-    TCCR3B |= (1<<CS30);   
-    TIMSK3 |= (1<<OCIE3A); // Enable CTC interrupt 
-    #define SERVO_ISR TIMER3_COMPA_vect
-    #define SERVO_CHANNEL OCR3A
-    #define SERVO_1K_US 16000 
-  #endif
-  #if defined(MEGA) // uses timer 5 Comperator A (11 bit)
-    TCCR5A &= ~(1<<WGM50) & ~(1<<WGM51); //normal counting & no prescaler
-    TCCR5B &= ~(1<<WGM52) & ~(1<<CS51) & ~(1<<CS52) & ~(1<<WGM53);
-    TCCR5B |= (1<<CS50);   
-    TIMSK5 |= (1<<OCIE5A); // Enable CTC interrupt  
-    #define SERVO_ISR TIMER5_COMPA_vect
-    #define SERVO_CHANNEL OCR5A
-    #define SERVO_1K_US 16000 
+  // init Timer 5 of the mega for hw PWM gimbal servos
+  #if defined(MEGA) && defined(MEGA_HW_GIMBAL)
+    TCCR5A |= (1<<WGM51); // phase correct mode & prescaler to 8
+    TCCR5A &= ~(1<<WGM50);
+    TCCR5B &= ~(1<<WGM52) &  ~(1<<CS50) & ~(1<<CS52);
+    TCCR5B |= (1<<WGM53) | (1<<CS51);
+    #if defined(SERVO_RFR_50HZ) 
+      ICR5   |= 16700; // TOP to 16700; 
+    #endif
+    #if defined(SERVO_RFR_160HZ) 
+      ICR5   |= 6200; // TOP to 6200; 
+    #endif
+    #if defined(SERVO_RFR_300HZ) 
+      ICR5   |= 3330; // TOP to 3330;  
+    #endif
+    pinMode(44,OUTPUT);
+    TCCR5A |= (1<<COM5C1); // pin 44
+    pinMode(45,OUTPUT);
+    TCCR5A |= (1<<COM5B1); // pin 45
   #endif
 }
 
@@ -492,84 +559,86 @@ void initializeServo() {
 
 // for servo 2-8
 // its almost the same as for servo 1
-#define SERVO_PULSE(PIN_HIGH,ACT_STATE,SERVO_NUM,LAST_PIN_LOW) \
-  }else if(state == ACT_STATE){                                \
-    LAST_PIN_LOW;                                              \
-    PIN_HIGH;                                                  \
-    SERVO_CHANNEL+=SERVO_1K_US;                                \
-    state++;                                                   \
-  }else if(state == ACT_STATE+1){                              \
-    SERVO_CHANNEL+=atomicServo[SERVO_NUM];                     \
-    state++;                                                   \
-
-ISR(SERVO_ISR) {
-  static uint8_t state = 0; // indicates the current state of the chain
-  if(state == 0){
-    SERVO_1_HIGH; // set servo 1's pin high 
-    SERVO_CHANNEL+=SERVO_1K_US; // wait 1000us
-    state++; // count up the state
-  }else if(state==1){
-    SERVO_CHANNEL+=atomicServo[SERVO_1_ARR_POS]; // load the servo's value (0-1000us)
-    state++; // count up the state
-  #if defined(SERVO_2_HIGH)
-    SERVO_PULSE(SERVO_2_HIGH,2,SERVO_2_ARR_POS,SERVO_1_LOW); // the same here
-  #endif
-  #if defined(SERVO_3_HIGH)
-    SERVO_PULSE(SERVO_3_HIGH,4,SERVO_3_ARR_POS,SERVO_2_LOW);
-  #endif
-  #if defined(SERVO_4_HIGH)
-    SERVO_PULSE(SERVO_4_HIGH,6,SERVO_4_ARR_POS,SERVO_3_LOW);
-  #endif
-  #if defined(SERVO_5_HIGH)
-    SERVO_PULSE(SERVO_5_HIGH,8,SERVO_5_ARR_POS,SERVO_4_LOW);
-  #endif
-  #if defined(SERVO_6_HIGH)
-    SERVO_PULSE(SERVO_6_HIGH,10,SERVO_6_ARR_POS,SERVO_5_LOW);
-  #endif
-  #if defined(SERVO_7_HIGH)
-    SERVO_PULSE(SERVO_7_HIGH,12,SERVO_7_ARR_POS,SERVO_6_LOW);
-  #endif
-  #if defined(SERVO_8_HIGH)
-    SERVO_PULSE(SERVO_8_HIGH,14,SERVO_8_ARR_POS,SERVO_7_LOW);
-  #endif
-  }else{
-    LAST_LOW;
-    #if defined(SERVO_RFR_300HZ)
-      #if defined(SERVO_3_HIGH)  // if there are 3 or more servos we dont need to slow it down
-        SERVO_CHANNEL+=(SERVO_1K_US>>3); // 0 would be better but it causes bad jitter
-        state=0; 
-      #else // if there are less then 3 servos we need to slow it to not go over 300Hz (the highest working refresh rate for the digital servos for what i know..)
+#if defined(SERVO_1_HIGH)
+  #define SERVO_PULSE(PIN_HIGH,ACT_STATE,SERVO_NUM,LAST_PIN_LOW) \
+    }else if(state == ACT_STATE){                                \
+      LAST_PIN_LOW;                                              \
+      PIN_HIGH;                                                  \
+      SERVO_CHANNEL+=SERVO_1K_US;                                \
+      state++;                                                   \
+    }else if(state == ACT_STATE+1){                              \
+      SERVO_CHANNEL+=atomicServo[SERVO_NUM];                     \
+      state++;                                                   \
+  
+  ISR(SERVO_ISR) {
+    static uint8_t state = 0; // indicates the current state of the chain
+    if(state == 0){
+      SERVO_1_HIGH; // set servo 1's pin high 
+      SERVO_CHANNEL+=SERVO_1K_US; // wait 1000us
+      state++; // count up the state
+    }else if(state==1){
+      SERVO_CHANNEL+=atomicServo[SERVO_1_ARR_POS]; // load the servo's value (0-1000us)
+      state++; // count up the state
+    #if defined(SERVO_2_HIGH)
+      SERVO_PULSE(SERVO_2_HIGH,2,SERVO_2_ARR_POS,SERVO_1_LOW); // the same here
+    #endif
+    #if defined(SERVO_3_HIGH)
+      SERVO_PULSE(SERVO_3_HIGH,4,SERVO_3_ARR_POS,SERVO_2_LOW);
+    #endif
+    #if defined(SERVO_4_HIGH)
+      SERVO_PULSE(SERVO_4_HIGH,6,SERVO_4_ARR_POS,SERVO_3_LOW);
+    #endif
+    #if defined(SERVO_5_HIGH)
+      SERVO_PULSE(SERVO_5_HIGH,8,SERVO_5_ARR_POS,SERVO_4_LOW);
+    #endif
+    #if defined(SERVO_6_HIGH)
+      SERVO_PULSE(SERVO_6_HIGH,10,SERVO_6_ARR_POS,SERVO_5_LOW);
+    #endif
+    #if defined(SERVO_7_HIGH)
+      SERVO_PULSE(SERVO_7_HIGH,12,SERVO_7_ARR_POS,SERVO_6_LOW);
+    #endif
+    #if defined(SERVO_8_HIGH)
+      SERVO_PULSE(SERVO_8_HIGH,14,SERVO_8_ARR_POS,SERVO_7_LOW);
+    #endif
+    }else{
+      LAST_LOW;
+      #if defined(SERVO_RFR_300HZ)
+        #if defined(SERVO_3_HIGH)  // if there are 3 or more servos we dont need to slow it down
+          SERVO_CHANNEL+=(SERVO_1K_US>>3); // 0 would be better but it causes bad jitter
+          state=0; 
+        #else // if there are less then 3 servos we need to slow it to not go over 300Hz (the highest working refresh rate for the digital servos for what i know..)
+          SERVO_CHANNEL+=SERVO_1K_US;
+          if(state<4){
+            state+=2;
+          }else{
+            state=0;
+          }
+        #endif
+      #endif
+      #if defined(SERVO_RFR_160HZ)
+        #if defined(SERVO_4_HIGH)  // if there are 4 or more servos we dont need to slow it down
+          SERVO_CHANNEL+=(SERVO_1K_US>>3); // 0 would be better but it causes bad jitter
+          state=0; 
+        #else // if there are less then 4 servos we need to slow it to not go over ~170Hz (the highest working refresh rate for analog servos)
+          SERVO_CHANNEL+=SERVO_1K_US;
+          if(state<8){
+            state+=2;
+          }else{
+            state=0;
+          }
+        #endif
+      #endif   
+      #if defined(SERVO_RFR_50HZ) // to have ~ 50Hz for all servos
         SERVO_CHANNEL+=SERVO_1K_US;
-        if(state<4){
+        if(state<30){
           state+=2;
         }else{
           state=0;
-        }
+        }     
       #endif
-    #endif
-    #if defined(SERVO_RFR_160HZ)
-      #if defined(SERVO_4_HIGH)  // if there are 4 or more servos we dont need to slow it down
-        SERVO_CHANNEL+=(SERVO_1K_US>>3); // 0 would be better but it causes bad jitter
-        state=0; 
-      #else // if there are less then 4 servos we need to slow it to not go over ~170Hz (the highest working refresh rate for analog servos)
-        SERVO_CHANNEL+=SERVO_1K_US;
-        if(state<8){
-          state+=2;
-        }else{
-          state=0;
-        }
-      #endif
-    #endif   
-    #if defined(SERVO_RFR_50HZ) // to have ~ 50Hz for all servos
-      SERVO_CHANNEL+=SERVO_1K_US;
-      if(state<30){
-        state+=2;
-      }else{
-        state=0;
-      }     
-    #endif
-  }
-} 
+    }
+  } 
+  #endif
 #endif
 
 /**************************************************************************************/
@@ -730,8 +799,8 @@ void mixTable() {
   #ifdef BI
     motor[0] = PIDMIX(+1, 0, 0); //LEFT
     motor[1] = PIDMIX(-1, 0, 0); //RIGHT        
-    servo[4]  = constrain(1500 + YAW_DIRECTION * (axisPID[YAW] + axisPID[PITCH]), 1020, 2000); //LEFT
-    servo[5]  = constrain(1500 + YAW_DIRECTION * (axisPID[YAW] - axisPID[PITCH]), 1020, 2000); //RIGHT
+    servo[4]  = constrain(1500 + (YAW_DIRECTION * axisPID[YAW]) + axisPID[PITCH], 1020, 2000); //LEFT
+    servo[5]  = constrain(1500 + (YAW_DIRECTION * axisPID[YAW]) - axisPID[PITCH], 1020, 2000); //RIGHT
   #endif
   #ifdef TRI
     motor[0] = PIDMIX( 0,+4/3, 0); //REAR
@@ -766,18 +835,18 @@ void mixTable() {
     motor[5] = PIDMIX(+1,-2/3,+1); //UNDER_LEFT    
   #endif
   #ifdef HEX6
-    motor[0] = PIDMIX(-1/2,+1/2,+1); //REAR_R
-    motor[1] = PIDMIX(-1/2,-1/2,-1); //FRONT_R
-    motor[2] = PIDMIX(+1/2,+1/2,+1); //REAR_L
-    motor[3] = PIDMIX(+1/2,-1/2,-1); //FRONT_L
+    motor[0] = PIDMIX(-7/8,+1/2,+1); //REAR_R
+    motor[1] = PIDMIX(-7/8,-1/2,-1); //FRONT_R
+    motor[2] = PIDMIX(+7/8,+1/2,+1); //REAR_L
+    motor[3] = PIDMIX(+7/8,-1/2,-1); //FRONT_L
     motor[4] = PIDMIX(+0  ,-1  ,+1); //FRONT
     motor[5] = PIDMIX(+0  ,+1  ,-1); //REAR
   #endif
   #ifdef HEX6X
-    motor[0] = PIDMIX(-1/2,+1/2,+1); //REAR_R
-    motor[1] = PIDMIX(-1/2,-1/2,+1); //FRONT_R
-    motor[2] = PIDMIX(+1/2,+1/2,-1); //REAR_L
-    motor[3] = PIDMIX(+1/2,-1/2,-1); //FRONT_L
+    motor[0] = PIDMIX(-1/2,+7/8,+1); //REAR_R
+    motor[1] = PIDMIX(-1/2,-7/8,+1); //FRONT_R
+    motor[2] = PIDMIX(+1/2,+7/8,-1); //REAR_L
+    motor[3] = PIDMIX(+1/2,-7/8,-1); //FRONT_L
     motor[4] = PIDMIX(-1  ,+0  ,-1); //RIGHT
     motor[5] = PIDMIX(+1  ,+0  ,+1); //LEFT
   #endif
@@ -812,10 +881,10 @@ void mixTable() {
     motor[7] = PIDMIX(+1  ,+1/2,-1); //MIDREAR_L 
   #endif
   #ifdef VTAIL4
-    motor[0] = PIDMIX(+0,+1, -1/2); //REAR_R 
-    motor[1] = PIDMIX(-1, -1, +0);  //FRONT_R 
-    motor[2] = PIDMIX(+0,+1, +1/2); //REAR_L 
-    motor[3] = PIDMIX(+1, -1, -0);  //FRONT_L
+    motor[0] = PIDMIX(+0,+1, +1); //REAR_R
+    motor[1] = PIDMIX(-1, -1, +0); //FRONT_R
+    motor[2] = PIDMIX(+0,+1, -1); //REAR_L
+    motor[3] = PIDMIX(+1, -1, -0); //FRONT_L
   #endif
 
   /****************                Cam stabilize Sevos             ******************/
@@ -867,7 +936,7 @@ void mixTable() {
   #endif
   #if defined(FLYING_WING)
     motor[0] = rcCommand[THROTTLE];
-    if (passThruMode) {// do not use sensors for correction, simple 2 channel mixing
+    if (f.PASSTHRU_MODE) {// do not use sensors for correction, simple 2 channel mixing
        servo[0]  = PITCH_DIRECTION_L * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_L * (rcData[ROLL]-MIDRC);
        servo[1]  = PITCH_DIRECTION_R * (rcData[PITCH]-MIDRC) + ROLL_DIRECTION_R * (rcData[ROLL]-MIDRC);
     } else { // use sensors to correct (gyro only or gyro+acc according to aux1/aux2 configuration
@@ -879,7 +948,7 @@ void mixTable() {
   #endif
   
   /************************************************************************************************************/
-  #if defined(AIRPLANE)
+  #if defined(AIRPLANE) || defined(SINGLECOPTER) || defined(DUALCOPTER)
     // Common parts for Plane and Heli
     static int16_t   servoMid[8];                        // Midpoint on servo
     static uint8_t   servoTravel[8] = SERVO_RATES;       // Rates in 0-100% 
@@ -900,33 +969,90 @@ void mixTable() {
     // servo[7] is programmed with safty features to avoid motorstarts when ardu reset..  
     // All other servos go to center at reset..  Half throttle can be dangerus    
     // Only use servo[7] as motorcontrol if motor is used in the setup            */
-    if (!armed){ 
+    if (!f.ARMED){ 
       servo[7] =  MINCOMMAND; // Kill throttle when disarmed
     } else {   
       servo[7] =  rcData[THROTTLE];
     }
 
     // Flapperon Controll
-    int16_t flaps[2]={0,0};    
-  #if  defined(FLAP_CHANNEL) && defined(FLAP_EP) && defined(FLAP_INVERT)  
-    int8_t flapinv[2] = FLAP_INVERT; 
-    static int16_t F_Endpoint[2] = FLAP_EP;
-    int16_t flap = (MIDRC- constrain(rcData[FLAP_CHANNEL],F_Endpoint[0],F_Endpoint[1]));
-    for(i=0; i<2; i++){flaps[i] = flap * flapinv[i] ;}
-  #endif
-
-    if(passThruMode){   // Direct passthru from RX 
-      servo[3]  = servoMid[3]+((rcCommand[ROLL] + flaps[0]) *servoReverse[3]);     //   Wing 1
-      servo[4]  = servoMid[4]+((rcCommand[ROLL] + flaps[1]) *servoReverse[4]);     //   Wing 2
-      servo[5]  = servoMid[5]+(rcCommand[YAW]               *servoReverse[5]);     //   Rudder
-      servo[6]  = servoMid[6]+(rcCommand[PITCH]             *servoReverse[6]);     //   Elevator 
+    int16_t flapperons[2]={0,0};    
+    #if  defined(FLAPPERONS) && defined(FLAPPERON_EP)
+      int8_t flapinv[2] = FLAPPERON_INVERT; 
+      static int16_t F_Endpoint[2] = FLAPPERON_EP;
+      int16_t flap =MIDRC-constrain(rcData[FLAPPERONS],F_Endpoint[1],F_Endpoint[0]);
+      static int16_t slowFlaps= flap;
+      #if defined(FLAPSPEED)
+        if (slowFlaps < flap ){slowFlaps+=FLAPSPEED;}else if(slowFlaps > flap){slowFlaps-=FLAPSPEED;}
+      #else
+        slowFlaps = flap;
+      #endif      
+      flap = MIDRC-(constrain(MIDRC-slowFlaps,F_Endpoint[0],F_Endpoint[1]));      
+    for(i=0; i<2; i++){flapperons[i] = flap * flapinv[i] ;}
+    #endif
+    
+    // Traditional Flaps on A2
+    #if defined(FLAPS)  && defined(FLAP_EP)
+      static int16_t lF_Endpoint[2] = FLAP_EP;
+      int16_t lFlap = MIDRC-constrain(rcData[FLAPS],lF_Endpoint[0],lF_Endpoint[1]);
+      static int16_t slow_LFlaps= lFlap;
+      #if defined(FLAPSPEED)
+        if (slow_LFlaps < lFlap ){slow_LFlaps+=FLAPSPEED;}else if(slow_LFlaps > lFlap){slow_LFlaps-=FLAPSPEED;}
+      #else
+        slow_LFlaps = lFlap;
+      #endif
+      servo[2]    =  servoMid[2]+(slow_LFlaps *servoReverse[2]);
+    #endif
+    
+    #if defined(AIRPLANE)
+    if(f.PASSTHRU_MODE){   // Direct passthru from RX 
+      servo[3]  = servoMid[3]+((rcCommand[ROLL] + flapperons[0]) *servoReverse[3]);     //   Wing 1
+      servo[4]  = servoMid[4]+((rcCommand[ROLL] + flapperons[1]) *servoReverse[4]);     //   Wing 2
+      servo[5]  = servoMid[5]+(rcCommand[YAW]                    *servoReverse[5]);     //   Rudder
+      servo[6]  = servoMid[6]+(rcCommand[PITCH]                  *servoReverse[6]);     //   Elevator 
     }else{
+	
       // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
-      servo[3]  =(servoMid[3] + ((axisPID[ROLL] + flaps[0]) *servoReverse[3]));   //   Wing 1 
-      servo[4]  =(servoMid[4] + ((axisPID[ROLL] + flaps[1]) *servoReverse[4]));   //   Wing 2
-      servo[5]  =(servoMid[5] + (axisPID[YAW]               *servoReverse[5]));   //   Rudder
-      servo[6]  =(servoMid[6] + (axisPID[PITCH]             *servoReverse[6]));   //   Elevator
-    } 
+      servo[3]  =(servoMid[3] + ((axisPID[ROLL] + flapperons[0]) *servoReverse[3]));   //   Wing 1 
+      servo[4]  =(servoMid[4] + ((axisPID[ROLL] + flapperons[1]) *servoReverse[4]));   //   Wing 2
+      servo[5]  =(servoMid[5] + (axisPID[YAW]                    *servoReverse[5]));   //   Rudder
+      servo[6]  =(servoMid[6] + (axisPID[PITCH]                  *servoReverse[6]));   //   Elevator	 
+    }  
+    #endif
+/*************************************************************************************************************************/
+/*************************************************************************************************************************/
+/******************                   Development of single & DualCopter                            **********************/
+/*************************************************************************************************************************/
+/*************************************************************************************************************************/
+    #if  defined(SINGLECOPTER)
+    int8_t yawServo[4] =SINGLECOPTRER_YAW;
+    int8_t scServo[4]  =SINGLECOPTRER_SERVO;
+    // Singlecopter  
+    // This is a beta requested by  xuant9
+    // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
+    // http://www.kkmulticopter.kr/multicopter/images/blue_single.jpg
+      servo[3]  = servoMid[3] + (axisPID[YAW]*yawServo[0]) + (axisPID[PITCH]*scServo[0])  ;   //   SideServo  5  D12
+      servo[4]  = servoMid[4] + (axisPID[YAW]*yawServo[1]) + (axisPID[PITCH]*scServo[1])  ;   //   SideServo  3  D11
+      servo[5]  = servoMid[5] + (axisPID[YAW]*yawServo[2]) + (axisPID[ROLL] *scServo[2])  ;   //   FrontServo 2  D3
+      servo[6]  = servoMid[6] + (axisPID[YAW]*yawServo[3]) + (axisPID[ROLL] *scServo[3])  ;   //   RearServo  4  D10
+      motor[1]  = rcData[THROTTLE] ;                                                          //  Pin D10
+    #endif 
+    #if  defined(DUALCOPTER)
+     int8_t dcServo[2]  =DUALCOPTER_SERVO;
+    // Dualcopter  
+    // This is a beta requested by  xuant9
+    // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
+    //http://www.kkmulticopter.kr/products_pic/index.html?sn=multicopter_v02_du&name=KKMultiCopter%20Flight%20Controller%20Blackboard%3Cbr%3E
+      servo[5]  = servoMid[5] + (axisPID[PITCH] * dcServo[0]) ;  //  PITCHServo 3  D12
+      servo[6]  = servoMid[6] + (axisPID[ROLL]  * dcServo[1]) ;  //  ROLLServo  4  D11
+      motor[0] = PIDMIX(0,0,-1);                                 //  Pin D9
+      motor[1] = PIDMIX(0,0,+1);                                 //  Pin D10
+    #endif	
+
+/*************************************************************************************************************************/ 
+/*************************************************************************************************************************/ 
+/*************************************************************************************************************************/ 
+/*************************************************************************************************************************/    
     // ServoRates
     for(i=3;i<8;i++){
       servo[i]  = map(servo[i], SERVO_MIN, SERVO_MAX,servoLimit[i][0],servoLimit[i][1]);
@@ -961,7 +1087,7 @@ void mixTable() {
       collective = collect * (collRange[0]*0.01); 
     } 
 
-    if(passThruMode){ // Use Rcdata Without sensors
+    if(f.PASSTHRU_MODE){ // Use Rcdata Without sensors
       heliRoll=  rcCommand[ROLL] ;
       heliNick=  rcCommand[PITCH];
     } else{ // Assisted modes
@@ -982,7 +1108,7 @@ void mixTable() {
   /* Throttle & YAW
   ********************
   Handeled in common functions for Heli */
-    if (!armed){ 
+    if (!f.ARMED){ 
       servo[7] = 900; // Kill throttle when disarmed
       if (YAWMOTOR){servo[5] =  MINCOMMAND;} else {servo[5] =  yawControll; } // Kill YAWMOTOR when disarmed
     }else {   
@@ -990,6 +1116,9 @@ void mixTable() {
       if (YAWMOTOR && rcData[THROTTLE] < MINTHROTTLE){servo[5] =  MINCOMMAND;}
       else{ servo[5] =  yawControll; }     // YawSero	 
     }
+    #ifndef HELI_USE_SERVO_FOR_THROTTLE
+      motor[0] = servo[7]; // use real motor output - ESC capable
+    #endif
 
 
   //              ( Collective, Pitch/Nick, Roll ) Change sign to invert
@@ -1062,7 +1191,7 @@ void mixTable() {
       #else
         motor[i] = MINCOMMAND;
       #endif
-    if (armed == 0)
+    if (!f.ARMED)
       motor[i] = MINCOMMAND;
   }
   /****************                      Powermeter Log                    ******************/
@@ -1082,7 +1211,7 @@ void mixTable() {
     if (vbat) { // by all means - must avoid division by zero 
       for (i =0;i<NUMBER_MOTOR;i++) {
         amp = amperes[ ((motor[i] - 1000)>>4) ] / vbat; // range mapped from [1000:2000] => [0:1000]; then break that up into 64 ranges; lookup amp
-  	  #if (LOG_VALUES == 2)
+  	    #if (LOG_VALUES == 2)
            pMeter[i]+= amp; // sum up over time the mapped ESC input 
         #endif
         #if defined(POWERMETER_SOFT)
