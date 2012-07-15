@@ -332,7 +332,7 @@ void getEstimatedAltitude() {
    EstAlt = (BaroAlt*temp32 + EstAlt*(32 - temp32))/32;
 
    //D
-   temp32 = conf.P8[PIDALT]*(deltaSumSmooth) / (DELTA_TAB_SIZE*2);
+   temp32 = conf.D8[PIDALT]*(deltaSumSmooth) / (DELTA_TAB_SIZE*2);
    tempPID-=temp32;
 
    AltError = constrain( AltHold - EstAlt, -1000, 1000);
@@ -342,7 +342,7 @@ void getEstimatedAltitude() {
    tempPID = constrain(tempPID,-150,+150); //sum of P and D should be in range 150
 
    //I
-   errorAltitudeI += temp32*conf.P8[PIDALT]/50;
+   errorAltitudeI += temp32*conf.I8[PIDALT]/50;
    errorAltitudeI = constrain(errorAltitudeI,-30000,30000);
    temp32 = errorAltitudeI / 500; //I in range +/-60
    tempPID+=temp32;
