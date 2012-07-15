@@ -17,8 +17,8 @@ void computeIMU () {
     getEstimatedAttitude(); // computation time must last less than one interleaving delay
     while((micros()-timeInterleave)<INTERLEAVING_DELAY) ; //interleaving delay between 2 consecutive reads
     timeInterleave=micros();
-    nunchukData = 1;
-    while(nunchukData == 1) ACC_getADC(); // For this interleaving reading, we must have a gyro update at this point (less delay)
+    f.NUNCHUKDATA = 1;
+    while(f.NUNCHUKDATA) ACC_getADC(); // For this interleaving reading, we must have a gyro update at this point (less delay)
 
     for (axis = 0; axis < 3; axis++) {
       // empirical, we take a weighted value of the current and the previous values
@@ -95,21 +95,17 @@ void computeIMU () {
 /* Set the Low Pass Filter factor for Magnetometer */
 /* Increasing this value would reduce Magnetometer noise (not visible in GUI), but would increase Magnetometer lag time*/
 /* Comment this if  you do not want filter at all.*/
-/* Default WMC value: n/a*/
 #ifndef MG_LPF_FACTOR
-//#define MG_LPF_FACTOR 4
+  //#define MG_LPF_FACTOR 4
 #endif
 
 /* Set the Gyro Weight for Gyro/Acc complementary filter */
-/* Increasing this value would reduce and delay Acc influence on the output of the filter*/
-/* Default WMC value: 300*/
-#ifndef GYR_CMPF_FACTOR
+/* Increasing this value would reduce and delay Acc influence on the output of the filter*/#ifndef GYR_CMPF_FACTOR
   #define GYR_CMPF_FACTOR 400.0f
 #endif
 
 /* Set the Gyro Weight for Gyro/Magnetometer complementary filter */
 /* Increasing this value would reduce and delay Magnetometer influence on the output of the filter*/
-/* Default WMC value: n/a*/
 #ifndef GYR_CMPFM_FACTOR
   #define GYR_CMPFM_FACTOR 200.0f
 #endif
@@ -222,15 +218,16 @@ void getEstimatedAttitude(){
     rotateV(&EstM.V,deltaGyroAngle);
   #endif 
 
-  if ( abs(accSmooth[ROLL])<acc_25deg && abs(accSmooth[PITCH])<acc_25deg && accSmooth[YAW]>0)
-    smallAngle25 = 1;
-  else
-    smallAngle25 = 0;
+  if ( abs(accSmooth[ROLL])<acc_25deg && abs(accSmooth[PITCH])<acc_25deg && accSmooth[YAW]>0) {
+    f.SMALL_ANGLES_25 = 1;
+  } else {
+    f.SMALL_ANGLES_25 = 0;
+  }
 
   // Apply complimentary filter (Gyro drift correction)
   // If accel magnitude >1.4G or <0.6G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
   // To do that, we just skip filter, as EstV already rotated by Gyro
-  if ( ( 36 < accMag && accMag < 196 ) || smallAngle25 )
+  if ( ( 36 < accMag && accMag < 196 ) || f.SMALL_ANGLES_25 )
     for (axis = 0; axis < 3; axis++) {
       int16_t acc = ACC_VALUE;
       EstG.A[axis] = (EstG.A[axis] * GYR_CMPF_FACTOR + acc) * INV_GYR_CMPF_FACTOR;
@@ -267,9 +264,9 @@ void getEstimatedAltitude(){
   static int32_t BaroHigh,BaroLow;
   int32_t temp32;
   int16_t last;
-  
-  if (currentTime < deadLine) return;
-  deadLine = currentTime + UPDATE_INTERVAL; 
+
+  if (abs(currentTime - deadLine) < UPDATE_INTERVAL) return;
+  deadLine = currentTime; 
 
   //**** Alt. Set Point stabilization PID ****
   //calculate speed for D calculation
