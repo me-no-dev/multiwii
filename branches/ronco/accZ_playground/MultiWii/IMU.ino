@@ -256,9 +256,6 @@ void getEstimatedAttitude(){
   getACCalt();
 }
 
-
-
-
 float InvSqrt (float x){ 
   union{  
     int32_t i;  
@@ -273,15 +270,15 @@ int32_t isq(int32_t x){
   return x * x;
 }
 
-
 void getACCalt(){
   static int16_t ACCZ, AccZ, AccZLast;
-  static float AccScale = 920.0f/acc_1G;
+  //static float AccScale = 512.0f/acc_1G;// assuming marbalon uses a MPU6050 without scale so 1:1
+  static float AccScale = 150.0f/acc_1G; // i got better results with 150
   
   // ACC Z angle correction of 1.9  
   ACCZ = accSmooth[YAW];
   AccZ = (ACCZ * (1 - acc_1G * InvSqrt(isq(accSmooth[ROLL]) + isq(accSmooth[PITCH]) + isq(ACCZ)))) * AccScale; 
-    
+  
   AccZSum += AccZLast - AccZ;
   AccZLast = AccZ;
 
@@ -291,7 +288,8 @@ void getACCalt(){
 
 #define UPDATE_INTERVAL 25000
 #define INIT_DELAY 4000000
-#define DELTA_TAB_SIZE  30
+//#define DELTA_TAB_SIZE  30
+#define DELTA_TAB_SIZE  15
 
 void getEstimatedAltitude() {
    static uint8_t inited = 0;
@@ -325,7 +323,8 @@ void getEstimatedAltitude() {
       deltaHistIdx = 0;
 
    //little filtering for AccZ 
-   AccZSumSmooth =  + AccZSumSmooth * 0.8 + AccZSum * 0.2;
+   //AccZSumSmooth =  + AccZSumSmooth * 0.8 + AccZSum * 0.2;
+   AccZSumSmooth =  + AccZSumSmooth * 0.7 + AccZSum * 0.3;
 
    //now try to smooth deltaSum and Est Altiture using ACC Z readings
    temp32 = constrain(abs(AccZSumSmooth),1,31);
@@ -352,4 +351,3 @@ void getEstimatedAltitude() {
 
    AccZSum = 0;
 }
-
