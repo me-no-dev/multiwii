@@ -18,3 +18,6 @@ If neccessary, the low and high values for the ESCs can be tweaked by changing t
 
 = Warning =
 Remove propellers or tie your copter down. Seriously. If for whatever reason this firmware would not make the ESCs enter calibration mode, it would nevertheless send 'full throttle' signals to the ESCs for some time. This is guaranteed to be dangerous.
+
+= !!! =
+This page is not maintained any more. The information was moved to the new official multiwii wiki at http://www.multiwii.com/wiki/index.php?title=Extra_features#ESCsCalibration
