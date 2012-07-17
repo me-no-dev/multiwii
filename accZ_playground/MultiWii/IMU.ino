@@ -273,7 +273,7 @@ int32_t isq(int32_t x){
 void getACCalt(){
   static int16_t ACCZ, AccZ, AccZLast;
   //static float AccScale = 512.0f/acc_1G;// assuming marbalon uses a MPU6050 without scale so 1:1
-  static float AccScale = 150.0f/acc_1G; // i got better results with 150
+  static float AccScale = 420.0f/acc_1G;
   
   // ACC Z angle correction of 1.9  
   ACCZ = accSmooth[YAW];
@@ -281,15 +281,15 @@ void getACCalt(){
   
   AccZSum += AccZLast - AccZ;
   AccZLast = AccZ;
-
 }
 
 // Altitude hold with ACC Z by Marcin (marbalon)
 
 #define UPDATE_INTERVAL 25000
 #define INIT_DELAY 4000000
-//#define DELTA_TAB_SIZE  30
-#define DELTA_TAB_SIZE  15
+#define DELTA_TAB_SIZE  30
+#define V_BAT_COMP 2
+//#define DELTA_TAB_SIZE  15
 
 void getEstimatedAltitude() {
    static uint8_t inited = 0;
@@ -323,8 +323,8 @@ void getEstimatedAltitude() {
       deltaHistIdx = 0;
 
    //little filtering for AccZ 
-   //AccZSumSmooth =  + AccZSumSmooth * 0.8 + AccZSum * 0.2;
-   AccZSumSmooth =  + AccZSumSmooth * 0.7 + AccZSum * 0.3;
+   AccZSumSmooth =  + AccZSumSmooth * 0.8 + AccZSum * 0.2;
+   //AccZSumSmooth =  + AccZSumSmooth * 0.7 + AccZSum * 0.3;
 
    //now try to smooth deltaSum and Est Altiture using ACC Z readings
    temp32 = constrain(abs(AccZSumSmooth),1,31);
@@ -339,6 +339,8 @@ void getEstimatedAltitude() {
 
    //P
    tempPID += conf.P8[PIDALT]*constrain(AltError,(-2)*conf.P8[PIDALT],2*conf.P8[PIDALT])/100;
+   if (AltError < 0)  //less correction when copter drop down
+      tempPID *= 0.8f; 
    tempPID = constrain(tempPID,-150,+150); //sum of P and D should be in range 150
 
    //I
@@ -348,6 +350,17 @@ void getEstimatedAltitude() {
    tempPID+=temp32;
 
    BaroPID = tempPID;
-
+   
+   #if defined(V_BAT_COMP) && defined(VBAT)
+     static uint8_t VbatVal = 0;
+     if (f.BARO_MODE && VbatVal == 0) {
+       VbatVal = vbat;
+     }
+     if (!f.BARO_MODE) {
+       VbatVal = 0;
+     }  
+     BaroPID += constrain((vbat-VbatVal)*V_BAT_COMP,-10,10);
+   #endif
+   
    AccZSum = 0;
 }
