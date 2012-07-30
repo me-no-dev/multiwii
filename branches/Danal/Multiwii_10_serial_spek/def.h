@@ -1,4 +1,38 @@
 /**************************************************************************************/
+/***************             test configurations                   ********************/
+/**************************************************************************************/
+#if COPTERTEST == 1
+  #define QUADP
+  #define WMP
+#elif COPTERTEST == 2
+  #define FLYING_WING
+  #define WMP
+  #define BMA020
+  #define FAILSAFE
+  #define LCD_CONF
+  #define LCD_TEXTSTAR
+#elif COPTERTEST == 3
+  #define TRI
+  #define FREEIMUv035_MS
+  #define BUZZER
+  #define VBAT
+  #define POWERMETER_HARD
+  #define LCD_CONF
+  #define LCD_VT100
+  #define LCD_TELEMETRY
+  #define LCD_TELEMETRY_STEP "01245"
+#elif COPTERTEST == 4
+  #define QUADX
+  #define CRIUS_SE
+  #define SPEKTRUM 2048
+  #define LED_RING
+  #define GPS_SERIAL 2
+#elif defined(COPTERTEST)
+  #error "*** this test is not yet defined"
+#endif
+
+
+/**************************************************************************************/
 /***************             Proc specific definitions             ********************/
 /**************************************************************************************/
 // Proc auto detection
@@ -77,7 +111,7 @@
   #define V_BATPIN                   A3    // Analog PIN 3
   #define PSENSORPIN                 A2    // Analog PIN 2
   
-  #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR < 8)
+  #if defined(A0_A1_PIN_HEX) || (NUMBER_MOTOR > 6)
     #define SOFT_PWM_1_PIN_HIGH        PORTC |= 1<<0;
     #define SOFT_PWM_1_PIN_LOW         PORTC &= ~(1<<0);
     #define SOFT_PWM_2_PIN_HIGH        PORTC |= 1<<1;
@@ -175,10 +209,21 @@
   #define SOFT_PWM_1_PIN_LOW         PORTD &= ~(1<<4);
   #define SOFT_PWM_2_PIN_HIGH        PORTF |= 1<<5;
   #define SOFT_PWM_2_PIN_LOW         PORTF &= ~(1<<5);
-  #define SOFT_PWM_3_PIN_HIGH        PORTF |= 1<<7;
-  #define SOFT_PWM_3_PIN_LOW         PORTF &= ~(1<<7);
-  #define SOFT_PWM_4_PIN_HIGH        PORTF |= 1<<6;
-  #define SOFT_PWM_4_PIN_LOW         PORTF &= ~(1<<6);
+  #if !defined(A32U4ALLPINS)
+    #define SOFT_PWM_3_PIN_HIGH        PORTF |= 1<<7;
+    #define SOFT_PWM_3_PIN_LOW         PORTF &= ~(1<<7);
+    #define SOFT_PWM_4_PIN_HIGH        PORTF |= 1<<6;
+    #define SOFT_PWM_4_PIN_LOW         PORTF &= ~(1<<6);
+    #define SW_PWM_P3                  A1        
+    #define SW_PWM_P4                  A0
+  #else
+    #define SOFT_PWM_3_PIN_HIGH        PORTF |= 1<<4;
+    #define SOFT_PWM_3_PIN_LOW         PORTF &= ~(1<<4);
+    #define SOFT_PWM_4_PIN_HIGH        PORTF |= 1<<5;
+    #define SOFT_PWM_4_PIN_LOW         PORTF &= ~(1<<5); 
+    #define SW_PWM_P3                  A2        
+    #define SW_PWM_P4                  A3 
+  #endif
   
   // Servos
   #define SERVO_1_PINMODE   DDRF |= (1<<7); // A0
@@ -199,12 +244,12 @@
     #define SERVO_4_PIN_HIGH  PORTF |= 1<<4;
     #define SERVO_4_PIN_LOW   PORTF &= ~(1<<4);  
   #endif
-  #define SERVO_5_PINMODE   DDRD |= (1<<7); // 6
-  #define SERVO_5_PIN_HIGH  PORTD |= 1<<7;
-  #define SERVO_5_PIN_LOW   PORTD &= ~(1<<7);
-  #define SERVO_6_PINMODE   DDRC |= (1<<6); // 5
-  #define SERVO_6_PIN_HIGH  PORTC|= 1<<6;
-  #define SERVO_6_PIN_LOW   PORTC &= ~(1<<6);
+  #define SERVO_5_PINMODE   DDRC |= (1<<6); // 5
+  #define SERVO_5_PIN_HIGH  PORTC|= 1<<6;
+  #define SERVO_5_PIN_LOW   PORTC &= ~(1<<6);
+  #define SERVO_6_PINMODE   DDRD |= (1<<7); // 6
+  #define SERVO_6_PIN_HIGH  PORTD |= 1<<7;
+  #define SERVO_6_PIN_LOW   PORTD &= ~(1<<7);
   #define SERVO_7_PINMODE   DDRB |= (1<<6); // 10
   #define SERVO_7_PIN_HIGH  PORTB |= 1<<6;
   #define SERVO_7_PIN_LOW   PORTB &= ~(1<<6);
@@ -385,8 +430,6 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define BMA180_ADDRESS 0x80
-  #define ITG3200_ADDRESS 0XD0
 #endif
 
 #if defined(FFIMUv2)
@@ -397,8 +440,6 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  Y; magADC[PITCH]  = -X; magADC[YAW]  = -Z;}
-  #define BMA180_ADDRESS 0x80
-  #define ITG3200_ADDRESS 0XD0
 #endif
 
 #if defined(FREEIMUv1)
@@ -408,7 +449,7 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X;  magADC[PITCH] =  Y; magADC[YAW]  = -Z;}
-  #define ADXL345_ADDRESS 0xA6
+  #define ADXL345_ADDRESS 0x53
   #undef INTERNAL_I2C_PULLUPS
 #endif
 
@@ -419,7 +460,7 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define ADXL345_ADDRESS 0xA6
+  #define ADXL345_ADDRESS 0x53
   #undef INTERNAL_I2C_PULLUPS
 #endif
 
@@ -458,6 +499,28 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
   #undef INTERNAL_I2C_PULLUPS
+  // move motor 7 & 8 to pin 4 & A2
+  #define SOFT_PWM_3_PIN_HIGH        PORTD |= 1<<4;
+  #define SOFT_PWM_3_PIN_LOW         PORTD &= ~(1<<4);
+  #define SOFT_PWM_4_PIN_HIGH        PORTF |= 1<<5;
+  #define SOFT_PWM_4_PIN_LOW         PORTF &= ~(1<<5);
+  #define SW_PWM_P3                  4        
+  #define SW_PWM_P4                  A2
+  #define HWPWM6
+  // move servo 3 & 4 to pin 12 & 11
+  #define SERVO_3_PINMODE   DDRD |= (1<<6); // 12
+  #define SERVO_3_PIN_HIGH  PORTD |= 1<<6;
+  #define SERVO_3_PIN_LOW   PORTD &= ~(1<<6);
+  #define SERVO_4_PINMODE   DDRB |= (1<<7); // 11
+  #define SERVO_4_PIN_HIGH  PORTB |= 1<<7;
+  #define SERVO_4_PIN_LOW   PORTB &= ~(1<<7);
+  // use pin 4 as status LED output if we have no octo
+  #if !defined(OCTOX8) && !defined(OCTOFLATP) && !defined(OCTOFLATX)
+    #define LEDPIN_PINMODE             DDRD |= (1<<4);            //D4 to output
+    #define LEDPIN_TOGGLE              PIND |= (1<<5)|(1<<4);     //switch LEDPIN state (Port D5) & pin D4
+    #define LEDPIN_OFF                 PORTD |= (1<<5); PORTD &= ~(1<<4);
+    #define LEDPIN_ON                  PORTD &= ~(1<<5); PORTD |= (1<<4);  
+  #endif
 #endif
 
 #if defined(PIPO)
@@ -467,7 +530,7 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] =  Y; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  Y; magADC[PITCH]  = -X; magADC[YAW]  =  Z;}
-  #define ADXL345_ADDRESS 0xA6
+  #define ADXL345_ADDRESS 0x53
 #endif
 
 #if defined(QUADRINO)
@@ -478,8 +541,6 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define BMA180_ADDRESS 0x80
-  #define ITG3200_ADDRESS 0XD0
 #endif
 
 #if defined(QUADRINO_ZOOM)
@@ -490,8 +551,6 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define BMA180_ADDRESS 0x80
-  #define ITG3200_ADDRESS 0XD0
   #define STABLEPIN_PINMODE pinMode (A2, OUTPUT);
   #define STABLEPIN_ON PORTC |= (1<<2);
   #define STABLEPIN_OFF PORTC &= ~(1<<2);
@@ -505,8 +564,6 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define BMA180_ADDRESS 0x80
-  #define ITG3200_ADDRESS 0XD0
   #define STABLEPIN_PINMODE pinMode (A2, OUTPUT);
   #define STABLEPIN_ON PORTC |= (1<<2);
   #define STABLEPIN_OFF PORTC &= ~(1<<2);
@@ -520,7 +577,7 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define BMA180_ADDRESS 0x82
+  #define BMA180_ADDRESS 0x41
 #endif
 
 #if defined(AEROQUADSHIELDv2) // to confirm
@@ -531,7 +588,7 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] =  Y; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define ITG3200_ADDRESS 0XD2
+  #define ITG3200_ADDRESS 0X69
 #endif
 
 #if defined(ATAVRSBIN1)
@@ -551,17 +608,15 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define BMA180_ADDRESS 0x80
-  #define ITG3200_ADDRESS 0XD0
 #endif
 
 #if defined(SIRIUS600)
+  #define WMP
   #define BMA180
   #define BMP085
   #define HMC5883
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define BMA180_ADDRESS 0x80
 #endif
 
 #if defined(MINIWII)
@@ -579,7 +634,6 @@
   #define ACC_ORIENTATION(X, Y, Z) {accADC[ROLL] = -X; accADC[PITCH] = -Y; accADC[YAW] = Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z) {magADC[ROLL] = X; magADC[PITCH] = Y; magADC[YAW] = -Z;}
-  #define ITG3200_ADDRESS 0XD0
   #undef INTERNAL_I2C_PULLUPS
 #endif
 
@@ -597,7 +651,7 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define ITG3200_ADDRESS 0XD2
+  #define ITG3200_ADDRESS 0X69
   #if defined(DROTEK_10DOF_MS)
     #define MS561101BA
   #elif defined(DROTEK_10DOF)
@@ -610,15 +664,33 @@
   #define BMA180
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
-  #define ITG3200_ADDRESS 0XD2
+  #define ITG3200_ADDRESS 0X69
 #endif
 
 #if defined(DROTEK_6DOF_MPU)
   #define MPU6050
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
-  #define MPU6050_ADDRESS 0xD2
+  #define MPU6050_ADDRESS 0x69
   #undef INTERNAL_I2C_PULLUPS
+#endif
+
+#if defined(DROTEK_10DOF_MPU)
+  #define MPU6050
+  #define HMC5883
+  #define MS561101BA
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  Y; accADC[PITCH]  = -X; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] = Y; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  -Y; magADC[PITCH]  = X; magADC[YAW]  = -Z;}
+  #define MPU6050_ADDRESS 0X69
+  #define MPU6050_I2C_AUX_MASTER // MAG connected to the AUX I2C bus of MPU6050
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
+#if defined(FLYDUINO_MPU)
+  #define MPU6050
+  #define ACC_ORIENTATION(X, Y, Z) {accADC[ROLL] = X; accADC[PITCH] = Y; accADC[YAW] = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -Y; gyroADC[PITCH] = X; gyroADC[YAW] = -Z;}
 #endif
 
 #if defined(MONGOOSE1_0)
@@ -629,9 +701,7 @@
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -Y; gyroADC[PITCH] =  X; gyroADC[YAW] = -Z;}
   #define ACC_ORIENTATION(Y, X, Z)  {accADC[ROLL]  =  Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = -X; magADC[PITCH]  = -Y; magADC[YAW]  = -Z;}
-  #define ADXL345_ADDRESS 0xA6
-  #define ITG3200_ADDRESS 0XD0
-  #define BMP085_ADDRESS 0xEE
+  #define ADXL345_ADDRESS 0x53
   #undef INTERNAL_I2C_PULLUPS
 #endif
 
@@ -659,7 +729,7 @@
   #define ACC_ORIENTATION(Y, X, Z)  {accADC[ROLL]  = -Y; accADC[PITCH]  = -X; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(Y, X, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define MS561101BA_ADDRESS 0xEC
+  #define MS561101BA_ADDRESS 0x76
   #define STABLEPIN_PINMODE pinMode (A2, OUTPUT);
   #define STABLEPIN_ON PORTC |= (1<<2);
   #define STABLEPIN_OFF PORTC &= ~(1<<2);
@@ -673,7 +743,7 @@
   #define GYRO_ORIENTATION(Y, X, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  =  Z;}
   #define MPU6050_I2C_AUX_MASTER
-  #define MS561101BA_ADDRESS 0xEC
+  #define MS561101BA_ADDRESS 0x76
   #define STABLEPIN_PINMODE pinMode (A2, OUTPUT);
   #define STABLEPIN_ON PORTC |= (1<<2);
   #define STABLEPIN_OFF PORTC &= ~(1<<2);
@@ -688,7 +758,18 @@
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
   #undef INTERNAL_I2C_PULLUPS
-  #define ADXL345_ADDRESS 0xA6
+  #define ADXL345_ADDRESS 0x53
+#endif
+
+#if defined(GY_85)
+  #define ITG3200
+  #define ADXL345
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
+  #undef INTERNAL_I2C_PULLUPS
+  #define ADXL345_ADDRESS 0x53
 #endif
 
 #if defined(GY_86)
@@ -698,21 +779,91 @@
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;}
-  #define MPU6050_EN_I2C_BYPASS // MAG connected to the AUX I2C bus of MPU6050
+  #define MPU6050_I2C_AUX_MASTER // MAG connected to the AUX I2C bus of MPU6050
   #undef INTERNAL_I2C_PULLUPS
 #endif
 
-#if defined(DESQUARED6DOFV2A)
+#if defined(INNOVWORKS_10DOF)
   #define ITG3200
-  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define BMA180
+  #define BMP085
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = X; magADC[PITCH]  = Y; magADC[YAW]  = -Z;}
   #undef INTERNAL_I2C_PULLUPS
 #endif
 
-#if defined(DESQUARED6DOFV4)
-  #define MPU6050
+#if defined(INNOVWORKS_6DOF)
+  #define ITG3200
+  #define BMA180
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
+#if defined(PROTO_DIY)
+  #define ITG3200
+  #define BMA180
+  #define HMC5883
+  #define MS561101BA
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = X; accADC[PITCH]  = Y; accADC[YAW]  = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = X; gyroADC[PITCH] = Y; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = X; magADC[PITCH]  = Y; magADC[YAW]  = -Z;}
+  #undef INTERNAL_I2C_PULLUPS
+  #define STABLEPIN_ON               PORTC &= ~(1<<6);
+  #define STABLEPIN_OFF              PORTC |= 1<<6;
+#endif
+
+#if defined(IOI_MINI_MULTIWII)
+  #define ITG3200
+  #define BMA180
+  #define HMC5883
+  #define BMP085
+  #define ACC_ORIENTATION(X, Y, Z) {accADC[ROLL] = -X; accADC[PITCH] = -Y; accADC[YAW] = Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z) {magADC[ROLL] = -Y; magADC[PITCH] = X; magADC[YAW] = -Z;} 
+#endif
+
+#if defined(Bobs_6DOF_V1)
+  #define ITG3200
+  #define BMA180
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  Y; magADC[PITCH]  = -X; magADC[YAW]  = -Z;}
   #undef INTERNAL_I2C_PULLUPS
+#endif
+
+#if defined(Bobs_9DOF_V1)
+  #define ITG3200
+  #define BMA180
+  #define BMP085
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  Y; magADC[PITCH]  = -X; magADC[YAW]  = -Z;}
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
+#if defined(Bobs_10DOF_BMP_V1)
+  #define ITG3200
+  #define BMA180
+  #define BMP085  // Bobs 10DOF uses the BMP180 - BMP085 and BMP180 are software compatible
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  Y; magADC[PITCH]  = -X; magADC[YAW]  = -Z;}
+  #undef INTERNAL_IC2_PULLUPS
+#endif
+
+#if defined(CRIUS_AIO_PRO_V1) 
+  #define MPU6050 
+  #define HMC5883 
+  #define MS561101BA 
+  #define ACC_ORIENTATION(X, Y, Z) {accADC[ROLL] = -X; accADC[PITCH] = -Y; accADC[YAW] = Z;} 
+  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;} 
+  #define MAG_ORIENTATION(X, Y, Z) {magADC[ROLL] = X; magADC[PITCH] = Y; magADC[YAW] = -Z;} 
+  #define MPU6050_EN_I2C_BYPASS // MAG connected to the AUX I2C bus of MPU6050 
+  #undef INTERNAL_I2C_PULLUPS 
 #endif
 
 #if defined(OPENLRSv2MULTI)
@@ -720,8 +871,7 @@
   #define ADXL345
   #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;}
-  #define ADXL345_ADDRESS 0xA6
-  #define ITG3200_ADDRESS 0XD0
+  #define ADXL345_ADDRESS 0x53
   
   #define SDO_pin A0
   #define SDI_pin A1        
@@ -778,7 +928,7 @@
 /***************              Sensor Type definitions              ********************/
 /**************************************************************************************/
 
-#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(MPU6050)
+#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(MPU6050) || defined(NUNCHUCK)
   #define ACC 1
 #else
   #define ACC 0
@@ -790,7 +940,7 @@
   #define MAG 0
 #endif
 
-#if defined(ITG3200) || defined(L3G4200D) || defined(MPU6050)
+#if defined(ITG3200) || defined(L3G4200D) || defined(MPU6050) || defined(WMP)
   #define GYRO 1
 #else
   #define GYRO 0
@@ -802,13 +952,19 @@
   #define BARO 0
 #endif
 
-#if defined(GPS_SERIAL)  || defined(I2C_GPS) || defined(GPS_FROM_OSD)
+#if defined(GPS_PROMINI_SERIAL)
+  #define GPS_SERIAL 0
+  #define GPS_PROMINI
+  #define GPS_BAUD   GPS_PROMINI_SERIAL
+#endif
+
+#if defined(GPS_SERIAL)  || defined(I2C_GPS) || defined(GPS_FROM_OSD) || defined(TINY_GPS)
   #define GPS 1
 #else
   #define GPS 0
 #endif
 
-#if defined(SRF02) || defined(SRF08) || defined(SRF10) || defined(SRC235)
+#if defined(SRF02) || defined(SRF08) || defined(SRF10) || defined(SRC235) || defined(TINY_GPS_SONAR)
   #define SONAR 1
 #else
   #define SONAR 0
@@ -844,7 +1000,7 @@
   #define MULTITYPE 12   //12  for MultiWinGui
 #elif defined(OCTOFLATX)
   #define MULTITYPE 13   //13  for MultiWinGui 
-#elif defined(AIRPLANE)    
+#elif defined(AIRPLANE)|| defined(SINGLECOPTER)|| defined(DUALCOPTER)    
   #define MULTITYPE 14    
 #elif defined (HELI_120_CCPM)   
   #define MULTITYPE 15      
@@ -857,11 +1013,11 @@
 /**************************************************************************************/
 /***************          Some unsorted "chain" defines            ********************/
 /**************************************************************************************/
-#if defined (AIRPLANE) || defined(FLYING_WING)
+#if defined (AIRPLANE) || defined(FLYING_WING)|| defined(SINGLECOPTER)|| defined(DUALCOPTER)
   #define FIXEDWING
 #endif
 
-#if defined (AIRPLANE) || defined(HELICOPTER) && defined(PROMINI) 
+#if defined (AIRPLANE) || defined(HELICOPTER)|| defined(SINGLECOPTER)|| defined(DUALCOPTER) && defined(PROMINI) 
   #if defined(D12_POWER)
     #define SERVO_4_PINMODE            ;  // D12
     #define SERVO_4_PIN_HIGH           ;
@@ -908,7 +1064,7 @@
 /**************************************************************************************/
 /***************             motor and servo numbers               ********************/
 /**************************************************************************************/
-#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING) || defined(AIRPLANE) || defined(CAMTRIG) || defined(HELICOPTER) || defined(SERVO_MIX_TILT)
+#if defined(BI) || defined(TRI) || defined(SERVO_TILT) || defined(GIMBAL) || defined(FLYING_WING) || defined(AIRPLANE) || defined(CAMTRIG) || defined(HELICOPTER) || defined(SERVO_MIX_TILT)|| defined(SINGLECOPTER)|| defined(DUALCOPTER)
   #define SERVO
 #endif
 
@@ -920,9 +1076,24 @@
   #define NUMBER_MOTOR     1
   #define PRI_SERVO_FROM   1 // use servo from 1 to 2
   #define PRI_SERVO_TO     2
+  
+#elif defined(SINGLECOPTER)
+  #define NUMBER_MOTOR     1
+  #define PRI_SERVO_FROM   4 // use servo from 4 to 7
+  #define PRI_SERVO_TO     7
+#elif defined(DUALCOPTER)
+  #define NUMBER_MOTOR     2
+  #define PRI_SERVO_FROM   4 // use servo from 5 to 6
+  #define PRI_SERVO_TO     6
+  
 #elif defined(AIRPLANE)
   #define NUMBER_MOTOR     0
-  #define PRI_SERVO_FROM   4 // use servo from 4 to 8
+    #if defined(FLAPS) 
+      #define PRI_SERVO_FROM   3 // use servo from 3 to 8    
+      #undef CAMTRIG             // Disable Camtrig on A2
+    #else
+      #define PRI_SERVO_FROM   4 // use servo from 4 to 8
+    #endif  
   #define PRI_SERVO_TO     8
 #elif defined(BI)
   #define NUMBER_MOTOR     2
@@ -939,9 +1110,15 @@
 #elif defined(OCTOX8) || defined(OCTOFLATP) || defined(OCTOFLATX)
   #define NUMBER_MOTOR     8
 #elif defined(HELICOPTER)
-  #define NUMBER_MOTOR     0
-  #define PRI_SERVO_FROM   4 // use servo from 4 to 8
-  #define PRI_SERVO_TO     8
+  #ifdef HELI_USE_SERVO_FOR_THROTTLE
+    #define NUMBER_MOTOR     0 // use servo to drive throttle output
+    #define PRI_SERVO_FROM   4 // use servo from 4 to 8
+    #define PRI_SERVO_TO     8
+  #else
+    #define NUMBER_MOTOR     1 // use 1 motor for throttle
+    #define PRI_SERVO_FROM   4 // use servo from 4 to 7
+    #define PRI_SERVO_TO     7
+  #endif
 #endif
 
 
@@ -955,8 +1132,10 @@
       #define SEC_SERVO_FROM   3 // use servo from 3 to 4
       #define SEC_SERVO_TO     4
     #else
-      #define SEC_SERVO_FROM   1 // use servo from 1 to 2
-      #define SEC_SERVO_TO     2
+      #if !defined(MEGA_HW_GIMBAL) // if HW Gimbal is active we dont need the SW PWM defines
+        #define SEC_SERVO_FROM   1 // use servo from 1 to 2
+        #define SEC_SERVO_TO     2
+      #endif
     #endif
   #endif
   #if defined(CAMTRIG)
@@ -1152,52 +1331,108 @@
 /***************                       I2C GPS                     ********************/
 /**************************************************************************************/
 #if defined(I2C_GPS)
-  #define I2C_GPS_ADDRESS                         0x40       
-  /*************** I2C GPS register definitions *********************************/
-  
-  #define I2C_GPS_STATUS                          0x00   //(Read only)
-          #define I2C_GPS_STATUS_NEW_DATA         0x01
-          #define I2C_GPS_STATUS_2DFIX            0x02
-          #define I2C_GPS_STATUS_3DFIX            0x04
-          #define I2C_GPS_STATUS_WP_REACHED       0x08      //Active waypoint has been reached (not cleared until new waypoint is set)
-          #define I2C_GPS_STATUS_NUMSATS          0xF0
-  
-  #define I2C_GPS_COMMAND                         0x01   //(write only)
-          #define I2C_GPS_COMMAND_POSHOLD         0x01      //copy current position to internal target location register
-          #define I2C_GPS_COMMAND_RESUME          0x02      //copy last active WP to internal target location register
-          #define I2C_GPS_COMMAND_SET_WP          0x04      //copy current position to given WP
-          #define I2C_GPS_COMMAND_ACTIVATE_WP     0x08      //copy given WP position to internal target location register
-          #define I2C_GPS_COMMAND_WP              0xF0      //Waypoint number
-  
-  #define I2C_GPS_WP_REG                          0x06   //Waypoint register (Read only)
-          #define I2C_GPS_WP_REG_ACTIVE           0x0F      //Active Waypoint
-          #define I2C_GPS_WP_REG_PERVIOUS         0xF0      //pervious Waypoint
-          
-  #define I2C_GPS_GROUND_SPEED                    0x07   //GPS ground speed in m/s*100 (uint16_t)      (Read Only)
-  #define I2C_GPS_ALTITUDE                        0x09   //GPS altitude in meters (uint16_t)           (Read Only)
-  #define I2C_GPS_COURSE                          0x9C   //GPS Course in degrees *10                   (Read Only)  
-  #define I2C_GPS_TIME                            0x0b   //UTC Time from GPS in hhmmss.sss * 100 (uint32_t)(unneccesary precision) (Read Only)
-  #define I2C_GPS_DISTANCE                        0x0f   //Distance between current pos and internal target location register in meters (uint16_t) (Read Only)
-  #define I2C_GPS_DIRECTION                       0x11   //direction towards interal target location reg from current position (+/- 180 degree)    (read Only)
-  #define I2C_GPS_LOCATION                        0x13   //current position (8 bytes, lat and lon, 1 degree = 10 000 000                           (read only)
-  #define I2C_GPS_WP0                             0x1B   //Waypoint 0 used for RTH location      (R/W)
-  #define I2C_GPS_WP1                             0x23
-  #define I2C_GPS_WP2                             0x2B
-  #define I2C_GPS_WP3                             0x33
-  #define I2C_GPS_WP4                             0x3B
-  #define I2C_GPS_WP5                             0x43
-  #define I2C_GPS_WP6                             0x4B
-  #define I2C_GPS_WP7                             0x53
-  #define I2C_GPS_WP8                             0x5B
-  #define I2C_GPS_WP9                             0x63
-  #define I2C_GPS_WP10                            0x6B
-  #define I2C_GPS_WP11                            0x73
-  #define I2C_GPS_WP12                            0x7B
-  #define I2C_GPS_WP13                            0x83
-  #define I2C_GPS_WP14                            0x8B
-  #define I2C_GPS_WP15                            0x93
-  #define I2C_GPS_WP_NAV_PAR1                     0x9B   //Waypoint navigation parameter 1
-          #define I2C_GPS_WP_NAV_PAR1_REACH_LIMIT 0x0F      //lover 4 bit, waypoint reached distance
+  #define I2C_GPS_ADDRESS                         0x20 //7 bits       
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// I2C GPS NAV registers
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+#define I2C_GPS_STATUS_00                            00 //(Read only)
+        #define I2C_GPS_STATUS_NEW_DATA       0x01      // New data is available (after every GGA frame)
+        #define I2C_GPS_STATUS_2DFIX          0x02      // 2dfix achieved
+        #define I2C_GPS_STATUS_3DFIX          0x04      // 3dfix achieved
+        #define I2C_GPS_STATUS_WP_REACHED     0x08      // Active waypoint has been reached (not cleared until new waypoint is set)
+        #define I2C_GPS_STATUS_NUMSATS        0xF0      // Number of sats in view
+
+#define I2C_GPS_COMMAND                              01 // (write only)
+        #define I2C_GPS_COMMAND_POSHOLD       0x01      // Start position hold at the current gps positon
+        #define I2C_GPS_COMMAND_START_NAV     0x02      // get the WP from the command and start navigating toward it
+        #define I2C_GPS_COMMAND_SET_WP        0x03      // copy current position to given WP      
+        #define I2C_GPS_COMMAND_UPDATE_PIDS   0x04      // update PI and PID controllers from the PID registers, this must be called after a pid register is changed
+        #define I2C_GPS_COMMAND_NAV_OVERRIDE  0x05      // do not nav since we tring to controll the copter manually (not implemented yet)
+        #define I2C_GPS_COMMAND_STOP_NAV      0x06      // Stop navigation (zeroes out nav_lat and nav_lon
+        #define I2C_GPS_COMMAND__7            0x07
+        #define I2C_GPS_COMMAND__8            0x08      
+        #define I2C_GPS_COMMAND__9            0x09
+        #define I2C_GPS_COMMAND__a            0x0a
+        #define I2C_GPS_COMMAND__b            0x0b
+        #define I2C_GPS_COMMAND__c            0x0c
+        #define I2C_GPS_COMMAND__d            0x0d
+        #define I2C_GPS_COMMAND__e            0x0e
+        #define I2C_GPS_COMMAND__f            0x0f
+
+        #define I2C_GPS_COMMAND_WP_MASK       0xF0       // Waypoint number
+
+#define I2C_GPS_WP_REG                              02   // Waypoint register (Read only)
+        #define I2C_GPS_WP_REG_ACTIVE_MASK    0x0F       // Active Waypoint lower 4 bits
+        #define I2C_GPS_WP_REG_PERVIOUS_MASK  0xF0       // pervious Waypoint upper 4 bits
+        
+#define I2C_GPS_REG_VERSION                         03   // Version of the I2C_NAV SW uint8_t
+#define I2C_GPS_REG_RES2                            04   // reserved for future use (uint8_t)
+#define I2C_GPS_REG_RES3                            05   // reserved for future use (uint8_t)
+#define I2C_GPS_REG_RES4                            06   // reserved for future use (uint8_t)
+
+
+#define I2C_GPS_LOCATION                            07   // current location 8 byte (lat, lon) int32_t
+#define I2C_GPS_NAV_LAT                             15   // Desired banking towards north/south int16_t
+#define I2C_GPS_NAV_LON                             17   // Desired banking toward east/west    int16_t
+#define I2C_GPS_WP_DISTANCE                         19   // Distance to current WP in cm uint32
+#define I2C_GPS_WP_TARGET_BEARING                   23   // bearing towards current wp 1deg = 1000 int16_t
+#define I2C_GPS_NAV_BEARING                         25   // crosstrack corrected bearing towards current wp 1deg = 1000 int16_t
+#define I2C_GPS_HOME_TO_COPTER_BEARING              27   // bearing from home to copter 1deg = 1000 int16_t
+#define I2C_GPS_DISTANCE_TO_HOME                    29   // distance to home in m int16_t
+        
+#define I2C_GPS_GROUND_SPEED                        31   // GPS ground speed in m/s*100 (uint16_t)      (Read Only)
+#define I2C_GPS_ALTITUDE                            33   // GPS altitude in meters (uint16_t)           (Read Only)
+#define I2C_GPS_GROUND_COURSE			    35   // GPS ground course (uint16_t)
+#define I2C_GPS_RES1                                37   // reserved for future use (uint16_t)
+#define I2C_GPS_TIME                                39   // UTC Time from GPS in hhmmss.sss * 100 (uint32_t)(unneccesary precision) (Read Only)
+
+//Writeable registers from here
+
+#define I2C_GPS_CROSSTRACK_GAIN                     43    // Crosstrack gain *100 (1 - 0.01 100 - 1) uint8_t
+#define I2C_GPS_SPEED_MIN                           44    // Minimum navigation speed cm/s uint8_t
+#define I2C_GPS_SPEED_MAX                           45    // Maximum navigation speed cm/s uint16_t
+#define I2C_GPS_RESERVED                            47    // Reserved for future use
+#define I2C_GPS_WP_RADIUS                           49    // Radius of the wp in cm, within this radius we consider the wp reached (uint16_t)
+
+#define I2C_GPS_NAV_FLAGS                           51    // Controls various functions of the I2C-GPS-NAV module
+        #define I2C_NAV_FLAG_GPS_FILTER          0x80     // If this bit set GPS coordinates are filtered via a 5 element moving average filter
+        #define I2C_NAV_FLAG_LOW_SPEED_D_FILTER  0x40     // If speed below .5m/s ignore D term in POSHOLD_RATE, this supposed to filter out noise
+
+#define I2C_GPS_HOLD_P                              52    // poshold_P  *100 uint16_t
+#define I2C_GPS_HOLD_I                              53    // poshold_I  *100 uint16_t
+#define I2C_GPS_HOLD_IMAX                           54    // poshold_IMAX *1 uint8_t
+
+#define I2C_GPS_HOLD_RATE_P                         55    // poshold_rate_P  *10 uint16_t
+#define I2C_GPS_HOLD_RATE_I                         56    // poshold_rate_I  *100 uint16_t
+#define I2C_GPS_HOLD_RATE_D                         57    // poshold_rate_D  *1000 uint16_t
+#define I2C_GPS_HOLD_RATE_IMAX                      58    // poshold_rate_IMAX *1 uint8_t
+
+#define I2C_GPS_NAV_P                               59    // nav_P  *10 uint16_t
+#define I2C_GPS_NAV_I                               60    // nav_I  *100 uint16_t
+#define I2C_GPS_NAV_D                               61    // nav_D  *1000 uint16_t
+#define I2C_GPS_NAV_IMAX                            62    // nav_IMAX *1 uint8_t
+
+#define I2C_GPS_WP0                                 63   //Waypoint 0 used for RTH location      (R/W)
+#define	I2C_GPS_WP1		                    74
+#define	I2C_GPS_WP2		                    85
+#define	I2C_GPS_WP3		                    96
+#define	I2C_GPS_WP4		                    107
+#define	I2C_GPS_WP5		                    118
+#define	I2C_GPS_WP6		                    129
+#define	I2C_GPS_WP7		                    140
+#define	I2C_GPS_WP8		                    151
+#define	I2C_GPS_WP9		                    162
+#define	I2C_GPS_WP10		                    173
+#define	I2C_GPS_WP11		                    184
+#define	I2C_GPS_WP12		                    195
+#define	I2C_GPS_WP13		                    206
+#define	I2C_GPS_WP14		                    217
+#define	I2C_GPS_WP15		                    228
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// End register definition 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 #endif
 
 #if !(defined(DISPLAY_2LINES)) && !(defined(DISPLAY_MULTILINE))
@@ -1224,12 +1459,20 @@
   #endif
 #endif
 
+#if !defined(ALT_HOLD_THROTTLE_NEUTRAL_ZONE)
+  #define ALT_HOLD_THROTTLE_NEUTRAL_ZONE 20
+#endif 
+
 /**************************************************************************************/
 /***************               Error Checking Section              ********************/
 /**************************************************************************************/
 
-#if (defined(LCD_CONF) || defined(LCD_TELEMETRY)) && !(defined(LCD_SERIAL3W) || defined(LCD_TEXTSTAR) || defined(LCD_VT100) || defined(LCD_ETPP) || defined(LCD_LCD03) || defined(OLED_I2C_128x64) || defined(LCD_CONF_DUMMY) )
-  #error "LCD_CONF or LCD_TELEMETRY defined, and choice of LCD not defined.  Uncomment one of LCD_SERIAL3W or LCD_TEXTSTAR or LCD_VT100 or LCD_ETPP or LCD_LCD03 or OLED_I2C_128x64 or LCD_CONF_DUMMY"
+#ifndef NUMBER_MOTOR
+        #error "NUMBER_MOTOR is not set, most likely you have not defined any type of multicopter"
+#endif
+
+#if (defined(LCD_CONF) || defined(LCD_TELEMETRY)) && !(defined(LCD_SERIAL3W) || defined(LCD_TEXTSTAR) || defined(LCD_VT100) || defined(LCD_ETPP) || defined(LCD_LCD03) || defined(OLED_I2C_128x64) )
+  #error "LCD_CONF or LCD_TELEMETRY defined, and choice of LCD not defined.  Uncomment one of LCD_SERIAL3W or LCD_TEXTSTAR or LCD_VT100 or LCD_ETPP or LCD_LCD03 or OLED_I2C_128x64"
 #endif
 
 #if defined(POWERMETER) && !(defined(VBAT))
@@ -1240,4 +1483,10 @@
         #error "to use automatic telemetry, you MUST also define and configure LCD_TELEMETRY"
 #endif
 
+#if defined(LCD_TELEMETRY_STEP) && !(defined(LCD_TELEMETRY))
+        #error "to use single step telemetry, you MUST also define and configure LCD_TELEMETRY"
+#endif
 
+#if defined(VBAT) && !(defined(BUZZER))
+        #error "to use VBAT, you must also configure BUZZER"
+#endif
