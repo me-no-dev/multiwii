@@ -4,8 +4,11 @@
 /**************************************************************************************/
 
 //RAW RC values will be store here
-volatile uint16_t rcValue[18] = {1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502}; // interval [1000;2000]
-
+#if defined(SBUS)
+  volatile uint16_t rcValue[18] = {1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502}; // interval [1000;2000]
+#else
+  volatile uint16_t rcValue[8] = {1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502}; // interval [1000;2000]
+#endif
 
 #if defined(SERIAL_SUM_PPM) //Channel order for PPM SUM RX Configs
   static uint8_t rcChannel[8] = {SERIAL_SUM_PPM};
@@ -20,8 +23,6 @@ volatile uint16_t rcValue[18] = {1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502,
   static uint8_t PCInt_RX_Pins[PCINT_PIN_COUNT] = {PCINT_RX_BITS}; // if this slowes the PCINT readings we can switch to a define for each pcint bit
 #endif
 
-
-// Configure each rc pin for PCINT
 
 /**************************************************************************************/
 /***************                   RX Pin Setup                    ********************/
@@ -141,7 +142,7 @@ void configureReceiver() {
     #endif
     
     #if defined(FAILSAFE) && !defined(PROMICRO)
-      if (mask & 1<<THROTTLEPIN) {  // If pulse present on THROTTLE pin (independent from ardu version), clear FailSafe counter  - added by MIS
+      if (mask & 1<<FAILSAFE_PIN) {  // If pulse present on FAILSAFE_PIN (independent from ardu version), clear FailSafe counter  - added by MIS
         if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0; }
     #endif
   }
@@ -180,14 +181,15 @@ void configureReceiver() {
       static uint16_t now,diff;
       static uint16_t last = 0;
       now = micros();  
-      diff = now - last;
-      last = now;
-      if(900<diff && diff<2200){ 
-        rcValue[3] = diff;
-        #if defined(FAILSAFE)
-          if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // If pulse present on THROTTLE pin (independent from ardu version), clear FailSafe counter  - added by MIS
-        #endif 
-      }  
+      if(!(PINE & (1<<6))){
+	diff = now - last;
+        if(900<diff && diff<2200){
+          rcValue[3] = diff;
+          #if defined(FAILSAFE)
+            if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // If pulse present on THROTTLE pin (independent from ardu version), clear FailSafe counter  - added by MIS
+          #endif 
+        }
+      }else last = now; 
     }
     // Aux 2
     #if defined(RCAUX2PINRXO)
@@ -195,9 +197,10 @@ void configureReceiver() {
         static uint16_t now,diff;
         static uint16_t last = 0; 
         now = micros();  
-        diff = now - last;
-        last = now;
-        if(900<diff && diff<2200) rcValue[7] = diff;
+        if(!(PIND & (1<<2))){
+          diff = now - last;
+          if(900<diff && diff<2200) rcValue[7] = diff;
+        }else last = now;
       }
     #endif  
   #endif
@@ -288,7 +291,7 @@ void  readSBus(){
   volatile uint8_t  spekFrameFlags;
   volatile uint32_t spekTimeLast;
 void readSpektrum() {
-  if ((!armed) && 
+  if ((!f.ARMED) && 
      #if defined(FAILSAFE) || (SPEK_SERIAL_PORT != 0) 
         (failsafeCnt > 5) &&
      #endif
