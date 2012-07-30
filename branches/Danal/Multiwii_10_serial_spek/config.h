@@ -409,7 +409,7 @@
                  
 #define SPEKTRUM 1024
       //#define SPEKTRUM 2048
-      #define SPEK_SERIAL_PORT 1    // Forced to 0 on Pro Mini and single serial boards; Set to your choice of 0, 1, or 2 on any Mega based board (defaults to 1 on Mega).  
+      //#define SPEK_SERIAL_PORT 1    // Forced to 0 on Pro Mini and single serial boards; Set to your choice of 0, 1, or 2 on any Mega based board (defaults to 1 on Mega).  
   
       /*******************************    SBUS RECIVER    ************************************/
       /* EXPERIMENTAL !!

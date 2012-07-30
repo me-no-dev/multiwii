@@ -299,13 +299,11 @@ void readSpektrum() {
     }
     return;
   } //End of: Is it the GUI?
-//  while (SerialAvailable(SPEK_SERIAL_PORT) > SPEK_FRAME_SIZE) {SerialRead(SPEK_SERIAL_PORT); debug3++; spekFrameFlags = 0;}  // More than a frame? Toss the data. More bytes implies we weren't called for multiple frame times.  We do not want to process 'old' frames in the buffer.
   while (SerialAvailable(SPEK_SERIAL_PORT) > SPEK_FRAME_SIZE) { // More than a frame?  More bytes implies we weren't called for multiple frame times.  We do not want to process 'old' frames in the buffer.
-    for (uint8_t i = 0; i < SPEK_FRAME_SIZE; i++) {SerialRead(SPEK_SERIAL_PORT); debug3++;}  //Toss one full frame of bytes.
+    for (uint8_t i = 0; i < SPEK_FRAME_SIZE; i++) {SerialRead(SPEK_SERIAL_PORT);}  //Toss one full frame of bytes.
   }  
   if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
     if (SerialAvailable(SPEK_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //A complete frame? If not, we'll catch it next time we are called. 
-  debug4 = SerialAvailable(SPEK_SERIAL_PORT);
       SerialRead(SPEK_SERIAL_PORT); SerialRead(SPEK_SERIAL_PORT);        //Eat the header bytes 
       for (uint8_t b = 2; b < SPEK_FRAME_SIZE; b += 2) {
         uint8_t bh = SerialRead(SPEK_SERIAL_PORT);
