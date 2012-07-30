@@ -289,7 +289,7 @@ void  readSBus(){
   volatile uint32_t spekTimeLast;
 void readSpektrum() {
   if ((!armed) && 
-     #if defined(FAILSAFE) 
+     #if defined(FAILSAFE) || (SPEK_SERIAL_PORT != 0) 
         (failsafeCnt > 5) &&
      #endif
       ( SerialPeek(SPEK_SERIAL_PORT) == '$')) {
@@ -297,12 +297,15 @@ void readSpektrum() {
       serialCom();
       delay (10);
     }
-  //      spekFrameFlags = 1;
     return;
-  } //GUI
+  } //End of: Is it the GUI?
+//  while (SerialAvailable(SPEK_SERIAL_PORT) > SPEK_FRAME_SIZE) {SerialRead(SPEK_SERIAL_PORT); debug3++; spekFrameFlags = 0;}  // More than a frame? Toss the data. More bytes implies we weren't called for multiple frame times.  We do not want to process 'old' frames in the buffer.
+  while (SerialAvailable(SPEK_SERIAL_PORT) > SPEK_FRAME_SIZE) { // More than a frame?  More bytes implies we weren't called for multiple frame times.  We do not want to process 'old' frames in the buffer.
+    for (uint8_t i = 0; i < SPEK_FRAME_SIZE; i++) {SerialRead(SPEK_SERIAL_PORT); debug3++;}  //Toss one full frame of bytes.
+  }  
   if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
-    if (SerialAvailable(SPEK_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //Frame is complete. If not, we'll catch it next time we are called. 
-//      uint8_t oldSREG = SREG; cli();
+    if (SerialAvailable(SPEK_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //A complete frame? If not, we'll catch it next time we are called. 
+  debug4 = SerialAvailable(SPEK_SERIAL_PORT);
       SerialRead(SPEK_SERIAL_PORT); SerialRead(SPEK_SERIAL_PORT);        //Eat the header bytes 
       for (uint8_t b = 2; b < SPEK_FRAME_SIZE; b += 2) {
         uint8_t bh = SerialRead(SPEK_SERIAL_PORT);
@@ -311,13 +314,12 @@ void readSpektrum() {
         if (spekChannel < SPEK_MAX_CHANNEL) rcValue[spekChannel] = 988 + (((uint16_t)(bh & SPEK_CHAN_MASK) << 8) + bl) SPEK_DATA_SHIFT;
       }
       spekFrameFlags = 0x00;
-//      SREG = oldSREG; 
       #if defined(FAILSAFE)
         if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // Valid frame, clear FailSafe counter
       #endif
-    } else { //Start flag is on, but not enough bytes = incomplete frame in buffer.  This could be OK, if we happened to be called in the middle of a frame.  Or not, if it has been a while since the start flag was set.
+    } else { //Start flag is on, but not enough bytes means there is an incomplete frame in buffer.  This could be OK, if we happened to be called in the middle of a frame.  Or not, if it has been a while since the start flag was set.
       uint32_t spekInterval = (timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond()) - spekTimeLast;
-      if (spekInterval > 2500) {spekFrameFlags = 0;}
+      if (spekInterval > 2500) {spekFrameFlags = 0;}  //If it has been a while, make the interrupt handler start over. 
     }
   }
 }

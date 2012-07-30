@@ -423,8 +423,8 @@ SIGNAL(USART1_RX_vect){
       if (spekInterval > 5000) {
         cli();
         spekFrameFlags = 0x01;       //Potential start of a Spektrum frame, they arrive every 11 or every 22 ms. Mark it, and clear the buffer. 
-        serialTailRX[1] = 0;
-        serialHeadRX[1] = 0;
+        serialTailRX[1] = 0;         // Re-Sync
+        serialHeadRX[1] = 0;         // Re-Sync
       }
     }
     cli();
@@ -491,6 +491,16 @@ uint8_t SerialAvailable(uint8_t port) {
   #endif
   return serialHeadRX[port] - serialTailRX[port];
 }
+
+//#if defined(SPEKTRUM)
+//void SerialResetSpektrum() {
+//  uint8_t oldSREG = SREG; cli();
+//  spekFrameFlags = 0x00;                      // Force no frame state
+//  serialTailRX[SPEK_SERIAL_PORT] = 0;         // Re-Sync
+//  serialHeadRX[SPEK_SERIAL_PORT] = 0;         // Re-Sync
+//  SREG = oldSREG;
+//}
+//#endif
 
 void SerialWrite(uint8_t port,uint8_t c){
  switch (port) {

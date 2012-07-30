@@ -102,8 +102,8 @@
       //#define BOARD_PROTO_2   // with MPU6050 + slave  MAG3110 + MS baro
       //#define GY_80           // Chinese 10 DOF with  L3G4200D ADXL345 HMC5883L BMP085, LLC
       //#define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
-      //#define DESQUARED6DOFV2A   // DEsquared V4 with ITG3200 only 
-      #define DESQUARED6DOFV4   // DEsquared V4 with MPU6050 
+      #define DESQUARED6DOFV2A   // DEsquared V4 with ITG3200 only 
+      //#define DESQUARED6DOFV4   // DEsquared V4 with MPU6050 
 
     /***************************    independent sensors    ********************************/
       //leave it commented if you already checked a specific board above
@@ -409,7 +409,7 @@
                  
 #define SPEKTRUM 1024
       //#define SPEKTRUM 2048
-      //#define SPEK_SERIAL_PORT 0    // Forced to 0 on Pro Mini and single serial boards; Set to your choice of 0, 1, or 2 on any Mega based board (defaults to 1 on Mega).  
+      #define SPEK_SERIAL_PORT 1    // Forced to 0 on Pro Mini and single serial boards; Set to your choice of 0, 1, or 2 on any Mega based board (defaults to 1 on Mega).  
   
       /*******************************    SBUS RECIVER    ************************************/
       /* EXPERIMENTAL !!
@@ -521,7 +521,7 @@
   /**************************************************************************************/
 
     /* uncomment this line if you plan to use a LCD or OLED */
-  //#define LCD_CONF
+  #define LCD_CONF
 
     /* to include setting the aux switches for AUX1 -> AUX4 via LCD */ //to review (activate[] is now 16 bit long)
       //#define LCD_CONF_AUX
@@ -540,6 +540,7 @@
       //#define LCD_ETPP        // Eagle Tree Power Panel LCD, which is i2c (not serial)
       //#define LCD_LCD03       // LCD03, which is i2c
       //#define OLED_I2C_128x64 // OLED http://www.multiwii.com/forum/viewtopic.php?f=7&t=1350
+      #define LCD_CONF_DUMMY    // No LCD attached; config will be via TX sticks only
 
     /******************************   Logo settings     ***********************************/
       //#define SUPPRESS_OLED_I2C_128x64LOGO  // suppress display of OLED logo to save memory
