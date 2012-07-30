@@ -1036,8 +1036,10 @@ void configurationLoop() {
       ConfigRefresh(p);
       refreshLCD = 0;
     }
-  delay(44); //At least two RX frames
-  uint8_t discard = readRawRC(1);  //Brute Force fix for exiting before we've begun.
+    delay(44);
+    computeRC();
+    delay(44);
+    computeRC();
 #if defined(LCD_TEXTSTAR) || defined(LCD_VT100) // textstar or vt100 can send keys
     key = ( SerialAvailable(0) ? SerialRead(0) : 0 );
 #endif
