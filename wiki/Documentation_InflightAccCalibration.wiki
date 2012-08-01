@@ -3,10 +3,10 @@
 
 = Introduction =
 
-You have to calibrate you acc at least once after you cleared the eeprom. For a correct calibration you need to put the copter on a absolutely flat surface and start the calibration.
+You have to calibrate your ACC at least once after you cleared the eeprom. For a correct calibration you need to put the copter on a absolutely flat surface and start the calibration.
 
 Sometimes there is no flat surface or the copter is not built exactly even or you have a flexible landing gear. in these cases a common calibration is not possible and the copter will start to drift. You have the possibility to trim the copter via stick combo by trial and error.
-The inflight acc calibration is a way to trim the cobter to make it drift free in just a glimpse.
+The inflight acc calibration is a way to trim the copter to make it drift free in just a glimpse.
 Arm/disarm via Aux switch is mandatory to do this.
 You need a buzzer to ehar the beeping signals in the process.
 
@@ -20,17 +20,22 @@ In config.h you need to alter one of the following lines:
 
 #define INFLIGHT_ACC_CALIBRATION
 
-
 to enable the option.
 
 = How it works =
 
-One of the following procedures has to be followed to finish the calibration.
+==Concept== 
+ * fly
+ * trim/get stable
+ * save deviation
+ * land
+ * finished
 
+One of the following procedures has to be followed to finish the calibration. 
 
 ==Activation with stick combo==
 
-Preparation: Plug the power and wait for the init to finish
+Preparation: Plug the power and wait for the init to finish, the ACC has to be calibrated at least once since you cleared the eeporm.
 
 1. do the following stick combination (throttle low)+(yaw left)+(pitch forward)+(roll right)
 
@@ -59,7 +64,7 @@ Preparation: Plug the power and wait for the init to finish
 
 ==Activation with passthrough switch==
 
-Preparation: Plug the power and wait for the init to finish
+Preparation: Plug the power and wait for the init to finish, the ACC has to be calibrated at least once since you cleared the eeporm.
 
 1. start your copter and get airborne
 
