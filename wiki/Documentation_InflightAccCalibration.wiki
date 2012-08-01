@@ -1,5 +1,5 @@
 #summary How to use the acc inflight calibration.
-#labels Documentation,feature
+#labels Documentation,Feature
 
 = Introduction =
 
