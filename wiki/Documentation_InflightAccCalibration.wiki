@@ -1,4 +1,4 @@
-#summary How to use the acc inflight calibration.
+#summary How to use the INFLIGHT_ACC_CALIBRATION
 #labels Documentation,Feature
 
 = Introduction =
