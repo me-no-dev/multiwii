@@ -1,4 +1,4 @@
-#summary Failsafe Feature
+#summary How to use the failsafe feature
 #labels Documentation,Feature
 
 = Introduction =
