@@ -48,6 +48,3 @@ Additional beeps
  * *Gyro calibration done:* SSS
  * *ACC calibration done:* L
  * *LCD Configuration step:* S
-
-
-At startup the copter
