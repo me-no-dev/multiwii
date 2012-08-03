@@ -28,7 +28,7 @@
     //#define BI
     //#define TRI
     //#define QUADP
-    //#define QUADX
+    #define QUADX
     //#define Y4
     //#define Y6
     //#define HEX6
@@ -477,7 +477,7 @@
        Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
        If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
        If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
-    //#define FAILSAFE                                  // uncomment  to activate the failsafe function
+    #define FAILSAFE                                  // uncomment  to activate the failsafe function
     #define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
     #define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
     #define FAILSAVE_THROTTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
@@ -702,15 +702,13 @@
     //#define SUPPRESS_TELEMETRY_PAGE_9
 
   /********************************************************************/
-  /****                             Buzzer                         ****/
+  /****                 Buzzer & Pilot Lampt                       ****/
   /********************************************************************/
-    //#define BUZZER
-    //#define RCOPTIONSBEEP        //uncomment this if you want the buzzer to beep at any rcOptions change on channel Aux1 to Aux4
-    //#define ARMEDTIMEWARNING 330  // Trigger an alarm after a certain time of being armed [s]
-    #define PILOTLAMP
-    #if defined(PILOTLAMP)
-      #define BUZZER
-    #endif
+   // #define BUZZER                //uncomment if a buzzer is connected to the FC
+   // #define RCOPTIONSBEEP        //uncomment this if you want the buzzer to beep at any rcOptions change on channel Aux1 to Aux4
+   // #define ARMEDTIMEWARNING 330  // Trigger an alarm after a certain time of being armed [s]
+   // #define PILOTLAMP            //Uncomment if you are using a X-Arcraft Pilot Lamp
+
   /********************************************************************/
   /****           battery voltage monitoring                       ****/
   /********************************************************************/
@@ -719,7 +717,7 @@
        with R1=33k and R2=51k
        vbat = [0;1023]*16/VBATSCALE
        must be associated with #define BUZZER ! */
-    #define VBAT              // uncomment this line to activate the vbat code
+   // #define VBAT              // uncomment this line to activate the vbat code
     #define VBATSCALE     129.5 // change this value if readed Battery voltage is different than real voltage
     #define VBATLEVEL1_3S 103 // 10,7V
     #define VBATLEVEL2_3S 101 // 10,3V
