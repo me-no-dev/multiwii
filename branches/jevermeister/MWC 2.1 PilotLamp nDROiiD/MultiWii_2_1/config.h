@@ -28,7 +28,7 @@
     //#define BI
     //#define TRI
     //#define QUADP
-    //#define QUADX
+    #define QUADX
     //#define Y4
     //#define Y6
     //#define HEX6
@@ -47,10 +47,10 @@
   /****************************    Motor minthrottle    *******************************/
     /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller)
        This is the minimum value that allow motors to run at a idle speed  */
-    //#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
+    #define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
     //#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
     //#define MINTHROTTLE 1064 // special ESC (simonk)
-    #define MINTHROTTLE 1150
+    //#define MINTHROTTLE 1150
 
   /****************************    Motor maxthrottle    *******************************/
     /* this is the maximum value for the ESCs at full power, this value can be increased up to 2000 */
@@ -112,7 +112,7 @@
       //#define BOARD_PROTO_2   // with MPU6050 + slave  MAG3110 + MS baro
       //#define GY_80           // Chinese 10 DOF with  L3G4200D ADXL345 HMC5883L BMP085, LLC
       //#define GY_85           // Chinese 9 DOF with  ITG3205 ADXL345 HMC5883L LLC
-      //#define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
+      #define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
       //#define INNOVWORKS_10DOF // with ITG3200, BMA180, HMC5883, BMP085 available here http://www.diymulticopter.com
       //#define INNOVWORKS_6DOF // with ITG3200, BMA180 available here http://www.diymulticopter.com
       //#define PROTO_DIY       // 10DOF mega board
@@ -300,7 +300,7 @@
       /* The following lines apply only for specific receiver with only one PPM sum signal, on digital PIN 2
          Select the right line depending on your radio brand. Feel free to modify the order in your PPM order is different */
       //#define SERIAL_SUM_PPM         PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4 //For Graupner/Spektrum
-      //#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4 //For Robe/Hitec/Futaba
+      #define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4 //For Robe/Hitec/Futaba
       //#define SERIAL_SUM_PPM         PITCH,ROLL,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4 //For some Hitec/Sanwa/Others
 
     /**********************    Spektrum Satellite Reciver    *******************************/
@@ -436,7 +436,7 @@
          IMPORTANT! Change low pass filter setting changes PID behaviour, so retune your PID's after changing LPF.*/
       //#define MPU6050_LPF_256HZ     // This is the default setting, no need to uncomment, just for reference
       //#define MPU6050_LPF_188HZ
-      //#define MPU6050_LPF_98HZ
+      #define MPU6050_LPF_98HZ
       //#define MPU6050_LPF_42HZ
       //#define MPU6050_LPF_20HZ
       //#define MPU6050_LPF_10HZ
@@ -477,7 +477,7 @@
        Next, afrer FAILSAVE_OFF_DELAY the copter is disarmed, and motors is stopped.
        If RC pulse coming back before reached FAILSAVE_OFF_DELAY time, after the small quard time the RC control is returned to normal.
        If you use serial sum PPM, the sum converter must completly turn off the PPM SUM pusles for this FailSafe functionality.*/
-    //#define FAILSAFE                                  // uncomment  to activate the failsafe function
+    #define FAILSAFE                                  // uncomment  to activate the failsafe function
     #define FAILSAVE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
     #define FAILSAVE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
     #define FAILSAVE_THROTTLE  (MINTHROTTLE + 200)    // Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
@@ -514,7 +514,7 @@
 
   /*************************    INFLIGHT ACC Calibration    *****************************/
     /* This will activate the ACC-Inflight calibration if unchecked */
-   //#define INFLIGHT_ACC_CALIBRATION
+    #define INFLIGHT_ACC_CALIBRATION
 
   /**************************    Disable WMP power pin     *******************************/
     /* disable use of the POWER PIN
@@ -545,7 +545,7 @@
        note: only the RX PIN is used, the GPS is not configured by multiwii
        the GPS must be configured to output GGA and RMC NMEA sentences (which is generally the default conf for most GPS devices)
        at least 5Hz update rate. uncomment the first line to select the GPS serial port of the arduino */
-    //#define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
+    #define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
     #define GPS_BAUD   115200
     
     //#define GPS_PROMINI_SERIAL    57600 // Will Autosense if GPS is connected when ardu boots
@@ -572,11 +572,11 @@
     //#define USE_MSP_WP           		//Enables the MSP_WP command, which is used by WinGUI to display and log Home and Poshold positions
 						//Uncomment it if you are planning to use WinGUI - Will cost +208 bytes of Flash
 	
-    //#define DONT_RESET_HOME_AT_ARM             // HOME position is reset at every arm, uncomment it to prohibit it (you can set home position with GyroCalibration)
+    #define DONT_RESET_HOME_AT_ARM             // HOME position is reset at every arm, uncomment it to prohibit it (you can set home position with GyroCalibration)
 
     /* GPS navigation can control the heading */
     
-    //#define NAV_CONTROLS_HEADING       true     // copter faces toward the navigation point, maghold must be enabled for it
+    #define NAV_CONTROLS_HEADING       true     // copter faces toward the navigation point, maghold must be enabled for it
     #define NAV_TAIL_FIRST             true     // true - copter comes in with tail first 
     #define NAV_SET_TAKEOFF_HEADING    true      // true - when copter arrives to home position it rotates it's head to takeoff direction
     
@@ -613,7 +613,7 @@
       /* choice of LCD attached for configuration and telemetry, see notes below */
       //#define LCD_SERIAL3W    // Alex' initial variant with 3 wires, using rx-pin for transmission @9600 baud fixed
       //#define LCD_TEXTSTAR    // SERIAL LCD: Cat's Whisker LCD_TEXTSTAR Module CW-LCD-02 (Which has 4 input keys for selecting menus)
-      //#define LCD_VT100       // SERIAL LCD: vt100 compatible terminal emulation (blueterm, putty, etc.)
+      #define LCD_VT100       // SERIAL LCD: vt100 compatible terminal emulation (blueterm, putty, etc.)
       //#define LCD_ETPP        // I2C LCD: Eagle Tree Power Panel LCD, which is i2c (not serial)
       //#define LCD_LCD03       // I2C LCD: LCD03, which is i2c
       //#define OLED_I2C_128x64 // I2C LCD: OLED http://www.multiwii.com/forum/viewtopic.php?f=7&t=1350
@@ -667,7 +667,7 @@
        The active page on the LCD does get updated automatically
        Easy to use with Terminal application or display like LCD - if available uses the 4 preconfigured buttons  to send 'A', 'B', 'C', 'D' */
     /********************************    Activation     ***********************************/
-    //#define LCD_TELEMETRY
+    #define LCD_TELEMETRY
 
     /* to enable automatic hopping between a choice of telemetry pages uncomment this.
        This may be useful if your LCD has no buttons or the sending is broken
@@ -704,11 +704,11 @@
   /********************************************************************/
   /****                             Buzzer                         ****/
   /********************************************************************/
-    //#define BUZZER
-    //#define RCOPTIONSBEEP        //uncomment this if you want the buzzer to beep at any rcOptions change on channel Aux1 to Aux4
-    //#define ARMEDTIMEWARNING 330  // Trigger an alarm after a certain time of being armed [s]
+    #define BUZZER
+    #define RCOPTIONSBEEP        //uncomment this if you want the buzzer to beep at any rcOptions change on channel Aux1 to Aux4
+    #define ARMEDTIMEWARNING 330  // Trigger an alarm after a certain time of being armed [s]
     #define PILOTLAMP
-    #if defined(PILOTLAMP)
+    #if defined(PILOTLAMP) || defined(VBAT)
       #define BUZZER
     #endif
   /********************************************************************/
