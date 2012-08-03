@@ -256,7 +256,7 @@ void GYRO_Common() {
         gyroZero[axis]=g[axis]/400;
         blinkLED(10,15,1);
       #if defined(BUZZER)
-        beep_confirmation = 1;
+        beep_confirmation = 4;
       #endif
       }
     }
