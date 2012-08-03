@@ -204,8 +204,8 @@
       #define    PL_RED_OFF   588    // 850Hz
       #define    PL_BZR_ON    689    // 725Hz
       #define    PL_BZR_OFF   800    // 625Hz
-      #define    PL_PIN_ON    PORTC |= 1<<5;
-      #define    PL_PIN_OFF   PORTC &= ~(1<<5);
+      #define    PL_PIN_ON    PORTB |= 1<<4;
+      #define    PL_PIN_OFF   PORTB &= ~(1<<4);
     #else
       #define BUZZERPIN_ON               PORTB |= 1<<4;
       #define BUZZERPIN_OFF              PORTB &= ~(1<<4); 
