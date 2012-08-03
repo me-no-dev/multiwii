@@ -1,4 +1,4 @@
- //=========================Buzzer===============================================
+
 #if defined(BUZZER)
   static uint8_t beeperOnBox = 0,
                  warn_noGPSfix = 0,
@@ -10,20 +10,13 @@
                  beepDone =0;
   static uint32_t buzzerLastToggleTime;
   uint8_t isBuzzerON() { return buzzerIsOn; } // returns true while buzzer is buzzing; returns 0 for silent periods
-  
+
+/********************************************************************/
+/****                      Alarm Handling                        ****/
+/********************************************************************/
   void alarmHandler(){
     
-    //=====================  low voltage alarm =====================
     #if defined(VBAT)
-      static uint8_t vbatTimer = 0;
-      static uint8_t ind = 0;
-      uint16_t vbatRaw = 0;
-      static uint16_t vbatRawArray[8];
-      if (! (++vbatTimer % VBATFREQ)) {
-      	vbatRawArray[(ind++)%8] = analogRead(V_BATPIN);
-      	for (uint8_t i=0;i<8;i++) vbatRaw += vbatRawArray[i];
-      	vbat = vbatRaw / (VBATSCALE/2);                  // result is Vbatt in 0.1V steps
-      }
       if ( ( (vbat>VBATLEVEL1_3S) 
       #if defined(POWERMETER)
                            && ( (pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0) )
@@ -39,7 +32,7 @@
       else if (vbat>VBATLEVEL3_3S)   warn_vbat = 2;
       else                           warn_vbat = 4;
     #endif
-    //=====================  Beep on Options Change =====================   
+ 
     #if defined(RCOPTIONSBEEP)
       static uint8_t i = 0, last_rcOptions[CHECKBOXITEMS];
       if (last_rcOptions[i] != rcOptions[i]){beep_toggle = 1;}
@@ -48,11 +41,9 @@
       if(i >= CHECKBOXITEMS)i=0;
     #endif  
   
-    //=====================  BeeperOn via rcOptions =====================
     if ( rcOptions[BOXBEEPERON] )beeperOnBox = 1;
     else beeperOnBox = 0;
     
-    //===================== Beeps for failsafe =====================
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && f.ARMED) {
         warn_failsafe = 1;                                                                   //set failsafe warning level to 1 while landing
@@ -62,13 +53,11 @@
       if ( failsafeCnt == 0) warn_failsafe = 0;                                              // turn off alarm if TX is okay
     #endif
     
-    //===================== GPS fix notification handling =====================
     #if GPS
       if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && !f.GPS_FIX)warn_noGPSfix = 1;  
       else warn_noGPSfix = 0;
     #endif
-    
-    //===================== Runtime Warning =====================
+
     #if defined(ARMEDTIMEWARNING)
       if (armedTime >= ArmedTimeWarningMicroSeconds)warn_runtime = 1;
     #endif
@@ -77,12 +66,15 @@
       PilotLampHandler();
     #endif
   }
-  
+/********************************************************************/
+/****                      Buzzer Handling                       ****/
+/********************************************************************/
   void buzzerHandler(){
     static uint16_t ontime, offtime, beepcount, repeat, repeatcounter;
+    
     //===================== Priority driven Handling =====================
     // beepcode(length1,length2,length3,pause)
-    //D: Double, L: Long, S: Short, N: None
+    //D: Double, L: Long, M: Middle, S: Short, N: None
     if (warn_failsafe == 2)      beep_code('L','N','N','D');                 //failsafe "find me" signal
     else if (warn_failsafe == 1) beep_code('S','L','L','S');                 //failsafe landing active              
     else if (beep_toggle == 1)    beep_code('S','N','N','N');       
@@ -91,11 +83,14 @@
     else if (warn_noGPSfix == 1) beep_code('S','S','N','S');    
     else if (beeperOnBox == 1)   beep_code('S','S','S','S');                 //beeperon
     else if (warn_runtime == 1 && f.ARMED == 1)beep_code('S','S','S','N'); //Runtime warning      
-    else if (warn_vbat == 4)     beep_code('S','L','L','D');       
-    else if (warn_vbat == 2)     beep_code('S','S','L','D');       
-    else if (warn_vbat == 1)     beep_code('S','L','N','D'); 
-    else if (beep_confirmation == 1) beep_code('L','N','N','N');    
-    else if (beep_confirmation == 2) beep_code('L','L','N','S');
+    else if (warn_vbat == 4)     beep_code('S','S','L','D');       
+    else if (warn_vbat == 2)     beep_code('S','L','N','D');       
+    else if (warn_vbat == 1)     beep_code('L','N','N','D'); 
+    else if (beep_confirmation == 1) beep_code('L','N','N','L');    
+    else if (beep_confirmation == 2) beep_code('L','L','N','L');   
+    else if (beep_confirmation == 3) beep_code('L','L','L','L');
+    else if (beep_confirmation == 4) beep_code('L','M','S','N');
+    else if (beep_confirmation > 4) beep_code('L','L','L','L');
     else if (buzzerSequenceActive == 1) beep_code('N','N','N','N');                //if no signal is needed, finish sequence if not finished yet
     else{                                                                   //reset everything and keep quiet
       buzzerIsOn = 0;
@@ -117,6 +112,9 @@
     switch(patternChar[icnt]) {
       case 'L': 
         Duration = 200; 
+        break;
+      case 'M': 
+        Duration = 120; 
         break;
       case 'D': 
         Duration = 2000; 
@@ -160,9 +158,9 @@
   } 
 #endif  //end of buzzer define
 
-//===================================================================================
-//=========================PilotLamp=================================================
-//===================================================================================
+/********************************************************************/
+/****                   Pilot Lamp Handling                      ****/
+/********************************************************************/
 #if defined (PILOTLAMP) 
   void PilotLampHandler(){
     //==================LED Sequence ===========================
@@ -256,12 +254,6 @@
       uint8_t pl_ctrl_all;
   };
   
-  // PilotLamp() is called with the PL_XX parameter (see below). In order to prevent unneccessary
-  // increases in IMU cycle time, the bit-bang freq control waveform is only generated if the device (LED or buzzer) 
-  // state update is different from the previous state.
-  //    PL_INIT { must be called once in main sketch setup() }
-
-  //
   void PilotLamp(uint16_t device){
       uint8_t i;
       static union pl_reg mode;
@@ -399,9 +391,10 @@
   }
 #endif
 
-//===================================================================================
-//=========================LED==================================================
-//===================================================================================
+
+/********************************************************************/
+/****                         LED Handling                       ****/
+/********************************************************************/
 
 void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   uint8_t i,r;
@@ -426,9 +419,10 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   }
 }
 
-//===================================================================================
-//=========================LED RING==================================================
-//===================================================================================
+
+/********************************************************************/
+/****                      LED Ring Handling                     ****/
+/********************************************************************/
 
 #if defined(LED_RING)
   #define LED_RING_ADDRESS 0x6D //7 bits
@@ -479,9 +473,10 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
   }
 #endif
 
-//===================================================================================
-//=========================LED FLASHER===============================================
-//===================================================================================
+
+/********************************************************************/
+/****                    LED flasher Handling                    ****/
+/********************************************************************/
 
 #if defined(LED_FLASHER)
   static uint8_t led_flasher_sequence = 0;
@@ -567,6 +562,3 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
     }
   }
 #endif
-
-
-

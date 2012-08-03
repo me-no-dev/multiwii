@@ -359,6 +359,17 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     }
   #endif
   #if defined(BUZZER)
+    #if defined(VBAT)
+      static uint8_t vbatTimer = 0;
+      static uint8_t ind = 0;
+      uint16_t vbatRaw = 0;
+      static uint16_t vbatRawArray[8];
+      if (! (++vbatTimer % VBATFREQ)) {
+      	vbatRawArray[(ind++)%8] = analogRead(V_BATPIN);
+      	for (uint8_t i=0;i<8;i++) vbatRaw += vbatRawArray[i];
+      	vbat = vbatRaw / (VBATSCALE/2);                  // result is Vbatt in 0.1V steps
+      }
+    #endif
     alarmHandler(); // external buzzer routine that handles buzzer events globally now
   #endif  
   

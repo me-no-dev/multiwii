@@ -702,15 +702,13 @@
     //#define SUPPRESS_TELEMETRY_PAGE_9
 
   /********************************************************************/
-  /****                             Buzzer                         ****/
+  /****                 Buzzer & Pilot Lampt                       ****/
   /********************************************************************/
-    #define BUZZER
+   // #define BUZZER                //uncomment if a buzzer is connected to the FC
     #define RCOPTIONSBEEP        //uncomment this if you want the buzzer to beep at any rcOptions change on channel Aux1 to Aux4
     #define ARMEDTIMEWARNING 330  // Trigger an alarm after a certain time of being armed [s]
-    #define PILOTLAMP
-    #if defined(PILOTLAMP) || defined(VBAT)
-      #define BUZZER
-    #endif
+   // #define PILOTLAMP            //Uncomment if you are using a X-Arcraft Pilot Lamp
+
   /********************************************************************/
   /****           battery voltage monitoring                       ****/
   /********************************************************************/
@@ -719,14 +717,13 @@
        with R1=33k and R2=51k
        vbat = [0;1023]*16/VBATSCALE
        must be associated with #define BUZZER ! */
-    #define VBAT              // uncomment this line to activate the vbat code
+    #define VBAT              // uncomment this line to activate the vbat code (Buzzer will be defined by default)
     #define VBATSCALE     129.5 // change this value if readed Battery voltage is different than real voltage
     #define VBATLEVEL1_3S 103 // 10,7V
     #define VBATLEVEL2_3S 101 // 10,3V
     #define VBATLEVEL3_3S 99  // 9.9V
     #define NO_VBAT       60 // Avoid beeping without any battery
-
-
+    
   /********************************************************************/
   /****           powermeter (battery capacity monitoring)         ****/
   /********************************************************************/

@@ -1127,7 +1127,7 @@ static uint8_t lcdStickState[3];
 void ConfigRefresh(uint8_t p) {
   blinkLED(10,20,1);
   #if defined(BUZZER)
-    beep_confirmation = 1;
+    beep_toggle = 1;
   #endif
   strcpy_P(line1,PSTR("                "));
   strcpy(line2,line1);
@@ -1148,7 +1148,7 @@ void ConfigRefresh(uint8_t p) {
   #ifndef OLED_I2C_128x64
    blinkLED(2,4,1);
    #if defined(BUZZER)
-    beep_confirmation = 1;
+    beep_toggle = 1;
    #endif
    LCDclear();
   #else
