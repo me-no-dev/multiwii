@@ -61,17 +61,16 @@
     // beepcode(length1,length2,length3,pause)
     //D: Double, L: Long, S: Short, N: None
     if (warn_failsafe == 2)      beep_code('L','N','N','D');                 //failsafe "find me" signal
-    else if (warn_failsafe == 1) beep_code('S','L','L','S');                 //failsafe landing active         
-    else if (warn_noGPSfix == 1) beep_code('S','S','N','S');       
+    else if (warn_failsafe == 1) beep_code('S','L','L','S');                 //failsafe landing active              
+    else if (toggleBeep == 1)    beep_code('S','N','N','N');       
+    else if (toggleBeep == 2)    beep_code('S','S','N','N');       
+    else if (toggleBeep > 2)     beep_code('S','S','S','N');         
+    else if (warn_noGPSfix == 1) beep_code('S','S','N','S');    
     else if (beeperOnBox == 1)   beep_code('S','S','S','S');                 //beeperon
     else if (warn_runtime == 1 && f.ARMED == 1)beep_code('S','S','S','N'); //Runtime warning      
     else if (warn_vbat == 4)     beep_code('S','L','L','D');       
     else if (warn_vbat == 2)     beep_code('S','S','L','D');       
-    else if (warn_vbat == 1)     beep_code('S','L','N','D');          
-    else if (toggleBeep == 1)    beep_code('S','N','N','N');       
-    else if (toggleBeep == 2)    beep_code('S','S','N','N');       
-    else if (toggleBeep > 2)     beep_code('S','S','S','N');  
-    //fast confirmation beep
+    else if (warn_vbat == 1)     beep_code('S','L','N','D'); 
     else if (buzzerSequenceActive == 1) beep_code('N','N','N','N');                //if no signal is needed, finish sequence if not finished yet
     else{                                                                   //reset everything and keep quiet
       buzzerIsOn = 0;
@@ -111,6 +110,7 @@
       icnt=0;
       toggleBeep = 0;
       buzzerSequenceActive = 0;                              //sequence is now done, next sequence may begin
+      return;
     }
     if (beepDone == 1 || Duration == 0){
       if (icnt < 3){icnt++;}    
