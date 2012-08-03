@@ -1,32 +1,57 @@
- #if defined(BUZZER) || defined(PILOTLAMP)
-  static uint8_t beeperOnBox,
+ //=========================Buzzer===============================================
+#if defined(BUZZER)
+  static uint8_t beeperOnBox = 0,
                  warn_noGPSfix = 0,
                  warn_failsafe = 0, 
-                 warn_runtime = 0; 
- #endif 
- 
- //=========================Buzzer===============================================
-#if defined(BUZZER) || defined(PILOTLAMP)
-  static uint8_t buzzerIsOn = 0, buzzerSequenceActive=0, beepDone =0;
+                 warn_runtime = 0,
+                 warn_vbat = 0,
+                 buzzerIsOn = 0, 
+                 buzzerSequenceActive=0, 
+                 beepDone =0;
   static uint32_t buzzerLastToggleTime;
   uint8_t isBuzzerON() { return buzzerIsOn; } // returns true while buzzer is buzzing; returns 0 for silent periods
   
-  void alarmHandler(uint8_t warn_vbat){
+  void alarmHandler(){
+    
+    //=====================  low voltage alarm =====================
+    #if defined(VBAT)
+      static uint8_t vbatTimer = 0;
+      static uint8_t ind = 0;
+      uint16_t vbatRaw = 0;
+      static uint16_t vbatRawArray[8];
+      if (! (++vbatTimer % VBATFREQ)) {
+      	vbatRawArray[(ind++)%8] = analogRead(V_BATPIN);
+      	for (uint8_t i=0;i<8;i++) vbatRaw += vbatRawArray[i];
+      	vbat = vbatRaw / (VBATSCALE/2);                  // result is Vbatt in 0.1V steps
+      }
+      if ( ( (vbat>VBATLEVEL1_3S) 
+      #if defined(POWERMETER)
+                           && ( (pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0) )
+      #endif
+                         )  || (NO_VBAT>vbat)                              ) // ToLuSe
+      {                                          // VBAT ok AND powermeter ok, alarm off
+        warn_vbat = 0;
+      #if defined(POWERMETER)
+      } else if (pMeter[PMOTOR_SUM] > pAlarm) {                             // sound alarm for powermeter
+        warn_vbat = 4;
+      #endif
+      } else if (vbat>VBATLEVEL2_3S) warn_vbat = 1;
+      else if (vbat>VBATLEVEL3_3S)   warn_vbat = 2;
+      else                           warn_vbat = 4;
+    #endif
+    //=====================  Beep on Options Change =====================   
     #if defined(RCOPTIONSBEEP)
-      static uint8_t i = 0;
-      static uint8_t last_rcOptions[CHECKBOXITEMS];
-      if (last_rcOptions[i] != rcOptions[i]){toggleBeep = 1;}
-      last_rcOptions[i] = rcOptions[i]; 
-      i++;
+      static uint8_t i = 0, last_rcOptions[CHECKBOXITEMS];
+      if (last_rcOptions[i] != rcOptions[i]){beep_toggle = 1;}
+        last_rcOptions[i] = rcOptions[i]; 
+        i++;
       if(i >= CHECKBOXITEMS)i=0;
     #endif  
   
     //=====================  BeeperOn via rcOptions =====================
-    if ( rcOptions[BOXBEEPERON] ){ // unconditional beeper on via AUXn switch 
-      beeperOnBox = 1;
-    }else{
-      beeperOnBox = 0;
-    }
+    if ( rcOptions[BOXBEEPERON] )beeperOnBox = 1;
+    else beeperOnBox = 0;
+    
     //===================== Beeps for failsafe =====================
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && f.ARMED) {
@@ -36,41 +61,41 @@
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && !f.ARMED) warn_failsafe = 2;                  // tx turned off while motors are off: start "find me" signal
       if ( failsafeCnt == 0) warn_failsafe = 0;                                              // turn off alarm if TX is okay
     #endif
+    
     //===================== GPS fix notification handling =====================
     #if GPS
-      if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && !f.GPS_FIX){    //if no fix and gps funtion is activated: do warning beeps.
-        warn_noGPSfix = 1;    
-      }else{
-        warn_noGPSfix = 0;
-      }
+      if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && !f.GPS_FIX)warn_noGPSfix = 1;  
+      else warn_noGPSfix = 0;
     #endif
+    
     //===================== Runtime Warning =====================
     #if defined(ARMEDTIMEWARNING)
-      if (armedTime >= ArmedTimeWarningMicroSeconds){
-        warn_runtime = 1;
-      }
+      if (armedTime >= ArmedTimeWarningMicroSeconds)warn_runtime = 1;
     #endif
-    buzzerHandler(warn_vbat);
+    buzzerHandler();
     #if defined(PILOTLAMP)
       PilotLampHandler();
     #endif
   }
-  void buzzerHandler(uint8_t warn_vbat){
+  
+  void buzzerHandler(){
     static uint16_t ontime, offtime, beepcount, repeat, repeatcounter;
     //===================== Priority driven Handling =====================
     // beepcode(length1,length2,length3,pause)
     //D: Double, L: Long, S: Short, N: None
     if (warn_failsafe == 2)      beep_code('L','N','N','D');                 //failsafe "find me" signal
     else if (warn_failsafe == 1) beep_code('S','L','L','S');                 //failsafe landing active              
-    else if (toggleBeep == 1)    beep_code('S','N','N','N');       
-    else if (toggleBeep == 2)    beep_code('S','S','N','N');       
-    else if (toggleBeep > 2)     beep_code('S','S','S','N');         
+    else if (beep_toggle == 1)    beep_code('S','N','N','N');       
+    else if (beep_toggle == 2)    beep_code('S','S','N','N');       
+    else if (beep_toggle > 2)     beep_code('S','S','S','N');         
     else if (warn_noGPSfix == 1) beep_code('S','S','N','S');    
     else if (beeperOnBox == 1)   beep_code('S','S','S','S');                 //beeperon
     else if (warn_runtime == 1 && f.ARMED == 1)beep_code('S','S','S','N'); //Runtime warning      
     else if (warn_vbat == 4)     beep_code('S','L','L','D');       
     else if (warn_vbat == 2)     beep_code('S','S','L','D');       
     else if (warn_vbat == 1)     beep_code('S','L','N','D'); 
+    else if (beep_confirmation == 1) beep_code('L','N','N','N');    
+    else if (beep_confirmation == 2) beep_code('L','L','N','S');
     else if (buzzerSequenceActive == 1) beep_code('N','N','N','N');                //if no signal is needed, finish sequence if not finished yet
     else{                                                                   //reset everything and keep quiet
       buzzerIsOn = 0;
@@ -108,7 +133,8 @@
     }
     if (icnt >=3 && (buzzerLastToggleTime<millis()-Duration) ){
       icnt=0;
-      toggleBeep = 0;
+      if (beep_toggle)beep_toggle = 0;
+      if (beep_confirmation)beep_confirmation = 0;
       buzzerSequenceActive = 0;                              //sequence is now done, next sequence may begin
       return;
     }
@@ -372,6 +398,33 @@
   return;
   }
 #endif
+
+//===================================================================================
+//=========================LED==================================================
+//===================================================================================
+
+void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
+  uint8_t i,r;
+  for (r=0;r<repeat;r++) {
+    for(i=0;i<num;i++) {
+      #if defined(LED_FLASHER)
+        switch_led_flasher(1);
+      #endif
+      #if defined(LANDING_LIGHTS_DDR)
+        switch_landing_lights(1);
+      #endif
+      LEDPIN_TOGGLE; // switch LEDPIN state
+      delay(wait);
+      #if defined(LED_FLASHER)
+        switch_led_flasher(0);
+      #endif
+      #if defined(LANDING_LIGHTS_DDR)
+        switch_landing_lights(0);
+      #endif
+    }
+    delay(60);
+  }
+}
 
 //===================================================================================
 //=========================LED RING==================================================
