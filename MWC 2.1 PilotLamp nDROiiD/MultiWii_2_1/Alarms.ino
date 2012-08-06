@@ -174,7 +174,7 @@
       //==================BLUE LED===========================
       #if GPS
         if (!f.GPS_FIX) usePilotLamp('B',100,100);
-        else if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && f.GPS_FIX) usePilotLamp('B',1000,1000);
+        else if (rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) usePilotLamp('B',1000,1000);
         else usePilotLamp('B',100,1000);
       #else
         usePilotLamp('B',0,0);
@@ -191,20 +191,20 @@
     static uint32_t channelLastToggleTime[4] ={0,0,0,0};
     
      switch(resource) {
-        case 'B': 
+        case 'G': 
           channel = 0;
           break;
-        case 'R': 
+        case 'B': 
           channel = 1;
           break;
-        case 'G': 
+        case 'R': 
           channel = 2;
           break;
         default:
-          channel = 3;
+          channel = 0;
           break;
       }
-    if ( !channelIsOn[channel] && (millis() >= (channelLastToggleTime[channel] + pause))&& pulse != 0 ) {	         
+    if (!channelIsOn[channel] && (millis() >= (channelLastToggleTime[channel] + pause))&& pulse != 0) {	         
       channelIsOn[channel] = 1;
           
       switch(channel) {
@@ -218,7 +218,7 @@
           PilotLamp(PL_GRN_ON);
           break;
         default:
-          PilotLamp(PL_BZR_ON); 
+          PilotLamp(PL_GRN_ON);
           break;
       }
       channelLastToggleTime[channel]=millis();      
@@ -236,7 +236,7 @@
           PilotLamp(PL_GRN_OFF);
           break;
         default:
-          PilotLamp(PL_BZR_OFF); 
+          PilotLamp(PL_GRN_OFF);
           break;
       }
       channelLastToggleTime[channel]=millis();    
