@@ -200,6 +200,9 @@
         case 'R': 
           channel = 2;
           break;
+        case 'S': 
+          channel = 3;
+          break;
         default:
           channel = 0;
           break;
@@ -209,13 +212,16 @@
           
       switch(channel) {
         case 0: 
-          PilotLamp(PL_BLU_ON);
+          PilotLamp(PL_GRN_ON);
           break;
         case 1: 
-          PilotLamp(PL_RED_ON);
+          PilotLamp(PL_BLU_ON);
           break;
         case 2: 
-          PilotLamp(PL_GRN_ON);
+          PilotLamp(PL_RED_ON);
+          break;
+        case 3: 
+          PilotLamp(PL_BZR_ON);
           break;
         default:
           PilotLamp(PL_GRN_ON);
@@ -227,13 +233,16 @@
       channelIsOn[channel] = 0;
       switch(channel) {
         case 0: 
-          PilotLamp(PL_BLU_OFF);
+          PilotLamp(PL_GRN_OFF);
           break;
         case 1: 
-          PilotLamp(PL_RED_OFF);
+          PilotLamp(PL_BLU_OFF);
           break;
         case 2: 
-          PilotLamp(PL_GRN_OFF);
+          PilotLamp(PL_RED_OFF);
+          break;
+        case 3: 
+          PilotLamp(PL_BZR_OFF);
           break;
         default:
           PilotLamp(PL_GRN_OFF);
