@@ -34,11 +34,16 @@
     #endif
  
     #if defined(RCOPTIONSBEEP)
-      static uint8_t i = 0, last_rcOptions[CHECKBOXITEMS];
-      if (last_rcOptions[i] != rcOptions[i]){beep_toggle = 1;}
+      static uint8_t i = 0,firstrun = 1, last_rcOptions[CHECKBOXITEMS];
+                    
+      if (last_rcOptions[i] != rcOptions[i])beep_toggle = 1;
         last_rcOptions[i] = rcOptions[i]; 
         i++;
       if(i >= CHECKBOXITEMS)i=0;
+      
+      if(firstrun == 1 && beep_confirmation == 0)beep_toggle=0;    //only enable options beep AFTER gyro init
+      else firstrun = 0;
+       
     #endif  
   
     if ( rcOptions[BOXBEEPERON] )beeperOnBox = 1;
@@ -163,9 +168,15 @@
 /********************************************************************/
 #if defined (PILOTLAMP) 
   void PilotLampHandler(){
+    static int16_t  i2c_errors_count_old = 0;
+    //==================I2C Error ===========================
+    if (i2c_errors_count > i2c_errors_count_old+100){
+      //i2c_errors_count_old = i2c_errors_count;
+      PilotLampBlinkAll(100);
+    }
     //==================LED Sequence ===========================
-    if (beeperOnBox){
-      PilotLampSequence();
+    else if (beeperOnBox){
+      PilotLampSequence(100);
     }else{
       //==================GREEN LED===========================
       if (f.ARMED && f.ACC_MODE) usePilotLamp('G',1000,500);
@@ -371,11 +382,11 @@
       return;
   }
   
-  void PilotLampSequence(void){
+  void PilotLampSequence(uint16_t speed){
     static uint32_t lastswitch = 0;
     static uint8_t state = 0;
        
-    if(millis() >= (lastswitch + 100)) {                                
+    if(millis() >= (lastswitch + speed)) {                                
       lastswitch = millis();
       state++;
     }
@@ -398,6 +409,31 @@
     }             
   return;
   }
+  
+  void PilotLampBlinkAll(uint16_t speed){
+    static uint32_t lastswitch = 0;
+    static uint8_t state = 0;
+       
+    if(millis() >= (lastswitch + speed)) {                                
+      lastswitch = millis();
+      state++;
+    }
+    switch(state) {                         
+      case 0:
+        PilotLamp(PL_GRN_ON);
+        PilotLamp(PL_BLU_ON);
+        PilotLamp(PL_RED_ON);
+        break;
+      case 1:
+        PilotLamp(PL_GRN_OFF);
+        PilotLamp(PL_BLU_OFF);
+        PilotLamp(PL_RED_OFF);
+        state = 0;
+        break;
+    }             
+  return;
+  }  
+  
 #endif
 
 
