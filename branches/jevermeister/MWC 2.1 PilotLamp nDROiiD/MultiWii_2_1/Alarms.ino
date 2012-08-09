@@ -7,7 +7,7 @@
                  warn_vbat = 0,
                  buzzerIsOn = 0, 
                  buzzerSequenceActive=0, 
-                 beepDone =0;
+                 beepCycleDone =0;
   static uint32_t buzzerLastToggleTime;
   uint8_t isBuzzerON() { return buzzerIsOn; } // returns true while buzzer is buzzing; returns 0 for silent periods
 
@@ -74,15 +74,12 @@
 /********************************************************************/
 /****                      Buzzer Handling                       ****/
 /********************************************************************/
-  void buzzerHandler(){
-    static uint16_t ontime, offtime, beepcount, repeat, repeatcounter;
-    
-    //===================== Priority driven Handling =====================
+  void buzzerHandler(){    
     // beepcode(length1,length2,length3,pause)
     //D: Double, L: Long, M: Middle, S: Short, N: None
     if (warn_failsafe == 2)      beep_code('L','N','N','D');                 //failsafe "find me" signal
     else if (warn_failsafe == 1) beep_code('S','L','L','S');                 //failsafe landing active              
-    else if (beep_toggle == 1)    beep_code('S','N','N','N');       
+    else if (beep_toggle == 1) {beep_code('S','N','N','N');      } 
     else if (beep_toggle == 2)    beep_code('S','S','N','N');       
     else if (beep_toggle > 2)     beep_code('S','S','S','N');         
     else if (warn_noGPSfix == 1) beep_code('S','S','N','S');    
@@ -106,7 +103,40 @@
     static char patternChar[4];
     uint16_t Duration;
     static uint8_t icnt = 0;
+  
+  /*
+  //neu für alle resourcen vereint (buzzer/LED/PL)
+  
+  resourcenvektor
+  channel, char
+  0: L LED      L
+  1: S Buzzer   S
+  2: G PL_GRN   G
+  3: B PL_BLU   B
+  4: R PL_RED   R
+  x: S PL_BZR   S
+  
+
     
+    Ablauf:
+    
+    übergebe AlarmpatternDecode(Länge1,Länge2,Länge3,Pause,resource);
+               UseResource(resource)
+                 ResourceToChannel(resource);
+                 ChannelToOutput(channel,activate);
+    siehe neuen code pilotlamp    unten
+    wenn ich exclusiven zugriff hätte, dann brauche ich nur noch mit toggle arbeiten
+    */
+    
+    if (risingEdge(beep_toggle) == 1){
+      buzzerSequenceActive = 0;
+      buzzerIsOn = 0;
+      beepCycleDone =0;
+      BUZZERPIN_OFF;
+      beepCycleDone =0;
+      icnt=0;
+    }
+ 
     if (buzzerSequenceActive == 0){    //only change sequenceparameters if prior sequence is done
       buzzerSequenceActive = 1;
       patternChar[0] = first; 
@@ -141,15 +171,23 @@
       buzzerSequenceActive = 0;                              //sequence is now done, next sequence may begin
       return;
     }
-    if (beepDone == 1 || Duration == 0){
+    if (beepCycleDone == 1 || Duration == 0){
       if (icnt < 3){icnt++;}    
       buzzerIsOn = 0;
-      beepDone =0;
+      beepCycleDone =0;
       BUZZERPIN_OFF;
     }  
   }
-
-  void Buzzer_beep( uint16_t pulse,uint16_t pause){  
+  
+  int risingEdge(uint8_t input){
+      static uint8_t result=0, input_old;
+      if (input_old == 0 and input > 0)result = 1;
+      else result = 0;
+      input_old = input;
+      return result;
+  }
+    
+  void Buzzer_beep(uint16_t pulse,uint16_t pause){  
     if ( !buzzerIsOn && (millis() >= (buzzerLastToggleTime + pause)) ) {	          // Buzzer is off and pause time is up -> turn it on
       buzzerIsOn = 1;
       BUZZERPIN_ON;
@@ -158,9 +196,10 @@
       buzzerIsOn = 0;
       BUZZERPIN_OFF;
       buzzerLastToggleTime=millis();   
-      beepDone =1;
+      beepCycleDone =1;
     }
   } 
+    
 #endif  //end of buzzer define
 
 /********************************************************************/
@@ -198,6 +237,85 @@
    }
   
   int usePilotLamp(char resource, uint16_t pulse, uint16_t pause){  
+    static uint8_t channel = 0, channelIsOn[5] = {0,0,0,0,0};
+    static uint32_t channelLastToggleTime[5] ={0,0,0,0,0};
+    
+    channel = ResourceToChannel(resource);
+    if (!channelIsOn[channel] && (millis() >= (channelLastToggleTime[channel] + pause))&& pulse != 0) {	         
+      channelIsOn[channel] = 1;      
+      ChannelToOutput(channel,1);
+      channelLastToggleTime[channel]=millis();      
+    } else if (channelIsOn[channel] && (millis() >= channelLastToggleTime[channel] + pulse)|| pulse==0 ) {        
+      channelIsOn[channel] = 0;
+      ChannelToOutput(channel,0);
+      channelLastToggleTime[channel]=millis();
+   //   cycle_Done[channel] = 1;     define muss gaaanz oben gemacht werden
+    } 
+  } 
+  
+  
+  int ResourceToChannel(uint8_t resource){
+    uint8_t channel =0;
+    switch(resource) {
+      case 'S': 
+        channel = 0;
+        break;
+      case 'L': 
+        channel = 1;
+        break;
+      case 'G': 
+        channel = 2;
+        break;
+      case 'B': 
+        channel = 3;
+        break;
+      case 'R': 
+        channel = 4;
+        break;
+      default:
+        channel = 1;
+        break;
+    }
+    return channel;
+  }
+  
+  void ChannelToOutput(uint8_t channel, uint8_t activate){
+     switch(channel) {
+        case 0: 
+          if (activate == 1) {BUZZERPIN_ON;}
+          else {BUZZERPIN_OFF;}
+          break; 
+        case 1:
+          if (activate == 1) {LEDPIN_ON;}
+          else {LEDPIN_OFF;}
+          break; 
+        case 2:
+          if (activate == 1)PilotLamp(PL_GRN_ON);
+          else PilotLamp(PL_GRN_OFF);
+          break;
+        case 3: 
+          if (activate == 1)PilotLamp(PL_BLU_ON);
+          else PilotLamp(PL_BLU_OFF);
+          break;
+        case 4: 
+          if (activate == 1)PilotLamp(PL_RED_ON);
+          else PilotLamp(PL_RED_OFF);
+          break;
+        default:
+          if (activate == 1)PilotLamp(PL_GRN_ON);
+          else PilotLamp(PL_GRN_OFF);
+          break;
+      }
+      return;
+  }
+  
+  
+  
+  
+  /* Sicherheitskopie von pilotlamp für umbau auf unified switch
+  
+  
+   int usePilotLamp(char resource, uint16_t pulse, uint16_t pause){  
     static uint8_t channel =0, channelIsOn[4] = {0,0,0,0};
     static uint32_t channelLastToggleTime[4] ={0,0,0,0};
     
@@ -263,6 +381,7 @@
       return 1;
     }
   } 
+  */
   
   union pl_reg {
       struct {
@@ -440,8 +559,9 @@
 /********************************************************************/
 /****                         LED Handling                       ****/
 /********************************************************************/
+//Beware!! Is working with delays, do not use inflight!
 
-void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
+void blinkLED(uint8_t num, uint8_t ontime,uint8_t repeat) {
   uint8_t i,r;
   for (r=0;r<repeat;r++) {
     for(i=0;i<num;i++) {
@@ -452,7 +572,7 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
         switch_landing_lights(1);
       #endif
       LEDPIN_TOGGLE; // switch LEDPIN state
-      delay(wait);
+      delay(ontime);
       #if defined(LED_FLASHER)
         switch_led_flasher(0);
       #endif
@@ -460,10 +580,9 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
         switch_landing_lights(0);
       #endif
     }
-    delay(60);
+    delay(60); //wait 60 ms
   }
 }
-
 
 /********************************************************************/
 /****                      LED Ring Handling                     ****/
