@@ -454,6 +454,12 @@
       /* Moving Average ServoGimbal Signal Output */
       //#define MMSERVOGIMBAL                  // Active Output Moving Average Function for Servos Gimbal
       //#define MMSERVOGIMBALVECTORLENGHT 32   // Lenght of Moving Average Vector
+       
+    /************************   Assisted AcroTrainer    **********************************/
+     /* Train Acro with auto recovery. Value set the point where Levelmode takes over.
+        Remember to activate LevelMode first!...
+        A Value on 200 will give a very distinct transfer */
+      //#define ACROTRAINER 200   // http://www.multiwii.com/forum/viewtopic.php?f=16&t=1944#p17437
 
 
 
