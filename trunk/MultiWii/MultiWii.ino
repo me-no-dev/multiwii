@@ -928,9 +928,15 @@ void loop () {
   currentTime = micros();
   cycleTime = currentTime - previousTime;
   previousTime = currentTime;
-
+  
+  int8_t acroTainer= 0;
+  #if defined(ACROTRAINER)
+    if(f.ACC_MODE){
+    if (abs(rcCommand[ROLL]) + abs(rcCommand[PITCH]) >= ACROTRAINER ) acroTainer=1;}
+  #endif
+  
   #if MAG
-    if (abs(rcCommand[YAW]) <70 && f.MAG_MODE) {
+    if (abs(rcCommand[YAW]) <70 && f.MAG_MODE && !acroTainer) {
       int16_t dif = heading - magHold;
       if (dif <= - 180) dif += 360;
       if (dif >= + 180) dif -= 360;
@@ -939,7 +945,7 @@ void loop () {
   #endif
 
   #if BARO
-    if (f.BARO_MODE) {
+    if (f.BARO_MODE && !acroTainer ) {
       if (abs(rcCommand[THROTTLE]-initialThrottleHold)>ALT_HOLD_THROTTLE_NEUTRAL_ZONE) {
         f.BARO_MODE = 0; // so that a new althold reference is defined
       }
@@ -964,12 +970,16 @@ void loop () {
    #endif
 	  
     }
+	if(acroTainer )  {
+	GPS_angle[ROLL]   = 0;
+	GPS_angle[PITCH]  = 0;
+	}
   #endif
 
 
   //**** PITCH & ROLL & YAW PID ****    
   for(axis=0;axis<3;axis++) {
-    if (f.ACC_MODE && axis<2 ) { //LEVEL MODE
+    if (f.ACC_MODE && axis<2 && !acroTainer) { //LEVEL MODE
       // 50 degrees max inclination
       errorAngle = constrain(2*rcCommand[axis] + GPS_angle[axis],-500,+500) - angle[axis] + conf.angleTrim[axis]; //16 bits is ok here
       #ifdef LEVEL_PDF

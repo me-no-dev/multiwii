@@ -268,3 +268,9 @@ D:
 N: Felix Niessen (ronco)
 E: felix.niessen@googlemail.com
 W:
+
+S: AcroTrainer mode - Experimental
+D:
+N: PatrikE
+E:
+W: http://www.multiwii.com/forum/viewtopic.php?f=16&t=1944#p17437
