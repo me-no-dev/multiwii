@@ -5,14 +5,11 @@
                  warn_failsafe = 0, 
                  warn_runtime = 0,
                  warn_vbat = 0,
-                 buzzerIsOn = 0, 
                  buzzerSequenceActive=0, 
-                 beepCycleDone =0,
-                 cycle_Done[5]={0,0,0,0,0}; 
-    static uint8_t channelIsOn[5] = {0,0,0,0,0};
+                 cycle_Done[5]={0,0,0,0,0}, 
+                 channelIsOn[5] = {0,0,0,0,0};
     static uint32_t channelLastToggleTime[5] ={0,0,0,0,0};
-  static uint32_t buzzerLastToggleTime;
-  uint8_t isBuzzerON() { return buzzerIsOn; } // returns true while buzzer is buzzing; returns 0 for silent periods
+  uint8_t isBuzzerON() { return channelIsOn[1]; } // returns true while buzzer is buzzing; returns 0 for silent periods
 
 /********************************************************************/
 /****                      Alarm Handling                        ****/
@@ -36,6 +33,9 @@
       else                           warn_vbat = 4;
     #endif
  
+    if ( rcOptions[BOXBEEPERON] )beeperOnBox = 1;
+    else beeperOnBox = 0;
+    
     #if defined(RCOPTIONSBEEP)
       static uint8_t i = 0,firstrun = 1, last_rcOptions[CHECKBOXITEMS];
                     
@@ -44,14 +44,14 @@
         i++;
       if(i >= CHECKBOXITEMS)i=0;
       
-      if(firstrun == 1 && beep_confirmation == 0)beep_toggle=0;    //only enable options beep AFTER gyro init
+      if(firstrun == 1 && beep_confirmation == 0){
+        beep_toggle = 0;    //only enable options beep AFTER gyro init
+        beeperOnBox = 0;
+      }        
       else firstrun = 0;
        
     #endif  
-  
-    if ( rcOptions[BOXBEEPERON] )beeperOnBox = 1;
-    else beeperOnBox = 0;
-    
+     
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && f.ARMED) {
         warn_failsafe = 1;                                                                   //set failsafe warning level to 1 while landing
@@ -69,15 +69,28 @@
     #if defined(ARMEDTIMEWARNING)
       if (armedTime >= ArmedTimeWarningMicroSeconds)warn_runtime = 1;
     #endif
-    buzzerHandler();
-    #if defined(PILOTLAMP)
-      PilotLampHandler();
-    #endif
+
+    //it is neccessary to switch beetween buzzer or led
+    static uint8_t alarmchannel = 0;
+    switch(alarmchannel){
+      case 0:
+        buzzerHandler();
+        #if defined(PILOTLAMP)
+            alarmchannel++;
+            break;
+          case 1:
+            PilotLampHandler();
+            alarmchannel = 0;
+            break;
+        #endif
+    }
+    
   }
-/********************************************************************/
-/****                      Buzzer Handling                       ****/
-/********************************************************************/
-  void buzzerHandler(){    
+
+  void buzzerHandler(){ 
+    /********************************************************************/
+    /****                      Buzzer Handling                       ****/
+    /********************************************************************/  
     // beepcode(length1,length2,length3,pause)
     //D: Double, L: Long, M: Middle, S: Short, N: None
     if (warn_failsafe == 2)      beep_code('L','N','N','D');                 //failsafe "find me" signal
@@ -98,7 +111,7 @@
     else if (beep_confirmation > 4) beep_code('L','L','L','L');
     else if (buzzerSequenceActive == 1) beep_code('N','N','N','N');                //if no signal is needed, finish sequence if not finished yet
     else{                                                                   //reset everything and keep quiet
-      buzzerIsOn = 0;
+      channelIsOn[1] = 0;
       BUZZERPIN_OFF;
     }  
   }
@@ -130,16 +143,17 @@
     siehe neuen code pilotlamp    unten
     wenn ich exclusiven zugriff hätte, dann brauche ich nur noch mit toggle arbeiten
     */
-    
+/*    
+maybe used later if i fix the lag problem
     if (risingEdge(beep_toggle) == 1){
       buzzerSequenceActive = 0;
-      buzzerIsOn = 0;
-      beepCycleDone =0;
+      channelIsOn[1] = 0;
+      cycle_Done[1] =0;
       BUZZERPIN_OFF;
-      beepCycleDone =0;
+      cycle_Done[1] =0;
       icnt=0;
     }
- 
+ */
     if (buzzerSequenceActive == 0){    //only change sequenceparameters if prior sequence is done
       buzzerSequenceActive = 1;
       patternChar[0] = first; 
@@ -172,6 +186,8 @@
       if (beep_toggle)beep_toggle = 0;
       if (beep_confirmation)beep_confirmation = 0;
       buzzerSequenceActive = 0;                              //sequence is now done, next sequence may begin
+      channelIsOn[1] = 0;
+      BUZZERPIN_OFF;
       return;
     }
     if (cycle_Done[1] == 1 || Duration == 0){
@@ -198,34 +214,45 @@
 /********************************************************************/
   void PilotLampHandler(){
     static int16_t  i2c_errors_count_old = 0;
+    static uint8_t channel = 0;
+    //executing more than one channel per cycle leads to severe peaks in cycle time
     //==================I2C Error ===========================
     if (i2c_errors_count > i2c_errors_count_old+100){
-      //i2c_errors_count_old = i2c_errors_count;
       PilotLampBlinkAll(100);
-    }
+    }else if (beeperOnBox){
     //==================LED Sequence ===========================
-    else if (beeperOnBox){
       PilotLampSequence(100);
     }else{
-      //==================GREEN LED===========================
-      if (f.ARMED && f.ACC_MODE) useResource('G',1000,500);
-      else if (f.ARMED) useResource('G',100,100);
-      else useResource('G',0,0);    //switch off  --> muss noch programmiert werden
-      //==================BLUE LED===========================
-      #if GPS
-        if (!f.GPS_FIX) useResource('B',100,100);
-        else if (rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) useResource('B',1000,1000);
-        else useResource('B',100,1000);
-      #else
-        useResource('B',0,0);
-      #endif   
-      //==================RED LED===========================
-      if (warn_failsafe==1)useResource('R',100,100);
-      else if (warn_failsafe==2)useResource('R',1000,2000);
-      else useResource('R',0,0);
+      switch(channel) {                          // only use one channel per cycle
+        case 0:
+          //==================GREEN LED===========================
+          if (f.ARMED && f.ACC_MODE) useResource('G',1000,500);
+          else if (f.ARMED) useResource('G',100,100);
+          else useResource('G',0,0);    //switch off  --> muss noch programmiert werden
+          channel++;
+          break;
+        case 1:
+          //==================BLUE LED===========================
+          #if GPS
+            if (!f.GPS_FIX) useResource('B',100,100);
+            else if (rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) useResource('B',1000,1000);
+            else useResource('B',100,1000);
+          #else
+            useResource('B',0,0);
+          #endif   
+          channel++;
+          break;
+        case 2:
+          //==================RED LED===========================
+          if (warn_failsafe==1)useResource('R',100,100);
+          else if (warn_failsafe==2)useResource('R',1000,2000);
+          else useResource('R',0,0);
+          channel=0;
+          break;
+       }     
      }
    }
-  
+    
   void PilotLampSequence(uint16_t speed){
     static uint32_t lastswitch = 0;
     static uint8_t state = 0;
@@ -253,7 +280,7 @@
     }             
   return;
   }
-  
+   
   void PilotLampBlinkAll(uint16_t speed){
     static uint32_t lastswitch = 0;
     static uint8_t state = 0;
@@ -276,84 +303,9 @@
         break;
     }             
   return;
-  }  
+  } 
   
-union pl_reg {
-    struct {
-        unsigned grn: 1;
-        unsigned blu: 1;
-        unsigned red: 1;
-        unsigned bzr: 1;
-    } ctrl;
-    uint8_t pl_ctrl_all;
-};
-
-
-void PilotLamp(uint16_t device)
-{
-    uint8_t i;
-    static union pl_reg mode;
-    
-    if(device == PL_INIT) {                             // Initialize the Pilot Lamp State Table, turn off LEDs and Buzzer.
-        mode.pl_ctrl_all = 0x00;                        // Reset all LED and Buzzer status states.
-        gen_pl_freq(PL_GRN_OFF);                        // Turn off Green LED.
-        gen_pl_freq(PL_BLU_OFF);                        // Turn off Blue LED.
-        gen_pl_freq(PL_RED_OFF);                        // Turn off Red LED.
-        gen_pl_freq(PL_BZR_OFF);                        // Turn off Buzzer.
-    }
-    else {                                              // Check to see if the new state request is different than the current state.
-        if(device==PL_GRN_OFF && mode.ctrl.grn==1) {
-            mode.ctrl.grn = 0;
-        }
-        else if(device==PL_GRN_ON && mode.ctrl.grn==0) {
-            mode.ctrl.grn = 1;
-        }
-        else if(device==PL_BLU_OFF && mode.ctrl.blu==1) {
-            mode.ctrl.blu = 0;
-        }
-        else if(device==PL_BLU_ON && mode.ctrl.blu==0) {
-            mode.ctrl.blu = 1;
-        }
-        else if(device==PL_RED_OFF && mode.ctrl.red==1) {
-            mode.ctrl.red = 0;
-        }
-        else if(device==PL_RED_ON && mode.ctrl.red==0) {
-            mode.ctrl.red = 1;
-        }
-        else if(device==PL_BZR_OFF && mode.ctrl.bzr==1) {
-            mode.ctrl.bzr = 0;
-        }
-        else if(device==PL_BZR_ON && mode.ctrl.bzr==0) {
-            mode.ctrl.bzr = 1;
-        }
-        else {                                          // No state changes
-            PL_PIN_OFF;
-            return;                                     // Skip signal generation.
-        }
-        
-        gen_pl_freq(device);                            // Send waveform to Pilot Lamp.
-    }
-    
-    return;
-}
-
-// Create the freq signal to activate Pilot Lamp. This is a bit-bang operation.
-void gen_pl_freq(uint16_t device)
-{
-    uint8_t i;
-    
-    for (i=0;i<4;i++) {                                // Four waveforms are required. 
-        PL_PIN_ON;
-        delayMicroseconds(device);
-        PL_PIN_OFF;
-        delayMicroseconds(device);
-    }
-    
-    return;
-}
-
-void PilotLampTest(void)
-{
+  void PilotLampTest(void){
      static uint8_t cam1 = 0;
      static uint8_t cam2 = 0;
      static uint8_t state = 0;
@@ -393,7 +345,79 @@ void PilotLampTest(void)
         }             
      }
     return;
-}
+  } 
+  
+  union pl_reg {
+      struct {
+          unsigned grn: 1;
+          unsigned blu: 1;
+          unsigned red: 1;
+          unsigned bzr: 1;
+      } ctrl;
+      uint8_t pl_ctrl_all;
+  };
+  
+  void PilotLamp(uint16_t device){
+      uint8_t i;
+      static union pl_reg mode;
+      
+      if(device == PL_INIT) {                             // Initialize the Pilot Lamp State Table, turn off LEDs and Buzzer.
+          mode.pl_ctrl_all = 0x00;                        // Reset all LED and Buzzer status states.
+          gen_pl_freq(PL_GRN_OFF);                        // Turn off Green LED.
+          gen_pl_freq(PL_BLU_OFF);                        // Turn off Blue LED.
+          gen_pl_freq(PL_RED_OFF);                        // Turn off Red LED.
+          gen_pl_freq(PL_BZR_OFF);                        // Turn off Buzzer.
+      }
+      else {                                              // Check to see if the new state request is different than the current state.
+          if(device==PL_GRN_OFF && mode.ctrl.grn==1) {
+              mode.ctrl.grn = 0;
+          }
+          else if(device==PL_GRN_ON && mode.ctrl.grn==0) {
+              mode.ctrl.grn = 1;
+          }
+          else if(device==PL_BLU_OFF && mode.ctrl.blu==1) {
+              mode.ctrl.blu = 0;
+          }
+          else if(device==PL_BLU_ON && mode.ctrl.blu==0) {
+              mode.ctrl.blu = 1;
+          }
+          else if(device==PL_RED_OFF && mode.ctrl.red==1) {
+              mode.ctrl.red = 0;
+          }
+          else if(device==PL_RED_ON && mode.ctrl.red==0) {
+              mode.ctrl.red = 1;
+          }
+          else if(device==PL_BZR_OFF && mode.ctrl.bzr==1) {
+              mode.ctrl.bzr = 0;
+          }
+          else if(device==PL_BZR_ON && mode.ctrl.bzr==0) {
+              mode.ctrl.bzr = 1;
+          }
+          else {                                          // No state changes
+              PL_PIN_OFF;
+              return;                                     // Skip signal generation.
+          }
+          
+          gen_pl_freq(device);                            // Send waveform to Pilot Lamp.
+      }
+      
+      return;
+  }
+  
+  // Create the freq signal to activate Pilot Lamp. This is a bit-bang operation.
+  void gen_pl_freq(uint16_t device)
+  {
+      uint8_t i;
+      
+      for (i=0;i<4;i++) {                                // Four waveforms are required. maybe three??
+          PL_PIN_ON;
+          delayMicroseconds(device);
+          PL_PIN_OFF;
+          delayMicroseconds(device);
+      }
+      
+      return;
+  }
 #endif
 
 /********************************************************************/
