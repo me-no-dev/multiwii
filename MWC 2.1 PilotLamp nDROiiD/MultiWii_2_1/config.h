@@ -704,10 +704,10 @@
   /********************************************************************/
   /****                 Buzzer & Pilot Lampt                       ****/
   /********************************************************************/
-    //#define BUZZER                //uncomment if a buzzer is connected to the FC
+    #define BUZZER                //uncomment if a buzzer is connected to the FC
     #define RCOPTIONSBEEP        //uncomment this if you want the buzzer to beep at any rcOptions change on channel Aux1 to Aux4
     #define ARMEDTIMEWARNING 330  // Trigger an alarm after a certain time of being armed [s]
-    #define PILOTLAMP            //Uncomment if you are using a X-Arcraft Pilot Lamp
+    //#define PILOTLAMP            //Uncomment if you are using a X-Aircraft Pilot Lamp
 
   /********************************************************************/
   /****           battery voltage monitoring                       ****/
