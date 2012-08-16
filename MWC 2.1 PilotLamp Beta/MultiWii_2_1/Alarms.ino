@@ -1,15 +1,14 @@
-
+static uint8_t cycle_Done[5]={0,0,0,0,0}, 
+               channelIsOn[5] = {0,0,0,0,0};
+static uint32_t channelLastToggleTime[5] ={0,0,0,0,0};
 #if defined(BUZZER)
   static uint8_t beeperOnBox = 0,
                  warn_noGPSfix = 0,
                  warn_failsafe = 0, 
                  warn_runtime = 0,
                  warn_vbat = 0,
-                 buzzerIsOn = 0, 
-                 buzzerSequenceActive=0, 
-                 beepDone =0;
-  static uint32_t buzzerLastToggleTime;
-  uint8_t isBuzzerON() { return buzzerIsOn; } // returns true while buzzer is buzzing; returns 0 for silent periods
+                 buzzerSequenceActive=0;
+  uint8_t isBuzzerON() { return channelIsOn[1]; } // returns true while buzzer is buzzing; returns 0 for silent periods
 
 /********************************************************************/
 /****                      Alarm Handling                        ****/
@@ -33,17 +32,25 @@
       else                           warn_vbat = 4;
     #endif
  
-    #if defined(RCOPTIONSBEEP)
-      static uint8_t i = 0, last_rcOptions[CHECKBOXITEMS];
-      if (last_rcOptions[i] != rcOptions[i]){beep_toggle = 1;}
-        last_rcOptions[i] = rcOptions[i]; 
-        i++;
-      if(i >= CHECKBOXITEMS)i=0;
-    #endif  
-  
     if ( rcOptions[BOXBEEPERON] )beeperOnBox = 1;
     else beeperOnBox = 0;
     
+    #if defined(RCOPTIONSBEEP)
+      static uint8_t i = 0,firstrun = 1, last_rcOptions[CHECKBOXITEMS];
+                    
+      if (last_rcOptions[i] != rcOptions[i])beep_toggle = 1;
+        last_rcOptions[i] = rcOptions[i]; 
+        i++;
+      if(i >= CHECKBOXITEMS)i=0;
+      
+      if(firstrun == 1 && beep_confirmation == 0){
+        beep_toggle = 0;    //only enable options beep AFTER gyro init
+        beeperOnBox = 0;
+      }        
+      else firstrun = 0;
+       
+    #endif  
+     
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAVE_DELAY) && f.ARMED) {
         warn_failsafe = 1;                                                                   //set failsafe warning level to 1 while landing
@@ -61,23 +68,33 @@
     #if defined(ARMEDTIMEWARNING)
       if (armedTime >= ArmedTimeWarningMicroSeconds)warn_runtime = 1;
     #endif
-    buzzerHandler();
-    #if defined(PILOTLAMP)
-      PilotLampHandler();
-    #endif
-  }
-/********************************************************************/
-/****                      Buzzer Handling                       ****/
-/********************************************************************/
-  void buzzerHandler(){
-    static uint16_t ontime, offtime, beepcount, repeat, repeatcounter;
+
+    //it is neccessary to switch beetween buzzer or led
+    static uint8_t alarmchannel = 0;
+    switch(alarmchannel){
+      case 0:
+        buzzerHandler();
+        #if defined(PILOTLAMP)
+            alarmchannel++;
+            break;
+          case 1:
+            PilotLampHandler();
+            alarmchannel = 0;
+            break;
+        #endif
+    }
     
-    //===================== Priority driven Handling =====================
+  }
+
+  void buzzerHandler(){ 
+    /********************************************************************/
+    /****                      Buzzer Handling                       ****/
+    /********************************************************************/  
     // beepcode(length1,length2,length3,pause)
     //D: Double, L: Long, M: Middle, S: Short, N: None
     if (warn_failsafe == 2)      beep_code('L','N','N','D');                 //failsafe "find me" signal
     else if (warn_failsafe == 1) beep_code('S','L','L','S');                 //failsafe landing active              
-    else if (beep_toggle == 1)    beep_code('S','N','N','N');       
+    else if (beep_toggle == 1) {beep_code('S','N','N','N');      } 
     else if (beep_toggle == 2)    beep_code('S','S','N','N');       
     else if (beep_toggle > 2)     beep_code('S','S','S','N');         
     else if (warn_noGPSfix == 1) beep_code('S','S','N','S');    
@@ -93,7 +110,7 @@
     else if (beep_confirmation > 4) beep_code('L','L','L','L');
     else if (buzzerSequenceActive == 1) beep_code('N','N','N','N');                //if no signal is needed, finish sequence if not finished yet
     else{                                                                   //reset everything and keep quiet
-      buzzerIsOn = 0;
+      channelIsOn[1] = 0;
       BUZZERPIN_OFF;
     }  
   }
@@ -127,121 +144,165 @@
         break;
     }
     if(icnt <3 && Duration!=0){
-      Buzzer_beep(Duration,50);
+      useResource('S',Duration,50);
     }
-    if (icnt >=3 && (buzzerLastToggleTime<millis()-Duration) ){
+    if (icnt >=3 && (channelLastToggleTime[1]<millis()-Duration) ){
       icnt=0;
       if (beep_toggle)beep_toggle = 0;
       if (beep_confirmation)beep_confirmation = 0;
       buzzerSequenceActive = 0;                              //sequence is now done, next sequence may begin
+      channelIsOn[1] = 0;
+      BUZZERPIN_OFF;
       return;
     }
-    if (beepDone == 1 || Duration == 0){
-      if (icnt < 3){icnt++;}    
-      buzzerIsOn = 0;
-      beepDone =0;
+    if (cycle_Done[1] == 1 || Duration == 0){
+      if (icnt < 3){icnt++;}   
+      channelIsOn[1] = 0;
+      cycle_Done[1] = 0;
       BUZZERPIN_OFF;
     }  
-  }
-
-  void Buzzer_beep( uint16_t pulse,uint16_t pause){  
-    if ( !buzzerIsOn && (millis() >= (buzzerLastToggleTime + pause)) ) {	          // Buzzer is off and pause time is up -> turn it on
-      buzzerIsOn = 1;
-      BUZZERPIN_ON;
-      buzzerLastToggleTime=millis();      // save the time the buzer turned on
-    } else if (buzzerIsOn && (millis() >= buzzerLastToggleTime + pulse) ) {         //Buzzer is on and time is up -> turn it off
-      buzzerIsOn = 0;
-      BUZZERPIN_OFF;
-      buzzerLastToggleTime=millis();   
-      beepDone =1;
-    }
-  } 
+  }  
+  
+    
 #endif  //end of buzzer define
 
+#if defined (PILOTLAMP) 
 /********************************************************************/
 /****                   Pilot Lamp Handling                      ****/
 /********************************************************************/
-#if defined (PILOTLAMP) 
   void PilotLampHandler(){
+    static int16_t  i2c_errors_count_old = 0;
+    static uint8_t channel = 0;
+    //executing more than one channel per cycle leads to severe peaks in cycle time
+    //==================I2C Error ===========================
+    if (i2c_errors_count > i2c_errors_count_old+100){
+      PilotLampBlinkAll(100);
+    }else if (beeperOnBox){
     //==================LED Sequence ===========================
-    if (beeperOnBox){
-      PilotLampSequence();
+      PilotLampSequence(100);
     }else{
-      //==================GREEN LED===========================
-      if (f.ARMED && f.ACC_MODE) usePilotLamp('G',1000,500);
-      else if (f.ARMED) usePilotLamp('G',100,100);
-      else usePilotLamp('G',0,0);    //switch off  --> muss noch programmiert werden
-      //==================BLUE LED===========================
-      #if GPS
-        if (!f.GPS_FIX) usePilotLamp('B',100,100);
-        else if ((rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) && f.GPS_FIX) usePilotLamp('B',1000,1000);
-        else usePilotLamp('B',100,1000);
-      #else
-        usePilotLamp('B',0,0);
-      #endif   
-      //==================RED LED===========================
-      if (warn_failsafe==1)usePilotLamp('R',100,100);
-      else if (warn_failsafe==2)usePilotLamp('R',1000,2000);
-      else usePilotLamp('R',0,0);
+      switch(channel) {                          // only use one channel per cycle
+        case 0:
+          //==================GREEN LED===========================
+          if (f.ARMED && f.ACC_MODE) useResource('G',1000,500);
+          else if (f.ARMED) useResource('G',100,100);
+          else useResource('G',0,0);    //switch off  --> muss noch programmiert werden
+          channel++;
+          break;
+        case 1:
+          //==================BLUE LED===========================
+          #if GPS
+            if (!f.GPS_FIX) useResource('B',100,100);
+            else if (rcOptions[BOXGPSHOME] || rcOptions[BOXGPSHOLD]) useResource('B',1000,1000);
+            else useResource('B',100,1000);
+          #else
+            useResource('B',0,0);
+          #endif   
+          channel++;
+          break;
+        case 2:
+          //==================RED LED===========================
+          if (warn_failsafe==1)useResource('R',100,100);
+          else if (warn_failsafe==2)useResource('R',1000,2000);
+          else useResource('R',0,0);
+          channel=0;
+          break;
+       }     
      }
    }
-  
-  int usePilotLamp(char resource, uint16_t pulse, uint16_t pause){  
-    static uint8_t channel =0, channelIsOn[4] = {0,0,0,0};
-    static uint32_t channelLastToggleTime[4] ={0,0,0,0};
     
-     switch(resource) {
-        case 'B': 
-          channel = 0;
-          break;
-        case 'R': 
-          channel = 1;
-          break;
-        case 'G': 
-          channel = 2;
-          break;
-        default:
-          channel = 3;
-          break;
-      }
-    if ( !channelIsOn[channel] && (millis() >= (channelLastToggleTime[channel] + pause))&& pulse != 0 ) {	         
-      channelIsOn[channel] = 1;
-          
-      switch(channel) {
-        case 0: 
-          PilotLamp(PL_BLU_ON);
-          break;
-        case 1: 
-          PilotLamp(PL_RED_ON);
-          break;
-        case 2: 
-          PilotLamp(PL_GRN_ON);
-          break;
-        default:
-          PilotLamp(PL_BZR_ON); 
-          break;
-      }
-      channelLastToggleTime[channel]=millis();      
-      return 0;
-    } else if (channelIsOn[channel] && (millis() >= channelLastToggleTime[channel] + pulse)|| pulse==0 ) {        
-      channelIsOn[channel] = 0;
-      switch(channel) {
-        case 0: 
-          PilotLamp(PL_BLU_OFF);
-          break;
-        case 1: 
-          PilotLamp(PL_RED_OFF);
-          break;
-        case 2: 
-          PilotLamp(PL_GRN_OFF);
-          break;
-        default:
-          PilotLamp(PL_BZR_OFF); 
-          break;
-      }
-      channelLastToggleTime[channel]=millis();    
-      return 1;
+  void PilotLampSequence(uint16_t speed){
+    static uint32_t lastswitch = 0;
+    static uint8_t state = 0;
+       
+    if(millis() >= (lastswitch + speed)) {                                
+      lastswitch = millis();
+      state++;
     }
+    switch(state) {                          // Light-chase Cycle the LED's.
+      case 0:
+        PilotLamp(PL_GRN_ON);
+        break;
+      case 1:
+         PilotLamp(PL_GRN_OFF);
+         PilotLamp(PL_BLU_ON);
+         break;
+      case 2:
+        PilotLamp(PL_BLU_OFF);
+        PilotLamp(PL_RED_ON);
+        break;
+      case 3:
+        state = 0;
+        PilotLamp(PL_RED_OFF);
+        break;
+    }             
+  return;
+  }
+   
+  void PilotLampBlinkAll(uint16_t speed){
+    static uint32_t lastswitch = 0;
+    static uint8_t state = 0;
+       
+    if(millis() >= (lastswitch + speed)) {                                
+      lastswitch = millis();
+      state++;
+    }
+    switch(state) {                         
+      case 0:
+        PilotLamp(PL_GRN_ON);
+        PilotLamp(PL_BLU_ON);
+        PilotLamp(PL_RED_ON);
+        break;
+      case 1:
+        PilotLamp(PL_GRN_OFF);
+        PilotLamp(PL_BLU_OFF);
+        PilotLamp(PL_RED_OFF);
+        state = 0;
+        break;
+    }             
+  return;
+  } 
+  
+  void PilotLampTest(void){
+     static uint8_t cam1 = 0;
+     static uint8_t cam2 = 0;
+     static uint8_t state = 0;
+     
+     if(cam1++ > 40) {                                // Update rate is perhaps 2Hz, but will vary.
+         cam1 = 0;
+         if(cam2++ > 20 && state==1) {                // Periodically beep the buzzer (every few seconds).
+             cam2 = 0;
+             PilotLamp(PL_BZR_ON);
+             delay(200);                              // Brute force delay is needed because main loop will immediately turn off buzzer.
+         }
+         else {
+             switch(state) {                          // Light-chase Cycle the LED's.
+                 case 0:
+                     state++;
+                     PilotLamp(PL_BZR_OFF);
+                     break;
+                 case 1:
+                     state++;
+                     PilotLamp(PL_GRN_ON);
+                     break;
+                 case 2:
+                     state++;
+                     PilotLamp(PL_GRN_OFF);
+                     PilotLamp(PL_BLU_ON);
+                     break;
+                 case 3:
+                     state++;
+                     PilotLamp(PL_BLU_OFF);
+                     PilotLamp(PL_RED_ON);
+                     break;
+                 case 4:
+                     state = 0;
+                     PilotLamp(PL_RED_OFF);
+                     break;
+             }
+        }             
+     }
+    return;
   } 
   
   union pl_reg {
@@ -257,28 +318,15 @@
   void PilotLamp(uint16_t device){
       uint8_t i;
       static union pl_reg mode;
-      if(device == PL_INIT) {                            // Initialize the Pilot Lamp.
-          mode.pl_ctrl_all = 0x00;                       // Reset all LED and Buzzer status states.
-          for (i=0;i<4;i++) {                            // Create the required freq waveforms to control the various modes.
-              PL_PIN_ON;
-              delayMicroseconds(PL_GRN_OFF);
-              PL_PIN_OFF;
-              delayMicroseconds(PL_GRN_OFF);
-              PL_PIN_ON;
-              delayMicroseconds(PL_BLU_OFF);
-              PL_PIN_OFF;
-              delayMicroseconds(PL_BLU_OFF);
-              PL_PIN_ON;
-              delayMicroseconds(PL_RED_OFF);
-              PL_PIN_OFF;
-              delayMicroseconds(PL_RED_OFF);
-              PL_PIN_ON;
-              delayMicroseconds(PL_BZR_OFF);
-              PL_PIN_OFF;
-              delayMicroseconds(PL_BZR_OFF);              
-          }
+      
+      if(device == PL_INIT) {                             // Initialize the Pilot Lamp State Table, turn off LEDs and Buzzer.
+          mode.pl_ctrl_all = 0x00;                        // Reset all LED and Buzzer status states.
+          gen_pl_freq(PL_GRN_OFF);                        // Turn off Green LED.
+          gen_pl_freq(PL_BLU_OFF);                        // Turn off Blue LED.
+          gen_pl_freq(PL_RED_OFF);                        // Turn off Red LED.
+          gen_pl_freq(PL_BZR_OFF);                        // Turn off Buzzer.
       }
-      else {                                                  // Check to see if the new state request is different than the current state.
+      else {                                              // Check to see if the new state request is different than the current state.
           if(device==PL_GRN_OFF && mode.ctrl.grn==1) {
               mode.ctrl.grn = 0;
           }
@@ -303,100 +351,39 @@
           else if(device==PL_BZR_ON && mode.ctrl.bzr==0) {
               mode.ctrl.bzr = 1;
           }
-          else {                                             // No state changes
+          else {                                          // No state changes
               PL_PIN_OFF;
-              return;                                       // Skip signal generation.
+              return;                                     // Skip signal generation.
           }
-          for (i=0;i<4;i++) {                                // Create the freq signal to activate Pilot Lamp.
-              PL_PIN_ON;
-              delayMicroseconds(device);
-              PL_PIN_OFF;
-              delayMicroseconds(device);
-          }
-      }      
-      return;
-  }
+          
+          gen_pl_freq(device);                            // Send waveform to Pilot Lamp.
+      }
       
-  void PilotLampTest(void){
-  // PilotLampTest() can be used to troubleshoot the LED/Buzzer module. Place it in the main loop and you 
-  // should see the three LED's sequence in order with a periodic short beep.
-    static uint8_t cam1 = 0;
-    static uint8_t cam2 = 0;
-    static uint8_t state = 0;
-       
-       if(cam1++ > 40) {                                // Update rate is perhaps 2Hz, but will vary.
-           cam1 = 0;
-           if(cam2++ > 20 && state==1) {                // Periodically beep the buzzer (every few seconds).
-               cam2 = 0;
-               PilotLamp(PL_BZR_ON);
-               delay(200);                              // Brute force delay is needed because maim loop will immediately turn off buzzer.
-           }
-           else {
-               switch(state) {                          // Light-chase Cycle the LED's.
-                   case 0:
-                       state++;
-                       PilotLamp(PL_BZR_OFF);
-                       break;
-                   case 1:
-                       state++;
-                       PilotLamp(PL_GRN_ON);
-                       break;
-                   case 2:
-                       state++;
-                       PilotLamp(PL_GRN_OFF);
-                       PilotLamp(PL_BLU_ON);
-                       break;
-                   case 3:
-                       state++;
-                       PilotLamp(PL_BLU_OFF);
-                       PilotLamp(PL_RED_ON);
-                       break;
-                   case 4:
-                       state = 0;
-                       PilotLamp(PL_RED_OFF);
-                       break;
-               }
-          }             
-       }
-    
       return;
   }
   
-  void PilotLampSequence(void){
-    static uint32_t lastswitch = 0;
-    static uint8_t state = 0;
-       
-    if(millis() >= (lastswitch + 100)) {                                
-      lastswitch = millis();
-      state++;
-    }
-    switch(state) {                          // Light-chase Cycle the LED's.
-      case 0:
-        PilotLamp(PL_GRN_ON);
-        break;
-      case 1:
-         PilotLamp(PL_GRN_OFF);
-         PilotLamp(PL_BLU_ON);
-         break;
-      case 2:
-        PilotLamp(PL_BLU_OFF);
-        PilotLamp(PL_RED_ON);
-        break;
-      case 3:
-        state = 0;
-        PilotLamp(PL_RED_OFF);
-        break;
-    }             
-  return;
+  // Create the freq signal to activate Pilot Lamp. This is a bit-bang operation.
+  void gen_pl_freq(uint16_t device)
+  {
+      uint8_t i;
+      
+      for (i=0;i<4;i++) {                                // Four waveforms are required. maybe three??
+          PL_PIN_ON;
+          delayMicroseconds(device);
+          PL_PIN_OFF;
+          delayMicroseconds(device);
+      }
+      
+      return;
   }
 #endif
-
 
 /********************************************************************/
 /****                         LED Handling                       ****/
 /********************************************************************/
+//Beware!! Is working with delays, do not use inflight!
 
-void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
+void blinkLED(uint8_t num, uint8_t ontime,uint8_t repeat) {
   uint8_t i,r;
   for (r=0;r<repeat;r++) {
     for(i=0;i<num;i++) {
@@ -407,7 +394,7 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
         switch_landing_lights(1);
       #endif
       LEDPIN_TOGGLE; // switch LEDPIN state
-      delay(wait);
+      delay(ontime);
       #if defined(LED_FLASHER)
         switch_led_flasher(0);
       #endif
@@ -415,9 +402,85 @@ void blinkLED(uint8_t num, uint8_t wait,uint8_t repeat) {
         switch_landing_lights(0);
       #endif
     }
-    delay(60);
+    delay(60); //wait 60 ms
   }
 }
+
+/********************************************************************/
+/****                         Global Handling                    ****/
+/********************************************************************/
+
+  int useResource(char resource, uint16_t pulse, uint16_t pause){ 
+    static uint8_t channel = 0; 
+    channel = ResourceToChannel(resource);
+    if (!channelIsOn[channel] && (millis() >= (channelLastToggleTime[channel] + pause))&& pulse != 0) {	         
+      channelIsOn[channel] = 1;      
+      ChannelToOutput(channel,1);
+      channelLastToggleTime[channel]=millis();      
+    } else if (channelIsOn[channel] && (millis() >= channelLastToggleTime[channel] + pulse)|| pulse==0 ) {        
+      channelIsOn[channel] = 0;
+      ChannelToOutput(channel,0);
+      channelLastToggleTime[channel]=millis();
+      cycle_Done[channel] = 1;     
+    } 
+  } 
+  
+  int ResourceToChannel(uint8_t resource){
+    uint8_t channel =0;
+    switch(resource) {
+      case 'L': 
+        channel = 0;
+        break;
+      case 'S': 
+        channel = 1;
+        break;
+      case 'G': 
+        channel = 2;
+        break;
+      case 'B': 
+        channel = 3;
+        break;
+      case 'R': 
+        channel = 4;
+        break;
+      default:
+        channel = 0;
+        break;
+    }
+    return channel;
+  }
+  
+  void ChannelToOutput(uint8_t channel, uint8_t activate){
+     switch(channel) {
+        case 0: 
+          if (activate == 1) {LEDPIN_ON;}
+          else {LEDPIN_OFF;}
+          break; 
+        case 1:
+          if (activate == 1) {BUZZERPIN_ON;}
+          else {BUZZERPIN_OFF;}
+          break; 
+        #if defined (PILOTLAMP) 
+          case 2:
+            if (activate == 1)PilotLamp(PL_GRN_ON);
+            else PilotLamp(PL_GRN_OFF);
+            break;
+          case 3: 
+            if (activate == 1)PilotLamp(PL_BLU_ON);
+            else PilotLamp(PL_BLU_OFF);
+            break;
+          case 4: 
+            if (activate == 1)PilotLamp(PL_RED_ON);
+            else PilotLamp(PL_RED_OFF);
+            break;
+        #endif
+        default:
+          if (activate == 1){LEDPIN_ON;}
+          else {LEDPIN_OFF;}
+          break;
+      }
+      return;
+  }
 
 
 /********************************************************************/

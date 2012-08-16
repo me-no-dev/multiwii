@@ -58,22 +58,11 @@
     #if !defined(MONGOOSE1_0)
       #define BUZZERPIN_PINMODE          pinMode (8, OUTPUT);
       #if defined PILOTLAMP
-        #define    BUZZERPIN_ON PilotLamp(PL_BZR_ON);
-        #define    BUZZERPIN_OFF PilotLamp(PL_BZR_OFF);
-        #define    PL_INIT   0
-        #define    PL_GRN_ON    111    // 4500Hz
-        #define    PL_GRN_OFF   192    // 2600Hz
-        #define    PL_BLU_ON    312    // 1600Hz
-        #define    PL_BLU_OFF   385    // 1300Hz
-        #define    PL_RED_ON    500    // 1000Hz
-        #define    PL_RED_OFF   588    // 850Hz
-        #define    PL_BZR_ON    689    // 725Hz
-        #define    PL_BZR_OFF   800    // 625Hz
-        #define    PL_PIN_ON    PORTB |= 1;
-        #define    PL_PIN_OFF   PORTB &= ~1;
+        #define    PL_PIN_ON            PORTB |= 1;
+        #define    PL_PIN_OFF           PORTB &= ~1;
       #else
-        #define BUZZERPIN_ON               PORTB |= 1;
-        #define BUZZERPIN_OFF              PORTB &= ~1;
+        #define BUZZERPIN_ON            PORTB |= 1;
+        #define BUZZERPIN_OFF           PORTB &= ~1;
       #endif 
     #endif
   #else
@@ -193,19 +182,8 @@
   #if defined(D8BUZZER)
     #define BUZZERPIN_PINMODE          DDRB |= (1<<4);
     #if defined PILOTLAMP
-      #define    BUZZERPIN_ON PilotLamp(PL_BZR_ON);
-      #define    BUZZERPIN_OFF PilotLamp(PL_BZR_OFF);
-      #define    PL_INIT   0
-      #define    PL_GRN_ON    111    // 4500Hz
-      #define    PL_GRN_OFF   192    // 2600Hz
-      #define    PL_BLU_ON    312    // 1600Hz
-      #define    PL_BLU_OFF   385    // 1300Hz
-      #define    PL_RED_ON    500    // 1000Hz
-      #define    PL_RED_OFF   588    // 850Hz
-      #define    PL_BZR_ON    689    // 725Hz
-      #define    PL_BZR_OFF   800    // 625Hz
-      #define    PL_PIN_ON    PORTB |= 1<<4;
-      #define    PL_PIN_OFF   PORTB &= ~(1<<4);
+      #define    PL_PIN_ON            PORTB |= 1<<4;
+      #define    PL_PIN_OFF           PORTB &= ~(1<<4);
     #else
       #define BUZZERPIN_ON               PORTB |= 1<<4;
       #define BUZZERPIN_OFF              PORTB &= ~(1<<4); 
@@ -214,17 +192,6 @@
   #elif defined(A32U4ALLPINS)
     #define BUZZERPIN_PINMODE          DDRD |= (1<<4);
     #if defined PILOTLAMP
-      #define    BUZZERPIN_ON PilotLamp(PL_BZR_ON);
-      #define    BUZZERPIN_OFF PilotLamp(PL_BZR_OFF);
-      #define    PL_INIT   0
-      #define    PL_GRN_ON    111    // 4500Hz
-      #define    PL_GRN_OFF   192    // 2600Hz
-      #define    PL_BLU_ON    312    // 1600Hz
-      #define    PL_BLU_OFF   385    // 1300Hz
-      #define    PL_RED_ON    500    // 1000Hz
-      #define    PL_RED_OFF   588    // 850Hz
-      #define    PL_BZR_ON    689    // 725Hz
-      #define    PL_BZR_OFF   800    // 625Hz
       #define    PL_PIN_ON    PORTD |= 1<<4;
       #define    PL_PIN_OFF   PORTD &= ~(1<<4);
     #else
@@ -234,17 +201,6 @@
   #else
     #define BUZZERPIN_PINMODE          DDRD |= (1<<3);
     #if defined PILOTLAMP
-      #define    BUZZERPIN_ON PilotLamp(PL_BZR_ON);
-      #define    BUZZERPIN_OFF PilotLamp(PL_BZR_OFF);
-      #define    PL_INIT   0
-      #define    PL_GRN_ON    111    // 4500Hz
-      #define    PL_GRN_OFF   192    // 2600Hz
-      #define    PL_BLU_ON    312    // 1600Hz
-      #define    PL_BLU_OFF   385    // 1300Hz
-      #define    PL_RED_ON    500    // 1000Hz
-      #define    PL_RED_OFF   588    // 850Hz
-      #define    PL_BZR_ON    689    // 725Hz
-      #define    PL_BZR_OFF   800    // 625Hz
       #define    PL_PIN_ON    PORTD |= 1<<3;
       #define    PL_PIN_OFF   PORTD &= ~(1<<3);
     #else
@@ -374,17 +330,6 @@
   #define LEDPIN_OFF                 PORTB &= ~(1<<7);PORTC &= ~(1<<7);
   #define BUZZERPIN_PINMODE          pinMode (32, OUTPUT);
   #if defined PILOTLAMP
-    #define    BUZZERPIN_ON PilotLamp(PL_BZR_ON);
-    #define    BUZZERPIN_OFF PilotLamp(PL_BZR_OFF);
-    #define    PL_INIT   0
-    #define    PL_GRN_ON    111    // 4500Hz
-    #define    PL_GRN_OFF   192    // 2600Hz
-    #define    PL_BLU_ON    312    // 1600Hz
-    #define    PL_BLU_OFF   385    // 1300Hz
-    #define    PL_RED_ON    500    // 1000Hz
-    #define    PL_RED_OFF   588    // 850Hz
-    #define    PL_BZR_ON    689    // 725Hz
-    #define    PL_BZR_OFF   800    // 625Hz
     #define    PL_PIN_ON    PORTC |= 1<<5;
     #define    PL_PIN_OFF   PORTC &= ~(1<<5);
   #else
@@ -1116,6 +1061,20 @@
 
 #if defined(POWERMETER_HARD) || defined(POWERMETER_SOFT)
   #define POWERMETER
+#endif
+
+#if defined PILOTLAMP
+  #define    BUZZERPIN_ON PilotLamp(PL_BZR_ON);
+  #define    BUZZERPIN_OFF PilotLamp(PL_BZR_OFF);
+  #define    PL_INIT   0
+  #define    PL_GRN_ON    111    // 4500Hz
+  #define    PL_GRN_OFF   192    // 2600Hz
+  #define    PL_BLU_ON    312    // 1600Hz
+  #define    PL_BLU_OFF   385    // 1300Hz
+  #define    PL_RED_ON    500    // 1000Hz
+  #define    PL_RED_OFF   588    // 850Hz
+  #define    PL_BZR_ON    689    // 725Hz
+  #define    PL_BZR_OFF   800    // 625Hz
 #endif
 
 #if defined(PILOTLAMP) || defined(VBAT)
