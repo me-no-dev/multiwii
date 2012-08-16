@@ -1,14 +1,13 @@
-
+static uint8_t cycle_Done[5]={0,0,0,0,0}, 
+               channelIsOn[5] = {0,0,0,0,0};
+static uint32_t channelLastToggleTime[5] ={0,0,0,0,0};
 #if defined(BUZZER)
   static uint8_t beeperOnBox = 0,
                  warn_noGPSfix = 0,
                  warn_failsafe = 0, 
                  warn_runtime = 0,
                  warn_vbat = 0,
-                 buzzerSequenceActive=0, 
-                 cycle_Done[5]={0,0,0,0,0}, 
-                 channelIsOn[5] = {0,0,0,0,0};
-    static uint32_t channelLastToggleTime[5] ={0,0,0,0,0};
+                 buzzerSequenceActive=0;
   uint8_t isBuzzerON() { return channelIsOn[1]; } // returns true while buzzer is buzzing; returns 0 for silent periods
 
 /********************************************************************/
@@ -119,41 +118,7 @@
     static char patternChar[4];
     uint16_t Duration;
     static uint8_t icnt = 0;
-  
-  /*
-  //neu für alle resourcen vereint (buzzer/LED/PL)
-  
-  resourcenvektor
-  channel, char
-  0: L LED      L
-  1: S Buzzer   S
-  2: G PL_GRN   G
-  3: B PL_BLU   B
-  4: R PL_RED   R
-  x: S PL_BZR   S
-  
-
     
-    Ablauf:
-    
-    übergebe AlarmpatternDecode(Länge1,Länge2,Länge3,Pause,resource);
-               UseResource(resource)
-                 ResourceToChannel(resource);
-                 ChannelToOutput(channel,activate);
-    siehe neuen code pilotlamp    unten
-    wenn ich exclusiven zugriff hätte, dann brauche ich nur noch mit toggle arbeiten
-    */
-/*    
-maybe used later if i fix the lag problem
-    if (risingEdge(beep_toggle) == 1){
-      buzzerSequenceActive = 0;
-      channelIsOn[1] = 0;
-      cycle_Done[1] =0;
-      BUZZERPIN_OFF;
-      cycle_Done[1] =0;
-      icnt=0;
-    }
- */
     if (buzzerSequenceActive == 0){    //only change sequenceparameters if prior sequence is done
       buzzerSequenceActive = 1;
       patternChar[0] = first; 
@@ -198,13 +163,6 @@ maybe used later if i fix the lag problem
     }  
   }  
   
-  int risingEdge(uint8_t input){
-      static uint8_t result=0, input_old;
-      if (input_old == 0 and input > 0)result = 1;
-      else result = 0;
-      input_old = input;
-      return result;
-  }
     
 #endif  //end of buzzer define
 
