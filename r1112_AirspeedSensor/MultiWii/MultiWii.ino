@@ -168,6 +168,12 @@ static int16_t  errorAltitudeI = 0;
 static int16_t  debug[4];
 static int16_t  sonarAlt; //to think about the unit
 
+#if defined(AIRSPEED)
+static float airpressureRaw = 0;
+static uint16_t airpressureOffset = 0;
+#endif
+static uint16_t airspeedSpeed = 0; //needs to be set anyway, as it is called in serial communication and therefore needs to be defined.
+
 struct flags_struct {
   uint8_t OK_TO_ARM :1 ;
   uint8_t ARMED :1 ;
@@ -598,6 +604,9 @@ void setup() {
     for(uint8_t i=0;i<=PMOTOR_SUM;i++)
       pMeter[i]=0;
   #endif
+  #if defined(AIRSPEED)
+    Airspeed_init();
+  #endif
   #if defined(ARMEDTIMEWARNING)
     ArmedTimeWarningMicroSeconds = (ARMEDTIMEWARNING *1000000);
   #endif
@@ -976,7 +985,7 @@ void loop () {
     #endif
   } else { // not in rc loop
     static uint8_t taskOrder=0; // never call all functions in the same loop, to avoid high delay spikes
-    switch (taskOrder++ % 5) {
+    switch (taskOrder++ % 6) {
       case 0:
         #if MAG
           Mag_getADC();
@@ -1004,6 +1013,12 @@ void loop () {
         #ifdef LANDING_LIGHTS_DDR
           auto_switch_landing_lights();
         #endif
+        break;
+      case 5:
+	  #if defined(AIRSPEED)
+        Airspeed_update();
+		debug[3] = airspeedSpeed;
+      #endif
         break;
     }
   }

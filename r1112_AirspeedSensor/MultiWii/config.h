@@ -39,7 +39,7 @@
     //#define OCTOFLATX
     //#define FLYING_WING
     //#define VTAIL4
-    //#define AIRPLANE
+    #define AIRPLANE
     //#define SINGLECOPTER
     //#define DUALCOPTER
     //#define HELI_120_CCPM
@@ -64,8 +64,8 @@
     #define MINCOMMAND  1000
 
   /**********************************    I2C speed   ************************************/
-    #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
-    //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
+    //#define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
+    #define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
   /***************************    Internal i2c Pullups   ********************************/
     /* enable internal I2C pull ups (in most cases it is better to use external pullups) */
@@ -140,7 +140,7 @@
       //#define WMP
       //#define ITG3200
       //#define L3G4200D
-      //#define MPU6050       //combo + ACC
+      #define MPU6050       //combo + ACC
 
       /* I2C accelerometer */
       //#define NUNCHUCK  // if you want to use the nunckuk connected to a WMP
@@ -172,6 +172,8 @@
       //#define ADCACC
 
       /* individual sensor orientation */
+      #define ACC_ORIENTATION(X, Y, Z) {accADC[ROLL] = -Y; accADC[PITCH] = X; accADC[YAW] = Z;}
+      #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
       //#define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  Y; accADC[PITCH]  = -X; accADC[YAW]  = Z;}
       //#define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -Y; gyroADC[PITCH] =  X; gyroADC[YAW] = Z;}
       //#define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  = X; magADC[PITCH]  = Y; magADC[YAW]  = Z;}
@@ -201,7 +203,7 @@
    /********************************    ARM/DISARM    *********************************/
    /* optionally disable stick combinations to arm/disarm the motors.
      * In most cases one of the two options to arm/disarm via TX stick is sufficient */
-    #define ALLOW_ARM_DISARM_VIA_TX_YAW
+    //#define ALLOW_ARM_DISARM_VIA_TX_YAW
     //#define ALLOW_ARM_DISARM_VIA_TX_ROLL
 
   /***********************          Cam Stabilisation             ***********************/
@@ -436,7 +438,7 @@
 
   /******                Serial com speed    *********************************/
     /* This is the speed of the serial interfaces */
-    #define SERIAL0_COM_SPEED 115200
+    #define SERIAL0_COM_SPEED 57600
     #define SERIAL1_COM_SPEED 115200
     #define SERIAL2_COM_SPEED 115200
     #define SERIAL3_COM_SPEED 115200
@@ -475,7 +477,7 @@
          IMPORTANT! Change low pass filter setting changes PID behaviour, so retune your PID's after changing LPF.*/
       //#define MPU6050_LPF_256HZ     // This is the default setting, no need to uncomment, just for reference
       //#define MPU6050_LPF_188HZ
-      //#define MPU6050_LPF_98HZ
+      #define MPU6050_LPF_98HZ
       //#define MPU6050_LPF_42HZ
       //#define MPU6050_LPF_20HZ
       //#define MPU6050_LPF_10HZ
@@ -847,7 +849,29 @@
      */
     //#define SUPPRESS_BARO_ALTHOLD
 
+  /********************************************************************/
+  /****                      airspeed sensor                       ****/
+  /********************************************************************/
+  
+  /* Airspeed sensor will initialize in one second on bootup of controler. Take care not letting the wind blow into pitot tube! */
+  
+    #define AIRSPEED              // uncomment this line to activate the airspeed code
+    #define AIRSPEED_PIN A4       // Analog PIN 4
+    #define AIRSPEED_FACTOR 11.96  // Calculation see bottom annotations
+    
+       /* Background for calculation of AIRSPEED_FACTOR
+       v [m/s]= sqrt(2 * roh * delta-pressure[Pa])
+              
+       1 increment (Analog read) = VCC/1024 = 5V/1024 = 0.0048828125 = 0.00488V = 4.88mV
+       Datasheet of MPXV7002: 1 = 1kPa -> 1mV = 1Pa
+       roh(@15 �C, 1bar air pressure) = 1,225 kg/m�
+       
+       -> 1 increment = 4.88mV = 4.88Pa
+       -> v [m/s] = sqrt(2 * roh * delta-pressure[Pa]) = sqrt(2 * roh * 4.88 * AnalogReadIncrements)
+       AIRSPEED_FACTOR = 2 * roh * 4.88
+       */
 
+    
 /*************************************************************************************************/
 /*****************                                                                 ***************/
 /****************  SECTION  7 - TUNING & DEVELOPER                                  **************/
