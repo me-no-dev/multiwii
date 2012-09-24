@@ -169,7 +169,7 @@ static int16_t  debug[4];
 static int16_t  sonarAlt; //to think about the unit
 
 #if defined(AIRSPEED)
-static float airpressureRaw = 0;
+static uint16_t airpressureRaw = 0;
 static uint16_t airpressureOffset = 0;
 #endif
 static uint16_t airspeedSpeed = 0; //needs to be set anyway, as it is called in serial communication and therefore needs to be defined.

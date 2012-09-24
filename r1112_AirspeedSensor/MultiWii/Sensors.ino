@@ -1558,24 +1558,24 @@ inline void Sonar_update() {}
 /* Inspired by ArduPilot code. Thanks guys! */
 
 void Airspeed_update() {
-  airpressureRaw = ((float)analogRead(AIRSPEED_PIN) * .10) + (airpressureRaw * .90); //Think about smoothing
+  airpressureRaw = (analogRead(AIRSPEED_PIN) * 10) + (airpressureRaw * 90); //Think about smoothing
   
   if(airpressureRaw - airpressureOffset<0) {
     airspeedSpeed = 0;
   }
   else {
-    airspeedSpeed = sqrt((airpressureRaw - airpressureOffset) * AIRSPEED_FACTOR)*100; // m/s * 100 = cm/s
+    airspeedSpeed = sqrt((airpressureRaw - airpressureOffset) * AIRSPEED_FACTOR)*10; // m/s * 100 = cm/s
   }
 }
 
 void Airspeed_init() {
   /* Reading airspeedRaw for some cycles/1s and storing as zero value */
   
-  airpressureRaw = (float)analogRead(AIRSPEED_PIN);
+  airpressureRaw = analogRead(AIRSPEED_PIN);
   
   for(int airspeedI=0; airspeedI < 50; airspeedI++){
     delay(20);
-    airpressureRaw = ((float)analogRead(AIRSPEED_PIN) * .10) + (airpressureRaw * .90); //Think about smoothing
+    airpressureRaw = (analogRead(AIRSPEED_PIN) * 10) + (airpressureRaw * 90); //Think about smoothing
   }
   airpressureOffset = airpressureRaw;
 }
