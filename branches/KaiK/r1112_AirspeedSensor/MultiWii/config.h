@@ -52,7 +52,7 @@
     //#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
     //#define MINTHROTTLE 1064 // special ESC (simonk)
     //#define MINTHROTTLE 1050 // for brushed ESCs like ladybird
-    #define MINTHROTTLE 1150
+    #define MINTHROTTLE 1020
 
   /****************************    Motor maxthrottle    *******************************/
     /* this is the maximum value for the ESCs at full power, this value can be increased up to 2000 */
@@ -61,7 +61,7 @@
   /****************************    Mincommand          *******************************/
     /* this is the value for the ESCs when they are not armed
        in some cases, this value must be lowered down to 900 for some specific ESCs, otherwise they failed to initiate */
-    #define MINCOMMAND  1000
+    #define MINCOMMAND  900
 
   /**********************************    I2C speed   ************************************/
     //#define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
@@ -243,7 +243,7 @@
 
   /***********************          Airplane                       ***********************/
     #define SERVO_RATES      {100, 100, 100, 100, 100, 100, 100, 100} // Rates in 0-100%
-    #define SERVO_DIRECTION  { -1,   1,   1,   -1,  1,   1,   1,   1 } // Invert servos by setting -1
+    #define SERVO_DIRECTION  { -1,   1,   1,   1,  -1,   -1,   1,   1 } // Invert servos by setting -1
 
     //#define FLAPPERONS    AUX4          // Mix Flaps with Aileroins.
     #define FLAPPERON_EP   { 1500, 1700 } // Endpooints for flaps on a 2 way switch else set {1020,2000} and program in radio.
@@ -593,9 +593,9 @@
        note: only the RX PIN is used, the GPS is not configured by multiwii
        the GPS must be configured to output GGA and RMC NMEA sentences (which is generally the default conf for most GPS devices)
        at least 5Hz update rate. uncomment the first line to select the GPS serial port of the arduino */
-    //#define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
+    #define GPS_SERIAL 2 // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
     //#define GPS_BAUD   57600
-    #define GPS_BAUD   115200
+    #define GPS_BAUD   38400
 
 
     /* GPS protocol 
@@ -603,7 +603,7 @@
        UBLOX - U-Blox binary protocol, use the ublox config file (u-blox-config.ublox.txt) from the source tree 
        With UBLOX you don't have to use GPS_FILTERING in multiwii code !!! */
     
-    //#define NMEA
+    #define NMEA
     //#define UBLOX
 
     //#define INIT_MTK_GPS        // initialize MTK GPS for using selected speed, 5Hz update rate and GGA & RMC sentence 
@@ -780,7 +780,7 @@
        vbat = [0;1023]*16/VBATSCALE
        must be associated with #define BUZZER ! */
     //#define VBAT              // uncomment this line to activate the vbat code
-    #define VBATSCALE     131 // change this value if readed Battery voltage is different than real voltage
+    #define VBATSCALE     115 // change this value if readed Battery voltage is different than real voltage
     #define VBATLEVEL1_3S 107 // 10,7V
     #define VBATLEVEL2_3S 103 // 10,3V
     #define VBATLEVEL3_3S 99  // 9.9V
@@ -857,7 +857,7 @@
   
     #define AIRSPEED              // uncomment this line to activate the airspeed code
     #define AIRSPEED_PIN A4       // Analog PIN 4
-    #define AIRSPEED_FACTOR 11.96  // Calculation see bottom annotations
+    #define AIRSPEED_FACTOR 1196  // Calculation see bottom annotations
     
        /* Background for calculation of AIRSPEED_FACTOR
        v [m/s]= sqrt(2 * roh * delta-pressure[Pa])
@@ -983,7 +983,7 @@
        You cannot fly with this special version. It is only to be used for calibrating ESCs
        Read How To at http://code.google.com/p/multiwii/wiki/ESCsCalibration */
     #define ESC_CALIB_LOW  MINCOMMAND
-    #define ESC_CALIB_HIGH 2000
+    #define ESC_CALIB_HIGH MAXTHROTTLE
     //#define ESC_CALIB_CANNOT_FLY  // uncomment to activate
 
   /****           internal frequencies                             ****/

@@ -55,9 +55,9 @@
   #if defined(SERVO)
     #if defined(AIRPLANE)|| defined(HELICOPTER)
       // To prevent motor to start at reset. atomicServo[7]=5 or 249 if reversed servo
-      volatile uint8_t atomicServo[8] = {8000,8000,8000,8000,8000,8000,8000,8000}; 
+      volatile uint16_t atomicServo[8] = {8000,8000,8000,8000,8000,8000,8000,320}; 
     #else
-      volatile uint16_t atomicServo[8] = {8000,8000,8000,8000,8000,8000,8000,320};
+      volatile uint16_t atomicServo[8] = {8000,8000,8000,8000,8000,8000,8000,8000};
     #endif
   #endif
   #if (NUMBER_MOTOR > 4)
@@ -980,7 +980,7 @@ void mixTable() {
      ***************************/
   #define SERVO_MIN 1020           // limit servo travel range must be inside [1020;2000]
   #define SERVO_MAX 2000           // limit servo travel range must be inside [1020;2000]
-    for(i=0; i<8; i++){  //  Set rates with 0 - 100%. 
+    for(i=0; i<7; i++){  //  Set rates with 0 - 100%. 
       servoMid[i]     =MIDRC + conf.servoTrim[i];
       servoLimit[i][0]=servoMid[i]-((servoMid[i]-SERVO_MIN)   *(servoTravel[i]*0.01));
       servoLimit[i][1]=servoMid[i]+((SERVO_MAX - servoMid[i]) *(servoTravel[i]*0.01));  
@@ -989,11 +989,7 @@ void mixTable() {
     // servo[7] is programmed with safty features to avoid motorstarts when ardu reset..  
     // All other servos go to center at reset..  Half throttle can be dangerus    
     // Only use servo[7] as motorcontrol if motor is used in the setup            */
-    if (!f.ARMED){ 
-      servo[7] =  MINCOMMAND; // Kill throttle when disarmed
-    } else {   
-      servo[7] =  rcData[THROTTLE];
-    }
+    motor[0] =  rcData[THROTTLE];
 
     // Flapperon Controll
     int16_t flapperons[2]={0,0};    
