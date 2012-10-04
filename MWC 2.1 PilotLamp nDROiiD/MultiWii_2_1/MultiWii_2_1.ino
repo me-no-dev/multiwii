@@ -475,7 +475,7 @@ void setup() {
   checkFirstTime();
   configureReceiver();
   #if defined (PILOTLAMP) 
-    PilotLamp(PL_INIT);
+    PL_INIT;
   #endif
   #if defined(OPENLRSv2MULTI)
     initOpenLRS();
