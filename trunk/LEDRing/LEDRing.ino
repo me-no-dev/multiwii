@@ -1,13 +1,24 @@
 /* 
- Multiwiicopter LED Ring - I2C implementation for Multiwii
+ Multiwiicopter LED Ring
+  - I2C implementation for Multiwii
+  - standalone implementation 
+  
  by Alexander Dubus
- adapted by Shikra for v2/v3 LEDring
+ adapted by Shikra
  
- v2.2 alpha 12 07 24
- See included file notes.txt
+ For all documenation and files:
+ http://code.google.com/p/ledring/ 
+ 
+ v2.1.1  12 10 05
+ + Reverse mag direction for inverted LEDring
+ + BARO indicator wilst in GPS/sat indicator mode
+ + MAG indicator whilst in GPS/sat indicator mode 
+ + support for horizon mode
+ - Correct bug - GPS/RTH indicator reversed
  
  UNTESTED elements...
  LEDboard v2 hardware
+ Reverse LED
  
  ROADMAP elements...
  PWM control
@@ -20,13 +31,16 @@
 /*************************************************************************************************/
 
 /* Operation mode *///Choose only 1
-#define MultiWii_I2C_v2 // - to use Multiwii 2.2rc LEDring funcionality. (or 2.1 with alternative LEDring.ino
-// #define MultiWii_I2C_v1 // - to use standard Multiwii 2.0/2.1 LED functionality. 
+#define MultiWii_I2C_v2 // - to use Multiwii 2.2rc LEDring functionality. (or 2.1 with alternative LEDring.ino
+//#define MultiWii_I2C_v1 // - to use standard Multiwii 2.0/2.1 LED functionality. 
 // #define Standalone              // - runs standalone using stitches to determine flashe sequences
 
 /* The LED board type *///Choose only 1
 //#define LEDBOARDv2 - untested
 #define LEDBOARDv3
+
+/* LED board inverted - uncomment to reverse MAG direction*///
+//#define reverse_mag
 
 /* The LED board I2C address *///
 #define I2C_address 0x6D
@@ -50,6 +64,7 @@
 uint8_t brightness[3][12];    //* 12 LEDS - 3 COLORS - 64 brightness levels per color   max brightness = 63 */
 int16_t	param[10];            //* Parameters passed from Multiwii */
 uint8_t singleLED = 0;
+int16_t magLED = 0;
 uint32_t ledlastflashtime = millis();
 uint8_t Switch1_state=0;
 uint8_t Switch2_state=0;
@@ -84,7 +99,7 @@ void setup() {
   PORTC &= ~(1<<5);
 #endif
 
-LED_sequence(15); // Default waiting status 
+  LED_sequence(15); // Default waiting status 
 }
 
 
@@ -106,7 +121,7 @@ void loop() {
 #endif
 #if defined PWM              
 #endif
-delay(50); // a little time to settle...
+  delay(50); // a little time to settle...
 }
 
 
@@ -180,14 +195,17 @@ void I2C_enhanced_mode(){
   case 'x': // Motors on - ACRO mode
     LED_sequence(11);    
     break;
-  case 'w': // Motors on - GPS position hold mode
-    LED_sequence(2);    
+  case 'y': // Motors on - HORIZON mode
+    LED_sequence(14);    
     break;
-  case 'v': // Motors on - GPS RTH mode mode
+  case 'w': // Motors on - GPS position hold mode
     LED_sequence(5);    
     break;
-  case 'u': // Motors on - Level mode
-    LED_sequence(1);    
+  case 'v': // Motors on - GPS RTH mode mode
+    LED_sequence(2);    
+    break;
+  case 'u': // Motors on - Angle mode
+    LED_sequence(14);    
     break;
   case 't': // Motors off - Uncalibrated acc / not level
     LED_sequence(4);    
@@ -206,7 +224,21 @@ void I2C_enhanced_mode(){
           set_led_rgb(i, 63 ,0, 0);
         }
         for(uint8_t i=param[6];i<12;i++){
-          set_led_rgb(i, 63 ,63, 63);
+          if (param[2]==1) { // baro on
+            set_led_rgb (i,63, 63, 63);
+          }
+          else {
+            set_led_rgb(i, 0 ,0, 0);
+          }
+          if (param[3]==1) { // mag on show the led
+#if defined(reverse_mag)
+            magLED=90+param[5];
+#else
+            magLED=90-param[5];
+#endif
+            if (magLED<0) magLED=magLED+180;
+            set_led_rgb(magLED*2*12/360, 0 ,0, 63);
+          }  
         }
       }
       else if ((millis()<(ledlastflashtime+1000)&&param[6]<5)){ // Flash LED's if < FIX sats
@@ -221,16 +253,24 @@ void I2C_enhanced_mode(){
         if (param[1]==1) {
           set_all_rgb (0, 63, 0);
         }
+        else if (param[1]==2) {
+          set_all_rgb (0, 63, 0);
+          for(i=1;i<12;i++) {
+            set_led_rgb(i, 0 ,0, 0);
+            i++;
+          }
+        }
         else {
           set_all_rgb (63, 0, 0);
         }
         if (param[3]==1) { // mag on
-          set_all_unicolor(2, 0); // all BLUE LEDs black
-          param[5]=90-param[5];
-          if (param[5]<0) param[5]=param[5]+180;
-          set_led_unicolor(param[5]*2*12/360, 0, 0);
-          set_led_unicolor(param[5]*2*12/360, 1, 0);
-          set_led_unicolor(param[5]*2*12/360, 2, 63);
+#if defined(reverse_mag)
+          magLED=90+param[5];
+#else
+          magLED=90-param[5];
+#endif
+          if (magLED<0) magLED=magLED+180;
+          set_led_rgb(magLED*2*12/360, 0 ,0, 63);
         }  
       }
       else if (millis()<(ledlastflashtime+2250)){
@@ -386,7 +426,7 @@ void receiveEvent(int16_t n) {
 ISR (TIMER2_OVF_vect){
   uint8_t b,t,l,tmp;
   static uint8_t transistor[6]={
-    0x01,0x02,0x04,0x08,0x10,0x20                              }; //transistor selection
+    0x01,0x02,0x04,0x08,0x10,0x20                                                    }; //transistor selection
   sei(); //it's important to release the CPU as soon as possible to not freeze I2C communications
   for (t = 0; t < 6; t++) {
     PORTB = transistor[t];
@@ -421,7 +461,7 @@ ISR (TIMER2_OVF_vect){
 ISR (TIMER2_OVF_vect){
   uint8_t b,t,l,tmp;
   static uint8_t transistor[6]={
-    0x20,0x10,0x08,0x04,0x80,0x40                                }; //transistor selection
+    0x20,0x10,0x08,0x04,0x80,0x40                                                      }; //transistor selection
   sei(); //it's important to release the CPU as soon as possible to not freeze I2C communications
   for (t = 0; t < 6; t++) {
     PORTB = transistor[t];
@@ -811,6 +851,17 @@ void LED_layout(uint8_t LED_seq){
     set_led_rgb (11,0,0,63);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
