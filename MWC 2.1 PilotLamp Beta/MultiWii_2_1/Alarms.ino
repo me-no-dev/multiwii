@@ -7,6 +7,7 @@ static uint32_t channelLastToggleTime[5] ={0,0,0,0,0};
                  warn_failsafe = 0, 
                  warn_runtime = 0,
                  warn_vbat = 0,
+                 warn_pMeter = 0,
                  buzzerSequenceActive=0;
   uint8_t isBuzzerON() { return channelIsOn[1]; } // returns true while buzzer is buzzing; returns 0 for silent periods
 
@@ -14,23 +15,18 @@ static uint32_t channelLastToggleTime[5] ={0,0,0,0,0};
 /****                      Alarm Handling                        ****/
 /********************************************************************/
   void alarmHandler(){
-    
-    #if defined(VBAT)
-      if ( ( (vbat>VBATLEVEL1_3S) 
-      #if defined(POWERMETER)
-                           && ( (pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0) )
-      #endif
-                         )  || (NO_VBAT>vbat)                              ) // ToLuSe
-      {                                          // VBAT ok AND powermeter ok, alarm off
-        warn_vbat = 0;
-      #if defined(POWERMETER)
-      } else if (pMeter[PMOTOR_SUM] > pAlarm) {                             // sound alarm for powermeter
-        warn_vbat = 4;
-      #endif
-      } else if (vbat>VBATLEVEL2_3S) warn_vbat = 1;
-      else if (vbat>VBATLEVEL3_3S)   warn_vbat = 2;
-      else                           warn_vbat = 4;
+
+     #if defined(VBAT)
+      if ( (vbat>VBATLEVEL1_3S)  || (NO_VBAT > vbat)) warn_vbat = 0;
+      else if (vbat > VBATLEVEL2_3S) warn_vbat = 1;
+      else if (vbat > VBATLEVEL3_3S) warn_vbat = 2;
+      else warn_vbat = 4;
     #endif
+ 
+    #if defined(POWERMETER)
+      if ( (pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0) ) warn_pMeter = 0;
+      else if (pMeter[PMOTOR_SUM] > pAlarm) warn_pMeter = 1;
+    #endif 
  
     if ( rcOptions[BOXBEEPERON] )beeperOnBox = 1;
     else beeperOnBox = 0;
@@ -83,13 +79,14 @@ static uint32_t channelLastToggleTime[5] ={0,0,0,0,0};
     /********************************************************************/  
     // beepcode(length1,length2,length3,pause)
     //D: Double, L: Long, M: Middle, S: Short, N: None
-    if (warn_failsafe == 2)      beep_code('L','N','N','D');                 //failsafe "find me" signal
-    else if (warn_failsafe == 1) beep_code('S','L','L','S');                 //failsafe landing active              
+    if (warn_failsafe == 2)      beep_code('L','N','N','D');
+    else if (warn_failsafe == 1) beep_code('S','L','L','S');            
     else if (beep_toggle == 1) {beep_code('S','N','N','N');      } 
     else if (beep_toggle == 2)    beep_code('S','S','N','N');       
-    else if (beep_toggle > 2)     beep_code('S','S','S','N');         
+    else if (beep_toggle > 2)     beep_code('S','S','S','N');     
     else if (warn_noGPSfix == 1) beep_code('S','S','N','S');    
     else if (beeperOnBox == 1)   beep_code('S','S','S','S');                 //beeperon
+    else if (warn_pMeter == 1 && f.ARMED == 1)beep_code('S','S','N','M'); 
     else if (warn_runtime == 1 && f.ARMED == 1)beep_code('S','S','S','N'); //Runtime warning      
     else if (warn_vbat == 4)     beep_code('S','S','L','D');       
     else if (warn_vbat == 2)     beep_code('S','L','N','D');       

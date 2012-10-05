@@ -173,8 +173,8 @@ static uint16_t intPowerMeterSum, intPowerTrigger1;
 // ******************
 // rc functions
 // ******************
-#define MINCHECK 1160
-#define MAXCHECK 1850
+#define MINCHECK 1100
+#define MAXCHECK 1900
 
 static int16_t failsafeEvents = 0;
 volatile int16_t failsafeCnt = 0;
