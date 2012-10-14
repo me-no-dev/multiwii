@@ -24,13 +24,12 @@ int xGraph      = 10;         int yGraph      = 325;
 int xObj        = 520;        int yObj        = 293; //900,450
 int xCompass    = 920;        int yCompass    = 341; //760,336
 int xLevelObj   = 920;        int yLevelObj   = 80; //760,80
-int xParam      = 120;        int yParam      = 34;
+int xParam      = 120;        int yParam      = 5;
 int xRC         = 690;        int yRC         = 10; //850,10
 int xMot        = 690;        int yMot        = 155; //850,155
 int xButton     = 845;        int yButton     = 231; //685,222
-int xBox        = 415;        int yBox        = 39;
+int xBox        = 415;        int yBox        = 10;
 int xGPS        = 853;        int yGPS        = 438; //693,438
-int xGUICommand = 124;        int yGUICommand = 8;
 
 boolean axGraph =true,ayGraph=true,azGraph=true,gxGraph=true,gyGraph=true,gzGraph=true,altGraph=true,headGraph=true, magxGraph =true,magyGraph=true,magzGraph=true,
         debug1Graph = false,debug2Graph = false,debug3Graph = false,debug4Graph = false;
@@ -76,11 +75,6 @@ boolean graphEnable = false;
 
 int version,versionMisMatch;
 float gx,gy,gz,ax,ay,az,magx,magy,magz,alt,head,angx,angy,debug1,debug2,debug3,debug4;
-
-/* bit mask indicating whether MAG_HOLD and/or HEADFREE is active */ 
-int headMode; 
-float magHead,refHead; 
-
 float angyLevelControl, angCalc;
 int horizonInstrSize;
 int i, j, blink;
@@ -175,14 +169,8 @@ void setup() {
   buttonSAVE = controlP5.addButton("bSAVE",1,5,45,40,19); buttonSAVE.setLabel("SAVE"); buttonSAVE.setColorBackground(red_);
   buttonIMPORT = controlP5.addButton("bIMPORT",1,50,45,40,19); buttonIMPORT.setLabel("LOAD"); buttonIMPORT.setColorBackground(red_);   
  
-  // GUI COMMANDS Button
-  buttonSTART =         controlP5.addButton("bSTART",1,xGUICommand,yGUICommand,44,16); buttonSTART.setLabel("START"); buttonSTART.setColorBackground(red_);
-  buttonSTOP =          controlP5.addButton("bSTOP",1,xGUICommand+48,yGUICommand,41,16); buttonSTOP.setLabel("STOP"); buttonSTOP.setColorBackground(red_);
-  buttonREAD =          controlP5.addButton("READ",1,xGUICommand+93,yGUICommand,42,16); buttonREAD.setColorBackground(red_);
-  buttonRESET =         controlP5.addButton("RESET",1,xGUICommand+139,yGUICommand,45,16); buttonRESET.setColorBackground(red_);
-  buttonWRITE =         controlP5.addButton("WRITE",1,xGUICommand+188,yGUICommand,45,16); buttonWRITE.setColorBackground(red_);
-  buttonCALIBRATE_ACC = controlP5.addButton("CALIB_ACC",1,xGUICommand+237,yGUICommand,73,16); buttonCALIBRATE_ACC.setColorBackground(red_);
-  buttonCALIBRATE_MAG = controlP5.addButton("CALIB_MAG",1,xGUICommand+314,yGUICommand,74,16); buttonCALIBRATE_MAG.setColorBackground(red_);
+  buttonSTART = controlP5.addButton("bSTART",1,xGraph+110,yGraph-25,40,19); buttonSTART.setLabel("START"); buttonSTART.setColorBackground(red_);
+  buttonSTOP = controlP5.addButton("bSTOP",1,xGraph+160,yGraph-25,40,19); buttonSTOP.setLabel("STOP"); buttonSTOP.setColorBackground(red_);
 
   buttonAcc = controlP5.addButton("bACC",1,xButton,yButton,45,15); buttonAcc.setColorBackground(red_);buttonAcc.setLabel("ACC");
   buttonBaro = controlP5.addButton("bBARO",1,xButton+50,yButton,45,15); buttonBaro.setColorBackground(red_);buttonBaro.setLabel("BARO");
@@ -301,13 +289,11 @@ void setup() {
   throttle_EXPO = controlP5.addNumberbox("T EXPO",0,xParam+40,yParam+197,30,14);throttle_EXPO.setDecimalPrecision(2);throttle_EXPO.setMultiplier(0.01);throttle_EXPO.setLabel("");
   throttle_EXPO.setDirection(Controller.HORIZONTAL);throttle_EXPO.setMin(0);throttle_EXPO.setMax(1);throttle_EXPO.setColorBackground(red_);
   
-  /*
   buttonREAD =          controlP5.addButton("READ",1,xParam+5,yParam+260,50,16);buttonREAD.setColorBackground(red_);
   buttonRESET =         controlP5.addButton("RESET",1,xParam+60,yParam+260,60,16);buttonRESET.setColorBackground(red_);
   buttonWRITE =         controlP5.addButton("WRITE",1,xParam+290,yParam+260,60,16);buttonWRITE.setColorBackground(red_);
   buttonCALIBRATE_ACC = controlP5.addButton("CALIB_ACC",1,xParam+210,yParam+260,70,16);buttonCALIBRATE_ACC.setColorBackground(red_);
   buttonCALIBRATE_MAG = controlP5.addButton("CALIB_MAG",1,xParam+130,yParam+260,70,16);buttonCALIBRATE_MAG.setColorBackground(red_);
-  */
   buttonSETTING =       controlP5.addButton("SETTING",1,xParam+405,yParam+260,110,16); buttonSETTING.setLabel("SELECT SETTING"); buttonSETTING.setColorBackground(red_);
   
   rcStickThrottleSlider = controlP5.addSlider("Throt",900,2100,1500,xRC,yRC,100,10);rcStickThrottleSlider.setDecimalPrecision(0);
@@ -355,7 +341,6 @@ private static final int
   MSP_MOTOR_PINS           =115,
   MSP_BOXNAMES             =116,
   MSP_PIDNAMES             =117,
-  MSP_HEADING              =125,
 
   MSP_SET_RAW_RC           =200,
   MSP_SET_RAW_GPS          =201,
@@ -507,12 +492,6 @@ public void evaluateCommand(byte cmd, int dataSize) {
         head = read16(); break;
     case MSP_ALTITUDE:
         alt = read32(); break;
-    case MSP_HEADING: 
-        headMode = read8(); 
-        head = read16(); 
-        magHead = read16(); 
-        refHead = read16(); 
-        break; 
     case MSP_BAT:
         bytevbat = read8();
         pMeterSum = read16(); break;
@@ -851,9 +830,8 @@ void draw() {
   text("dist home : ",xGPS,yGPS+90);
   // ---------------------------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------------------------
-  // Power System Information
-  // ---------------------------------------------------------------------------------------------
+  text("I2C error:",xGraph+350,yGraph-10);
+  text("Cycle Time:",xGraph+220,yGraph-10);
   text("Power:",xGraph-5,yGraph-30); text(pMeterSum,xGraph+50,yGraph-30);
   text("pAlarm:",xGraph-5,yGraph-15);
   text("Volt:",xGraph-5,yGraph-2);  text(bytevbat/10.0,xGraph+50,yGraph-2);
@@ -1256,26 +1234,16 @@ void draw() {
     text("0", 34, 4-angy); // center
     text("0", -39, 4-angy); // center
   }
-  // inner circle
-//  noStroke();
-//  fill(255,255,255,50);
-//  ellipse(0,0,100,100);
-//  arc(0,0,50,50,PI,TWO_PI);
+
   // lateral arrows
   strokeWeight(1);
   // down fixed triangle
   stroke(60,60,60);
   fill(180,180,180,255);
-//  triangle(-55,-8,-55,8,-42,0);
-//  triangle(55,-8,55,8,42,0);
+
   triangle(-horizonInstrSize,-8,-horizonInstrSize,8,-55,0);
   triangle(horizonInstrSize,-8,horizonInstrSize,8,55,0);
 
-  // upper mobile tringle
-//  stroke(10,10,10);
-//  fill(180,180,180,255);
-//  triangle(-55,-8-angyLevelControl,-55,8-angyLevelControl,-42,-angyLevelControl);
-//  triangle(55,-8-angyLevelControl,55,8-angyLevelControl,42,-angyLevelControl);
   // center
   strokeWeight(1);
   stroke(255,0,0);
@@ -1308,27 +1276,9 @@ void draw() {
   rotate(GPS_directionToHome*PI/180);
   strokeWeight(4);stroke(255,255,100);line(0,0, 0,-2.4*size);line(0,-2.4*size, -5 ,-2.4*size+10); line(0,-2.4*size, +5 ,-2.4*size+10);  
   rotate(-GPS_directionToHome*PI/180);
-  // mag heading 
-  strokeWeight(1.5);fill(0);stroke(0);ellipse(0,  0,   2*size+7, 2*size+7); 
-  strokeWeight(2); 
-  if ((headMode & 1<<1) != 0) { // HEADFREE active 
-    stroke(128, 255, 128); 
-  } else { 
-    stroke(128, 128, 255); 
-  } 
-  rotate(refHead*PI/180); 
-  line(0,0, 0,-2*size); 
-  rotate(-refHead*PI/180); 
-  stroke(255); 
   // compass quadrant
   strokeWeight(1.5);fill(0);stroke(0);
   ellipse(0,  0,   2.6*size+7, 2.6*size+7);
-  if ((headMode & 1<<0) != 0) { // MAG_HOLD active 
-    stroke(255, 0, 0); 
-    rotate(magHead*PI/180); 
-    line(0,size*0.2, 0,-size*1.3); line(0,-size*1.3, -5 ,-size*1.3+10); line(0,-size*1.3, +5 ,-size*1.3+10); 
-    rotate(-magHead*PI/180); 
-  } 
   // Compass rotating pointer
   stroke(255);
   rotate(head*PI/180);
@@ -1430,21 +1380,6 @@ void draw() {
   // param background
   rect(xParam,yParam, xParam+555, yParam+280);
 
-  // ---------------------------------------------------------------------------------------------
-  // CPU System Information
-  // ---------------------------------------------------------------------------------------------
-  // cpu background
-  fill(0, 0, 0);
-  strokeWeight(3);stroke(0);
-  rectMode(CORNERS);
-  rect(xGUICommand-4,yGUICommand-3, xGUICommand+551, yGUICommand+19);
-  // info
-  fill(255,255,255);
-  textFont(font12);
-  text("Cycle: " + cycleTime,    xGUICommand+398, yGUICommand+12);
-  text("I2C error: " + i2cError, xGUICommand+483, yGUICommand+12);
-
-  // RC COMMAND PITCH / ROLL EXPO CURVE
   int xSens1       = xParam + 80;
   int ySens1       = yParam + 220;
   stroke(255);
@@ -1473,7 +1408,6 @@ void draw() {
   a=throttle_MID.value();
   b=throttle_EXPO.value();
   
-  // RC COMMAND THROTTLE EXPO CURVE
   int xSens2       = xParam + 80;
   int ySens2       = yParam + 180;
   strokeWeight(1);stroke(255);
