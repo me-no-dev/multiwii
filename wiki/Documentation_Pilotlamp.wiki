@@ -31,8 +31,9 @@ There are three different colors on the pilot light:red, green and blue.
  * Green: Flight mode indicator
  * GPS function indicator
 
- * Armed, acro mode: green LED medium blinking
- * Armed, stable mode: green LED slow blinking
+ * Armed, acro mode: green LED medium blinking 2x
+ * Armed, angle mode: green LED slow blinking 3x
+ * Armed, horizon mode: green LED medium blinking 3x
 
 *Blue LED*
  * GPS present: No GPS fix: fast blinking
@@ -46,7 +47,8 @@ There are three different colors on the pilot light:red, green and blue.
 *Beeper*
  * Sequence RED->BLUE->GREEN (repeat)
 
-
+*I²C*
+ * All colors blink at the same time, buzzer sounds*
 *Buzzer*
 
 There are several mandatory and optional beeping patterns to indicate the different states of the MultWii system. The patternn consist of 3 beeps followed by a pause. The length of the beeps and pauses are defined as follows:
