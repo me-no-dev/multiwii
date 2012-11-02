@@ -147,6 +147,7 @@ static uint32_t currentTime = 0;
 static uint16_t previousTime = 0;
 static uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 static uint16_t calibratingA = 0;  // the calibration is done in the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
+static uint16_t calibratingB = 0;  // baro calibration = get new ground pressure value
 static uint16_t calibratingG;
 static uint16_t acc_1G;             // this is the 1G measured acceleration
 static int16_t  acc_25deg;
@@ -350,6 +351,9 @@ static struct {
   #ifdef CYCLETIME_FIXATED
     uint16_t cycletime_fixated;
   #endif
+  #ifdef MMGYRO
+    uint8_t mmgyro;
+  #endif
   uint8_t  checksum;      // MUST BE ON LAST POSITION OF CONF STRUCTURE ! 
 } conf;
 
@@ -405,6 +409,7 @@ static struct {
  
 #if BARO
   static int32_t baroPressure;
+  static int32_t baroGroundPressure;
   static int32_t baroTemperature;
   static int32_t baroPressureSum;  
 #endif
@@ -571,28 +576,19 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     if (cycleTime > cycleTimeMax) cycleTimeMax = cycleTime; // remember highscore
     if (cycleTime < cycleTimeMin) cycleTimeMin = cycleTime; // remember lowscore
   #endif
+  if (f.ARMED)  {
   #if defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING)
-    if (f.ARMED) armedTime += (uint32_t)cycleTime;
+      armedTime += (uint32_t)cycleTime;
   #endif
   #if defined(VBAT)
-    if (vbat > conf.no_vbat) { // only track possibly sane voltage values
-      if (!f.ARMED) {
-        vbatMin = vbat;
-      } else {
-        if (vbat < vbatMin) vbatMin = vbat;
-      }
-    }
+      if ( (vbat > conf.no_vbat) && (vbat < vbatMin) ) vbatMin = vbat;
   #endif
   #ifdef LCD_TELEMETRY
     #if BARO
-      if (!f.ARMED) {
-        BAROaltStart = BaroAlt;
-        BAROaltMax = BaroAlt;
-      } else {
-        if (BaroAlt > BAROaltMax) BAROaltMax = BaroAlt;
-      }
+        if ( (BaroAlt > BAROaltMax) ) BAROaltMax = BaroAlt;
     #endif
   #endif
+}
 }
 
 void setup() {
@@ -613,9 +609,14 @@ void setup() {
   STABLEPIN_PINMODE;
   POWERPIN_OFF;
   initOutput();
+  #ifdef MULTIPLE_CONFIGURATION_PROFILES
   for(global_conf.currentSet=0; global_conf.currentSet<3; global_conf.currentSet++) {  // check all settings integrity
     readEEPROM();
   }
+  #else
+    global_conf.currentSet=0;
+    readEEPROM();
+  #endif
   readGlobalSet();
   readEEPROM();                                    // load current setting data
   blinkLED(2,40,global_conf.currentSet+1);          
@@ -635,6 +636,7 @@ void setup() {
    calibratingA = 400;
   #endif
   calibratingG = 400;
+  calibratingB = 200;  // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
   #if defined(POWERMETER)
     for(uint8_t i=0;i<=PMOTOR_SUM;i++)
       pMeter[i]=0;
@@ -695,9 +697,18 @@ void go_arm() {
     && failsafeCnt < 2
   #endif
     ) {
-      if(!f.ARMED) {
+      if(!f.ARMED) { // arm now!
         f.ARMED = 1;
         headFreeModeHold = heading;
+        #if defined(VBAT)
+          if (vbat > conf.no_vbat) vbatMin = vbat;
+        #endif
+        #ifdef LCD_TELEMETRY // reset some values when arming
+          #if BARO
+              BAROaltStart = BaroAlt;
+              BAROaltMax = BaroAlt;
+          #endif
+        #endif
       }
     } else if(!f.ARMED){ 
         blinkLED(2,800,1);
@@ -775,10 +786,10 @@ void loop () {
     if(rcDelayCommand == 20) {
       if(f.ARMED) {                   // actions during armed
         #ifdef ALLOW_ARM_DISARM_VIA_TX_YAW
-          if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) f.ARMED = 0;    // Disarm via YAW
+          if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) f.ARMED = 0;    // Disarm via YAW
         #endif
         #ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL
-          if (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO) f.ARMED = 0;    // Disarm via ROLL
+          if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO) f.ARMED = 0;    // Disarm via ROLL
         #endif
       } else {                        // actions during not armed
         i=0;
@@ -786,6 +797,9 @@ void loop () {
           calibratingG=400;
           #if GPS 
             GPS_reset_home_position();
+          #endif
+          #if BARO
+            calibratingB=10;  // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
           #endif
         }
         #if defined(INFLIGHT_ACC_CALIBRATION)  
@@ -801,6 +815,7 @@ void loop () {
             }
          } 
         #endif
+        #ifdef MULTIPLE_CONFIGURATION_PROFILES
         if      (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_LO) i=1;    // ROLL left  -> Profile 1
         else if (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_CE) i=2;    // PITCH up   -> Profile 2
         else if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_HI) i=3;    // ROLL right -> Profile 3
@@ -811,6 +826,7 @@ void loop () {
           blinkLED(2,40,i);
           alarmArray[0] = i;
         }
+        #endif
         if (rcSticks == THR_LO + YAW_HI + PIT_HI + ROL_CE) {            // Enter LCD config
           #ifdef TRI
             servo[5] = 1500; // we center the yaw servo in conf mode
@@ -831,10 +847,10 @@ void loop () {
           previousTime = micros();
         }
         #ifdef ALLOW_ARM_DISARM_VIA_TX_YAW
-          else if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) go_arm();      // Arm via YAW
+          else if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) go_arm();      // Arm via YAW
         #endif
         #ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL
-          else if (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_HI) go_arm();      // Arm via ROLL
+          else if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_HI) go_arm();      // Arm via ROLL
         #endif
         #ifdef LCD_TELEMETRY_AUTO
           else if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_LO) {              // Auto telemetry ON/OFF
@@ -1020,7 +1036,7 @@ void loop () {
     #endif
   } else { // not in rc loop
     static uint8_t taskOrder=0; // never call all functions in the same loop, to avoid high delay spikes
-    switch (taskOrder % 4) {
+    switch (taskOrder % 5) {
       case 0:
         taskOrder++;
         #if MAG
@@ -1033,13 +1049,16 @@ void loop () {
         #if BARO
           if (Baro_update() != 0 ) {
             break;
-          } else {
-            if (getEstimatedAltitude() !=0) {
-              break;
-            }
           }
         #endif
       case 2:
+        taskOrder++;
+        #if BARO
+            if (getEstimatedAltitude() !=0) {
+              break;
+            }
+        #endif
+      case 3:
         taskOrder++;
         #if GPS
           if(GPS_Enable) {
@@ -1047,7 +1066,7 @@ void loop () {
           }
           break;
         #endif
-      case 3:
+      case 4:
         taskOrder++;
         #if SONAR
           Sonar_update();debug[2] = sonarAlt;

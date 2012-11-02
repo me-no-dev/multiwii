@@ -287,17 +287,17 @@ void getEstimatedAttitude(){
 #if BARO
 uint8_t getEstimatedAltitude(){
   static uint32_t deadLine = INIT_DELAY;
-  static float baroGroundPressure = 0; // a float is really needed ?
-
-  if(baroGroundPressure == 0 && currentTime > INIT_DELAY) { // 10 seconds delay
-    baroGroundPressure = baroPressureSum/(float)(BARO_TAB_SIZE - 1);
-  }
  
   if (abs(currentTime - deadLine) < UPDATE_INTERVAL) return 0;
 
   uint16_t dTime = currentTime - deadLine;
   deadLine = currentTime;
 
+  if(calibratingB > 0) {
+    baroGroundPressure = baroPressureSum/(float)(BARO_TAB_SIZE - 1) + 0.5f; // +0.5 for correct rounding
+    calibratingB--;
+  }
+  // log(0) is bad!
   if(baroGroundPressure != 0) {
     // pressure relative to ground pressure with temperature compensation (fast!)
     // see: https://code.google.com/p/ardupilot-mega/source/browse/libraries/AP_Baro/AP_Baro.cpp
@@ -327,12 +327,12 @@ uint8_t getEstimatedAltitude(){
     int16_t accZ = (accLPFVel[ROLL] * EstG.V.X + accLPFVel[PITCH] * EstG.V.Y + accLPFVel[YAW] * EstG.V.Z) * invG;
     //int16_t accZ = (accLPFVel[ROLL] * EstG.V.X + accLPFVel[PITCH] * EstG.V.Y + accLPFVel[YAW] * EstG.V.Z) * invG - acc_1G;
     
-    static int16_t acc_1G_calculated = acc_1G*8;
+    static int16_t acc_1G_calculated = acc_1G*6;
     if (!f.ARMED) {
-      acc_1G_calculated -= acc_1G_calculated/8;
+      acc_1G_calculated -= acc_1G_calculated/6;
       acc_1G_calculated += accZ;
     }  
-    accZ -= acc_1G_calculated/8;
+    accZ -= acc_1G_calculated/6;
     applyDeadband(accZ, ACC_Z_DEADBAND);
     //debug[0] = accZ; 
     

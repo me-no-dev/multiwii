@@ -19,11 +19,6 @@
  *    Changing those values in config.h and upload will require a 'Reset' from the GUI to take effect
  */
 
-  // Natural alt change for rapid pilots. It's temporary switch OFF the althold when throttle stick is out of deadband defined with ALT_HOLD_THROTTLE_NEUTRAL_ZONE
-  // but if it's commented: Smooth alt change routine is activated, for slow auto and aerophoto modes (in general solution from alexmos). It's slowly increase/decrease 
-  // altitude proportional to stick movement (+/-100 throttle gives about +/-50 cm in 1 second with cycle time about 3-4ms)
-  #define ALTHOLD_FAST_THROTTLE_CHANGE
-
 
 /*************************************************************************************************/
 /*****************                                                                 ***************/
@@ -209,6 +204,11 @@
       #define TRI_YAW_CONSTRAINT_MIN 1020
       #define TRI_YAW_CONSTRAINT_MAX 2000
       #define TRI_YAW_MIDDLE 1500 // (*) tail servo center pos. - use this for initial trim; later trim midpoint via LCD
+
+  /********************************    BI    *********************************/
+    /* you can change the bicopter servo travel direction here */     
+    //#define BI_PITCH_DIRECTION 1
+     #define BI_PITCH_DIRECTION -1
 
    /********************************    ARM/DISARM    *********************************/
    /* optionally disable stick combinations to arm/disarm the motors.
@@ -515,8 +515,8 @@
       //#define GYRO_SMOOTHING {20, 20, 3}    // (*) separate averaging ranges for roll, pitch, yaw
 
     /************************    Moving Average Gyros    **********************************/
-      //#define MMGYRO                         // Active Moving Average Function for Gyros
-      //#define MMGYROVECTORLENGHT 10          // Lenght of Moving Average Vector
+      //#define MMGYRO 10                      // (*) Active Moving Average Function for Gyros
+      //#define MMGYROVECTORLENGTH 15          // Length of Moving Average Vector (maximum value for tunable MMGYRO
       /* Moving Average ServoGimbal Signal Output */
       //#define MMSERVOGIMBAL                  // Active Output Moving Average Function for Servos Gimbal
       //#define MMSERVOGIMBALVECTORLENGHT 32   // Lenght of Moving Average Vector
@@ -535,8 +535,7 @@
     //#define LEVEL_PDF
 
   /************************        AP FlightMode        **********************************/
-  /* Gyrocalibration will be repeated if copter is moving during calibration. 
-  Beware: May lead to unflyable copter, because of Temperature drift ob cheap gyros. */
+  /* Gyrocalibration will be repeated if copter is moving during calibration. */
     //#define GYROCALIBRATIONFAILSAFE
   /************************        AP FlightMode        **********************************/
     /* Temporarily Disables GPS_HOLD_MODE to be able to make it possible to adjust the Hold-position when moving the sticks.*/
@@ -694,7 +693,7 @@
     /* uncomment this line if you plan to use a LCD or OLED */
       //#define LCD_CONF
 
-    /* to include setting the aux switches for AUX1 -> AUX4 via LCD */ //to review (activate[] is now 16 bit long)
+    /* to include setting the aux switches for AUX1 -> AUX4 via LCD */
       //#define LCD_CONF_AUX
 
     /* if program gets too large (>32k), need to exclude some functionality */
@@ -707,7 +706,7 @@
       //#define LCD_SERIAL3W    // Alex' initial variant with 3 wires, using rx-pin for transmission @9600 baud fixed
       //#define LCD_TEXTSTAR    // SERIAL LCD: Cat's Whisker LCD_TEXTSTAR Module CW-LCD-02 (Which has 4 input keys for selecting menus)
       //#define LCD_VT100       // SERIAL LCD: vt100 compatible terminal emulation (blueterm, putty, etc.)
-      //#define LCD_TTY         // SERIAL LCD: useful to tweak paramters over cable with arduino IDE 'serial monitor'
+      //#define LCD_TTY         // SERIAL LCD: useful to tweak parameters over cable with arduino IDE 'serial monitor'
       //#define LCD_ETPP        // I2C LCD: Eagle Tree Power Panel LCD, which is i2c (not serial)
       //#define LCD_LCD03       // I2C LCD: LCD03, which is i2c
       //#define OLED_I2C_128x64 // I2C LCD: OLED http://www.multiwii.com/forum/viewtopic.php?f=7&t=1350
@@ -715,7 +714,7 @@
     /******************************   Logo settings     ***********************************/
       //#define SUPPRESS_OLED_I2C_128x64LOGO  // suppress display of OLED logo to save memory
 
-    /* style of display - AUTODETECTED via LCD_ setting - only activate to overwrite defaults */
+    /* style of display - AUTODETECTED via LCD_ setting - only activate to override defaults */
       //#define DISPLAY_2LINES
       //#define DISPLAY_MULTILINE
       //#define MULTILINE_PRE 2  // multiline configMenu # pref lines
@@ -769,7 +768,7 @@
        set it to the sequence of telemetry pages you want to see
        2 line displays support pages 1-9
        multiline displays support pages 1-5 */
-    //#define LCD_TELEMETRY_AUTO "123452679" // pages 1 to 7 in ascending order
+    //#define LCD_TELEMETRY_AUTO "123452679" // pages 1 to 9 in ascending order
     //#define LCD_TELEMETRY_AUTO  "212232425262729" // strong emphasis on page 2
 
     /* same as above, but manual stepping sequence; requires 
@@ -848,6 +847,12 @@
      */
     //#define SUPPRESS_BARO_ALTHOLD
 
+  /* Natural alt change for rapid pilots. It's temporary switch OFF the althold when throttle stick is out of deadband defined with ALT_HOLD_THROTTLE_NEUTRAL_ZONE
+   * but if it's commented: Smooth alt change routine is activated, for slow auto and aerophoto modes (in general solution from alexmos). It's slowly increase/decrease 
+   * altitude proportional to stick movement (+/-100 throttle gives about +/-50 cm in 1 second with cycle time about 3-4ms)
+   */
+  #define ALTHOLD_FAST_THROTTLE_CHANGE
+
   /********************************************************************/
   /****           baord naming                                     ****/
   /********************************************************************/
@@ -864,6 +869,9 @@
      */
     #define BOARD_NAME "MultiWii   V-.--"
     //                  123456789.123456
+
+    /****      Support multiple configuration profile in EEPROM   ****/
+    //#define MULTIPLE_CONFIGURATION_PROFILES
 
 /*************************************************************************************************/
 /*****************                                                                 ***************/
