@@ -148,6 +148,7 @@ void patternDecode(uint8_t resource,uint16_t first,uint16_t second,uint16_t thir
   static uint8_t icnt[5] = {0,0,0,0,0};
   
   if(icnt[resource] == 0){
+    SequenceActive[resource] = 1;   
     patternInt[resource][0] = first; 
     patternInt[resource][1] = second;
     patternInt[resource][2] = third;
