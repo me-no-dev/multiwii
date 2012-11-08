@@ -848,7 +848,7 @@
      */
     //#define SUPPRESS_BARO_ALTHOLD
 
-  /* In this mode, throttle stick position gives a desired vario. Regulation is divided into two parts, when throttle stick is inside ALT_HOLD_DEADBAND, 
+  /* In this mode, throttle stick position gives a desired vario. Regulation is divided into two parts, when throttle stick is inside ALT_HOLD_THROTTLE_NEUTRAL_ZONE, 
    * the current althold regulation is used. When throttle stick is out of deadband, it ascend or descend with a desired vario.
    *
    * but if it's commented: Smooth alt change routine is activated, for slow auto and aerophoto modes (in general solution from alexmos). 
