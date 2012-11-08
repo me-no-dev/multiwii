@@ -1155,7 +1155,9 @@ void loop () {
       if (abs(throttleDiff) > ALT_HOLD_THROTTLE_NEUTRAL_ZONE) {
         
         if (!isAltChanged) {
-          // apply real initial throttle hover (it's stabilised when alt hold activated) here before changing the altitude
+          // when you activate the althold, initial throttle taken from stick (or calculated from INITIAL_THROTTLE_HOLD_FROM_MID_EXPO_POINT, see below), 
+          // but actually it's not precised throttle for hovering... after one-two second it's become stabilized by althold PID regulator 
+          // and BaroPID it's correction for initial throttle... And when we start regulate altitude, initial throttle will be corrected for hovering...
           initialThrottleHoldOutput = initialThrottleHoldOutput + BaroPID; 
           isAltChanged = 1;
         }
