@@ -491,6 +491,9 @@ void setup() {
   readEEPROM();
   checkFirstTime();
   configureReceiver();
+  #if defined (PILOTLAMP) 
+    PL_INIT;
+  #endif
   #if defined(OPENLRSv2MULTI)
     initOpenLRS();
   #endif
