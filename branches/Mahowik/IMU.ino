@@ -335,10 +335,11 @@ uint8_t getEstimatedAltitude(){
     applyDeadband(accZ, ACC_Z_DEADBAND);
     //debug[0] = accZ; 
     
+    static float vel = 0.0f;
     static float accVelScale = 9.80665f / 10000.0f / acc_1G ;
-    
+        
     // Integrator - velocity, cm/sec
-    vel+= accZ * accVelScale * dTime;
+    vel += accZ * accVelScale * dTime;
     
     static int32_t lastBaroAlt;
     float baroVel = (EstAlt - lastBaroAlt) * 1000000.0f / dTime;

@@ -159,7 +159,6 @@ static uint8_t  vbatMin = VBATNOMINAL;  // lowest battery voltage in 0.1V steps
 static uint8_t  rcOptions[CHECKBOXITEMS];
 static int32_t  BaroAlt;
 static int32_t  EstAlt;             // in cm
-static float    vel = 0.0f;
 static int16_t  accZ;
 static int16_t  BaroPID = 0;
 static int32_t  AltHold;
@@ -1162,15 +1161,15 @@ void loop () {
           isAltChanged = 1;
         }
         
-        int16_t targetVel = throttleDiff - ((rcCommand[THROTTLE] > initialThrottleHold) ? ALT_HOLD_THROTTLE_NEUTRAL_ZONE : -ALT_HOLD_THROTTLE_NEUTRAL_ZONE);
+        int16_t targetVario = throttleDiff - ((rcCommand[THROTTLE] > initialThrottleHold) ? ALT_HOLD_THROTTLE_NEUTRAL_ZONE : -ALT_HOLD_THROTTLE_NEUTRAL_ZONE);
         
-        int16_t velError = constrain(targetVel - vel, -300, 300);
+        int16_t varioError = constrain(targetVario - vario, -300, 300);
         
         static float accScale = 980.665f / acc_1G; // don't worry, it's calculated only one time because it's static init ;)
         
-        rcCommand[THROTTLE] = initialThrottleHoldOutput + constrain((VARIO_P*velError/20 - VARIO_D*accZ*accScale/40), -300, 300);
+        rcCommand[THROTTLE] = initialThrottleHoldOutput + constrain((VARIO_P*varioError/20 - VARIO_D*accZ*accScale/40), -300, 300);
         
-        //debug[0] = VARIO_P*velError/20;
+        //debug[0] = VARIO_P*varioError/20;
         //debug[1] = VARIO_D*accZ*accScale/40;
         //debug[3] = rcCommand[THROTTLE] - initialThrottleHoldOutput;
         
