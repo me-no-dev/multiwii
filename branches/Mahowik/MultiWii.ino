@@ -197,7 +197,6 @@ struct flags_struct {
   static uint16_t cycleTimeMax = 0;       // highest ever cycle timen
   static uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
   static uint16_t powerMax = 0;           // highest ever current;
-  static int32_t  BAROaltStart;       // offset value from powerup
   static int32_t  BAROaltMax;         // maximum value
 #endif
 #if defined(LOG_VALUES) || defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING)
@@ -706,13 +705,12 @@ void go_arm() {
         #endif
         #ifdef LCD_TELEMETRY // reset some values when arming
           #if BARO
-              BAROaltStart = BaroAlt;
               BAROaltMax = BaroAlt;
           #endif
         #endif
       }
     } else if(!f.ARMED){ 
-        blinkLED(2,800,1);
+        blinkLED(2,255,1);
         alarmArray[8] = 1;
       }
 }
@@ -724,7 +722,8 @@ void loop () {
   uint8_t axis,i;
   int16_t error,errorAngle;
   int16_t delta,deltaSum;
-  int16_t PTerm,ITerm,PTermACC,ITermACC,PTermGYRO,ITermGYRO,DTerm;
+  int16_t PTerm,ITerm,DTerm;
+  int16_t PTermACC = 0 , ITermACC = 0 , PTermGYRO = 0 , ITermGYRO = 0;
   static int16_t lastGyro[3] = {0,0,0};
   static int16_t delta1[3],delta2[3];
   static int16_t errorGyroI[3] = {0,0,0};
@@ -1235,11 +1234,7 @@ void loop () {
     if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis<2 ) { // MODE relying on ACC
       // 50 degrees max inclination
       errorAngle = constrain(2*rcCommand[axis] + GPS_angle[axis],-500,+500) - angle[axis] + conf.angleTrim[axis]; //16 bits is ok here
-      #ifdef LEVEL_PDF
-        PTermACC      = -(int32_t)angle[axis]*conf.P8[PIDLEVEL]/100 ;
-      #else  
         PTermACC      = (int32_t)errorAngle*conf.P8[PIDLEVEL]/100 ;                          // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
-      #endif
       PTermACC = constrain(PTermACC,-conf.D8[PIDLEVEL]*5,+conf.D8[PIDLEVEL]*5);
 
       errorAngleI[axis]     = constrain(errorAngleI[axis]+errorAngle,-10000,+10000);    // WindUp     //16 bits is ok here

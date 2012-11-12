@@ -530,18 +530,15 @@
 /*****************                                                                 ***************/
 /*************************************************************************************************/
 
-  /* Pseudo-derivative conrtroller for level mode (experimental)
-     Additional information: http://www.multiwii.com/forum/viewtopic.php?f=8&t=503 */
-    //#define LEVEL_PDF
-
-  /************************        AP FlightMode        **********************************/
+  /************************        continuous gyro calibration        ********************/
   /* Gyrocalibration will be repeated if copter is moving during calibration. */
     //#define GYROCALIBRATIONFAILSAFE
+
   /************************        AP FlightMode        **********************************/
     /* Temporarily Disables GPS_HOLD_MODE to be able to make it possible to adjust the Hold-position when moving the sticks.*/
     //#define AP_MODE 20  // Create a deadspan for GPS.
         
-  /************************   Assisted AcroTrainer    **********************************/
+  /************************   Assisted AcroTrainer    ************************************/
     /* Train Acro with auto recovery. Value set the point where ANGLE_MODE takes over.
        Remember to activate ANGLE_MODE first!...
        A Value on 200 will give a very distinct transfer */
@@ -855,8 +852,8 @@
    * It's slowly increase/decrease altitude proportional to stick movement (+/-100 throttle gives about +/-50 cm in 1 second with cycle time about 3-4ms).
    */
   #define VARIO_ALT_CHANGE
-  #define VARIO_P 20    // it's force to get desired vario
-  #define VARIO_D 7     // regulate the speed of vario change and prevent oscillations of PID controller, e.g. if VARIO_D=0 it means that speed to get desired vario (by throttle stick) will be max
+  #define VARIO_P 15     // it's force to get desired vario
+  #define VARIO_D 10     // regulate the speed of vario change and prevent oscillations of PID controller, e.g. if VARIO_D=0 it means that speed to get desired vario (by throttle stick) will be max
       
   /*  Predefined initial throttle for AltHold will be calculated from MID (middle/hover) point of expo throttle from GUI 
    *  (BUT not taken from current throttle value on AltHold activation).
@@ -883,7 +880,7 @@
     #define BOARD_NAME "MultiWii   V-.--"
     //                  123456789.123456
 
-    /****      Support multiple configuration profile in EEPROM   ****/
+  /*************      Support multiple configuration profiles in EEPROM     ************/
     //#define MULTIPLE_CONFIGURATION_PROFILES
 
 /*************************************************************************************************/
