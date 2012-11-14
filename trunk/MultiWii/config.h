@@ -25,7 +25,7 @@
 
   /**************************    The type of multicopter    ****************************/
     //#define GIMBAL
-    //#define BI
+    #define BI
     //#define TRI
     //#define QUADP
     //#define QUADX
@@ -69,7 +69,7 @@
 
   /***************************    Internal i2c Pullups   ********************************/
     /* enable internal I2C pull ups (in most cases it is better to use external pullups) */
-    //#define INTERNAL_I2C_PULLUPS
+    #define INTERNAL_I2C_PULLUPS
 
   /**************************************************************************************/
   /*****************          boards and sensor definitions            ******************/
@@ -138,12 +138,12 @@
       /* leave it commented if you already checked a specific board above */
       /* I2C gyroscope */
       //#define WMP
-      //#define ITG3200
+      #define ITG3200
       //#define L3G4200D
       //#define MPU6050       //combo + ACC
 
       /* I2C accelerometer */
-      //#define NUNCHUCK  // if you want to use the nunckuk connected to a WMP
+      #define NUNCHUCK  // if you want to use the nunckuk connected to a WMP
       //#define MMA7455
       //#define ADXL345
       //#define BMA020
@@ -201,8 +201,8 @@
    /********************************    ARM/DISARM    *********************************/
    /* optionally disable stick combinations to arm/disarm the motors.
      * In most cases one of the two options to arm/disarm via TX stick is sufficient */
-    #define ALLOW_ARM_DISARM_VIA_TX_YAW
-    //#define ALLOW_ARM_DISARM_VIA_TX_ROLL
+    //#define ALLOW_ARM_DISARM_VIA_TX_YAW
+    #define ALLOW_ARM_DISARM_VIA_TX_ROLL
 
   /***********************          Cam Stabilisation             ***********************/
     /* The following lines apply only for a pitch/roll tilt stabilization system. Uncomment the first or second line to activate it */
@@ -351,7 +351,7 @@
       //#define SBUS
 
     /******************* RC signal from the serial port via Multiwii Serial Protocol *********/
-      //#define RCSERIAL
+      #define RCSERIAL
 
 
 
