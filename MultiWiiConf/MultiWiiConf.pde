@@ -117,6 +117,7 @@ void create_checkboxes(String[] names) {
     checkbox[i].setItemsPerRow(12);checkbox[i].setSpacingColumn(10);
     checkbox[i].setLabel("");
     for (int j=1; j<=12; j++) checkbox[i].addItem(i + "_cb_" + j, j);
+
     checkbox[i].hideLabels();
     i++;
   }
@@ -127,11 +128,14 @@ void create_checkboxes(String[] names) {
 // Truncates a long port name for better (readable) display in the GUI
 String shortifyPortName(String portName, int maxlen)  {
   String shortName = portName;
+  return shortName;
+  /*
   if(shortName.startsWith("/dev/")) shortName = shortName.substring(5);  
   if(shortName.startsWith("tty.")) shortName = shortName.substring(4); // get rid of leading tty. part of device name
   if(portName.length()>maxlen) shortName = shortName.substring(0,(maxlen-1)/2) + "~" +shortName.substring(shortName.length()-(maxlen-(maxlen-1)/2));
   if(shortName.startsWith("cu.")) shortName = "";// only collect the corresponding tty. devices
   return shortName;
+*/
 }
 
 controlP5.Controller hideLabel(controlP5.Controller c) {
