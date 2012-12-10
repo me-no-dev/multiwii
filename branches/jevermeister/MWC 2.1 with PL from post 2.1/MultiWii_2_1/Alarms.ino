@@ -1,6 +1,6 @@
-static uint8_t next[5]={0,0,0,0,0}, 
+static uint8_t cycleDone[5]={0,0,0,0,0}, 
                resourceIsOn[5] = {0,0,0,0,0};
-static uint32_t resourceLastToggleTime[5] ={0,0,0,0,0};
+static uint32_t LastToggleTime[5] ={0,0,0,0,0};
 static int16_t  i2c_errors_count_old = 0;
 
 static uint8_t SequenceActive[5]={0,0,0,0,0};
@@ -100,22 +100,22 @@ void alarmPatternComposer(){
   // patternDecode(length1,length2,length3,beeppause,endpause,loop)
   #if defined(BUZZER)
     resource = 1;                                                                                  //buzzer selected
-    if (alarmArray[1] == 2)       patternDecode(resource,200,0,0,50,2000,1);                       //failsafe "find me" signal
-    else if (alarmArray[1] == 1 || alarmArray[8] == 1) patternDecode(resource,50,200,200,50,50,1); //failsafe "panic"  or Acc not calibrated                     
-    else if (alarmArray[0] == 1)  patternDecode(resource,50,0,0,50,0,0);                           //toggle 1
-    else if (alarmArray[0] == 2)  patternDecode(resource,50,50,0,50,0,0);                          //toggle 2       
-    else if (alarmArray[0] > 2)   patternDecode(resource,50,50,50,50,0,0);                         //toggle else         
-    else if (alarmArray[2] == 2)  patternDecode(resource,50,50,0,50,50,1);                         //gps installed but no fix    
-    else if (alarmArray[3] == 1)  patternDecode(resource,50,50,50,50,50,1);                        //BeeperOn
-    else if (alarmArray[4] == 1)  patternDecode(resource,50,50,0,50,120,1);                        //pMeter Warning
-    else if (alarmArray[5] == 1)  patternDecode(resource,50,50,50,50,0,1);                         //Runtime warning      
-    else if (alarmArray[6] == 4)  patternDecode(resource,50,50,200,50,2000,1);                     //vbat critical
-    else if (alarmArray[6] == 2)  patternDecode(resource,50,200,0,50,2000,1);                      //vbat warning      
-    else if (alarmArray[6] == 1)  patternDecode(resource,200,0,0,50,2000,1);                       //vbat info
-    else if (alarmArray[7] == 1)  patternDecode(resource,200,0,0,50,200,0);                        //confirmation indicator 1x
-    else if (alarmArray[7] == 2)  patternDecode(resource,200,200,0,50,200,0);                      //confirmation indicator 2x 
-    else if (alarmArray[7] > 2)   patternDecode(resource,200,200,200,50,200,0);                    //confirmation indicator 3x
-    else if (SequenceActive[resource] == 1) patternDecode(resource,0,0,0,0,0,1);                   // finish last sequence if not finished yet
+    if (alarmArray[1] == 2)       patternDecode(resource,200,0,0,50,2000);                       //failsafe "find me" signal
+    else if (alarmArray[1] == 1 || alarmArray[8] == 1) patternDecode(resource,50,200,200,50,50); //failsafe "panic"  or Acc not calibrated                     
+    else if (alarmArray[0] == 1)  patternDecode(resource,50,0,0,50,0);                           //toggle 1
+    else if (alarmArray[0] == 2)  patternDecode(resource,50,50,0,50,0);                          //toggle 2       
+    else if (alarmArray[0] > 2)   patternDecode(resource,50,50,50,50,0);                         //toggle else         
+    else if (alarmArray[2] == 2)  patternDecode(resource,50,50,0,50,50);                         //gps installed but no fix    
+    else if (alarmArray[3] == 1)  patternDecode(resource,50,50,50,50,50);                        //BeeperOn
+    else if (alarmArray[4] == 1)  patternDecode(resource,50,50,0,50,120);                        //pMeter Warning
+    else if (alarmArray[5] == 1)  patternDecode(resource,50,50,50,50,0);                         //Runtime warning      
+    else if (alarmArray[6] == 4)  patternDecode(resource,50,50,200,50,2000);                     //vbat critical
+    else if (alarmArray[6] == 2)  patternDecode(resource,50,200,0,50,2000);                      //vbat warning      
+    else if (alarmArray[6] == 1)  patternDecode(resource,200,0,0,50,2000);                       //vbat info
+    else if (alarmArray[7] == 1)  patternDecode(resource,200,0,0,50,200);                        //confirmation indicator 1x
+    else if (alarmArray[7] == 2)  patternDecode(resource,200,200,0,50,200);                      //confirmation indicator 2x 
+    else if (alarmArray[7] > 2)   patternDecode(resource,200,200,200,50,200);                    //confirmation indicator 3x
+    else if (SequenceActive[resource] == 1) patternDecode(resource,0,0,0,0,0);                   // finish last sequence if not finished yet
     else turnOff(resource);                                                                        // turn off the resource 
     alarmArray[8] = 0;                                                                             //reset acc not calibrated
     
@@ -125,55 +125,56 @@ void alarmPatternComposer(){
     else if (alarmArray[3] == 1)  PilotLampSequence(100,B0101<<8|B00010001,4);                    //BeeperOn
     else{        
       resource = 2; 
-      if (f.ARMED && f.ACC_MODE) patternDecode(resource,100,100,100,100,1000,1);                //Green Slow Blink-->angle
-      else if (f.ARMED) patternDecode(resource,100,100,0,100,1000,1);                             //Green fast Blink-->acro
+      if (f.ARMED && f.ACC_MODE) patternDecode(resource,100,100,100,100,1000);                //Green Slow Blink-->angle
+      else if (f.ARMED) patternDecode(resource,100,100,0,100,1000);                             //Green fast Blink-->acro
       else turnOff(resource);                                                               //switch off
       resource = 3; 
       #if GPS
-        if (alarmArray[2]==1) patternDecode(resource,100,100,100,100,100,1);                      // blue fast blink -->no gps fix
-        else if (f.GPS_HOME_MODE || f.GPS_HOLD_MODE) patternDecode(resource,100,100,100,100,1000,1); //blue slow blink --> gps active
+        if (alarmArray[2]==1) patternDecode(resource,100,100,100,100,100);                      // blue fast blink -->no gps fix
+        else if (f.GPS_HOME_MODE || f.GPS_HOLD_MODE) patternDecode(resource,100,100,100,100,1000); //blue slow blink --> gps active
         else setTiming(resource,100,1000);                                                        //blue short blink -->gps fix ok
       #else
         turnOff(resource);
       #endif   
       resource = 4; 
       if (alarmArray[1] == 1)       setTiming(resource,100,100);                                  //Red fast blink--> failsafe panic
-      else if (alarmArray[1] == 2)  patternDecode(resource,1000,0,0,0,2000,1);                    //red slow blink--> failsafe find me
+      else if (alarmArray[1] == 2)  patternDecode(resource,1000,0,0,0,2000);                    //red slow blink--> failsafe find me
       else turnOff(resource); 
     }
   #endif 
 }
 
-void patternDecode(uint8_t resource,uint16_t first,uint16_t second,uint16_t third,uint16_t cyclepause, uint16_t endpause, uint8_t Loop){
-  static uint16_t patternInt[5][5];
+void patternDecode(uint8_t resource,uint16_t first,uint16_t second,uint16_t third,uint16_t cyclepause, uint16_t endpause){
+  static uint16_t pattern[5][5];
   static uint8_t icnt[5] = {0,0,0,0,0};
   
-  if(icnt[resource] == 0){
+  if(SequenceActive[resource] == 0){		//only set if no sequence is active yet
     SequenceActive[resource] = 1;   
-    patternInt[resource][0] = first; 
-    patternInt[resource][1] = second;
-    patternInt[resource][2] = third;
-    patternInt[resource][3] = endpause;
-    patternInt[resource][4] = cyclepause;
+    pattern[resource][0] = first; 
+    pattern[resource][1] = second;
+    pattern[resource][2] = third;
+    pattern[resource][3] = endpause;
+    pattern[resource][4] = cyclepause;
   }
-  if(icnt[resource] <3 ){
-    setTiming(resource,patternInt[resource][icnt[resource]],patternInt[resource][4]);
+  
+  if(icnt[resource] <3){
+    if (pattern[resource][icnt[resource]] != 0){
+      setTiming(resource,pattern[resource][icnt[resource]],pattern[resource][4]);
+     }
   }
-  else if (resourceLastToggleTime[resource]<millis()-patternInt[resource][icnt[resource]])  {  //sequence is over: reset everything
+  else if (LastToggleTime[resource] < (millis()-pattern[resource][3]))  {  //sequence is over: reset everything
     icnt[resource]=0;
     SequenceActive[resource] = 0;                               //sequence is now done, next sequence may begin
-    if (!Loop){      //reset toggle or notification events that are curent
-      alarmArray[0] = 0;                                //reset toggle bit
-      alarmArray[7] = 0;                                //reset confirmation bit
-    }
+    alarmArray[0] = 0;                                		//reset toggle bit
+    alarmArray[7] = 0;                                		//reset confirmation bit
     turnOff(resource);   
     return;
   }
-  if (next[resource] == 1 || patternInt[resource][icnt[resource]] == 0) {            //single on off cycle is done
+  if (cycleDone[resource] == 1 || pattern[resource][icnt[resource]] == 0) {            //single on off cycle is done or a skip is called
     if (icnt[resource] < 3) {
       icnt[resource]++;
     }
-    next[resource] = 0;
+    cycleDone[resource] = 0;
     turnOff(resource);    
   }  
 }
@@ -323,15 +324,15 @@ void blinkLED(uint8_t num, uint8_t ontime,uint8_t repeat) {
 /********************************************************************/
 
   int setTiming(uint8_t resource, uint16_t pulse, uint16_t pause){ 
-    if (!resourceIsOn[resource] && (millis() >= (resourceLastToggleTime[resource] + pause))&& pulse != 0) {	         
+    if (!resourceIsOn[resource] && (millis() >= (LastToggleTime[resource] + pause))&& pulse != 0) {	         
       resourceIsOn[resource] = 1;      
       toggleResource(resource,1);
-      resourceLastToggleTime[resource]=millis();      
-    } else if (resourceIsOn[resource] && (millis() >= resourceLastToggleTime[resource] + pulse)|| (pulse==0 && resourceIsOn[resource]) ) {       
+      LastToggleTime[resource]=millis();      
+    } else if (resourceIsOn[resource] && (millis() >= LastToggleTime[resource] + pulse)|| (pulse==0 && resourceIsOn[resource]) ) {       
       resourceIsOn[resource] = 0;
       toggleResource(resource,0);
-      resourceLastToggleTime[resource]=millis();
-      next[resource] = 1;     
+      LastToggleTime[resource]=millis();
+      cycleDone[resource] = 1;     
     } 
   } 
  
