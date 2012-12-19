@@ -1,0 +1,7 @@
+The harness code here targets the MultiWii code at the UAVXArm32F4 board.
+
+The UAVXArm32F4 board may be obtained from:
+
+http://www.quadroufo.com/
+
+G.K. Egan 2012
