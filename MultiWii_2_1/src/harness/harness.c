@@ -258,62 +258,69 @@ void i2cUnstick(uint8 I2CCurr) {
 } // i2cUnstick
 
 void InitPWMPins(uint8 s) {
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-	TIM_OCInitTypeDef TIM_OCInitStructure = { 0, };
-	uint8 i;
-	PinDef * u;
+        TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+        TIM_OCInitTypeDef TIM_OCInitStructure = { 0, };
+        uint8 i;
+        PinDef * u;
 
-	for (i = 0; i < MAX_PWM_OUTPUTS; i++)
-		TIM_DeInit(PWMPins[i].Timer.Tim);
+        for (i = 0; i < MAX_PWM_OUTPUTS; i++)
+                TIM_DeInit(PWMPins[i].Timer.Tim);
 
-	TIM_OCStructInit(&TIM_OCInitStructure);
-	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
-	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
-	TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
+        TIM_OCStructInit(&TIM_OCInitStructure);
+        TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
+        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+        TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
 
-	TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+        TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
 
-	for (i = 0; i < s; i++) {
+        for (i = 0; i < s; i++) {
 
-		u = &PWMPins[i];
-		pinInit(u);
+                u = &PWMPins[i];
+                pinInit(u);
 
 #ifdef STM32F1
-		TIM_TimeBaseStructure.TIM_Prescaler = TIMER_PS - 1; // 1uSec tick
+                TIM_TimeBaseStructure.TIM_Prescaler = TIMER_PS - 1; // 1uSec tick
 #else
-		GPIO_PinAFConfig(u->Port, u->PinSource, u->Timer.TimAF);
-		if ((u->Timer.Tim == TIM1) || (u->Timer.Tim == TIM8))
-			TIM_TimeBaseStructure.TIM_Prescaler = TIMER_PS - 1;
-		else
-			TIM_TimeBaseStructure.TIM_Prescaler = (TIMER_PS / 2) - 1;
+                GPIO_PinAFConfig(u->Port, u->PinSource, u->Timer.TimAF);
+                if ((u->Timer.Tim == TIM1) || (u->Timer.Tim == TIM8))
+                        TIM_TimeBaseStructure.TIM_Prescaler = TIMER_PS - 1;
+                else
+                        TIM_TimeBaseStructure.TIM_Prescaler = (TIMER_PS / 2) - 1;
 #endif
-		TIM_TimeBaseStructure.TIM_Period = u->Period - 1;
-		TIM_TimeBaseInit(u->Timer.Tim, &TIM_TimeBaseStructure);
+                TIM_TimeBaseStructure.TIM_Period = u->Period - 1;
+                TIM_TimeBaseInit(u->Timer.Tim, &TIM_TimeBaseStructure);
 
-		TIM_OCInitStructure.TIM_Pulse = u->Width;
+                TIM_OCInitStructure.TIM_Pulse = u->Width;
 
-		switch (u->Timer.Channel) { // TODO: must be a more direct way
-		case TIM_Channel_1:
-			TIM_OC1Init(u->Timer.Tim, &TIM_OCInitStructure);
-			break;
-		case TIM_Channel_2:
-			TIM_OC2Init(u->Timer.Tim, &TIM_OCInitStructure);
-			break;
-		case TIM_Channel_3:
-			TIM_OC3Init(u->Timer.Tim, &TIM_OCInitStructure);
-			break;
-		case TIM_Channel_4:
-			TIM_OC4Init(u->Timer.Tim, &TIM_OCInitStructure);
-			break;
-		} // switch Timer.Channel
-	}
+                switch (u->Timer.Channel) { // TODO: must be a more direct way
+                case TIM_Channel_1:
+                        TIM_OC1Init(u->Timer.Tim, &TIM_OCInitStructure);
+                        TIM_OC1PreloadConfig(u->Timer.Tim, TIM_OCPreload_Enable);
+                        break;
+                case TIM_Channel_2:
+                        TIM_OC2Init(u->Timer.Tim, &TIM_OCInitStructure);
+                        TIM_OC2PreloadConfig(u->Timer.Tim, TIM_OCPreload_Enable);
+                        break;
+                case TIM_Channel_3:
+                        TIM_OC3Init(u->Timer.Tim, &TIM_OCInitStructure);
+                        TIM_OC3PreloadConfig(u->Timer.Tim, TIM_OCPreload_Enable);
+                        break;
+                case TIM_Channel_4:
+                        TIM_OC4Init(u->Timer.Tim, &TIM_OCInitStructure);
+                        TIM_OC4PreloadConfig(u->Timer.Tim, TIM_OCPreload_Enable);
+                        break;
+                } // switch Timer.Channel
+        }
 
-	for (i = 0; i < s; i++) {
-		u = &PWMPins[i];
-		TIM_Cmd(u->Timer.Tim, ENABLE);
-		TIM_CtrlPWMOutputs(u->Timer.Tim, ENABLE);
-	}
+        for (i = 0; i < s; i++)
+                TIM_ARRPreloadConfig(PWMPins[i].Timer.Tim, ENABLE);
+
+        for (i = 0; i < s; i++) {
+                u = &PWMPins[i];
+                TIM_Cmd(u->Timer.Tim, ENABLE);
+                TIM_CtrlPWMOutputs(u->Timer.Tim, ENABLE);
+        }
 } // InitPWMPins
 
 void InitSerialPort(uint8 s) {
