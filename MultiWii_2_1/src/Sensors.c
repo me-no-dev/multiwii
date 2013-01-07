@@ -130,7 +130,7 @@ int16_t  i2c_errors_count = 0;
 #endif
 
 uint8_t rawADC[6];
-static uint32_t neutralizeTime = 0;
+//static uint32_t neutralizeTime = 0;
   
 // ************************************************************************************************************
 // I2C general functions
@@ -322,7 +322,7 @@ void i2c_BMP085_readCalibration(){
   delay(10);
   //read calibration data in one go
   size_t s_bytes = (uint8_t*)&bmp085_ctx.md - (uint8_t*)&bmp085_ctx.ac1 + sizeof(bmp085_ctx.ac1);
-  i2cBlockreadataddr(1, BMP085_ADDRESS, 0xAA, &bmp085_ctx.ac1, s_bytes);
+  i2cBlockradataddr(1,  BMP085_ADDRESS, 0xAA, &bmp085_ctx.ac1, s_bytes);
   // now fix endianness
   int16_t *p;
  // for (p = &bmp085_ctx.ac1; p <= &bmp085_ctx.md; p++) {
@@ -359,7 +359,7 @@ void i2c_BMP085_UP_Start () {
 void i2c_BMP085_UP_Read () {
 	uint8 B[3];
 
-	i2cRead(I2CBaro, BMP085_ADDRESS, 0, 3, B);
+	i2cRead(1,  BMP085_ADDRESS, 0, 3, B);
 	bmp085_ctx.upval = ((int32) B[0] << 16) + ((int32) B[1] << 8) + B[2];
 
 }
@@ -369,7 +369,7 @@ void i2c_BMP085_UP_Read () {
 void i2c_BMP085_UT_Read() {
 	uint8 B[3];
 
-	i2cRead(I2CBaro, BMP085_ADDRESS, 0, 2, B);
+	i2cRead(1,  BMP085_ADDRESS, 0, 2, B);
 	bmp085_ctx.utval = ((int32) B[0] << 8) + B[1]
 }
 
@@ -467,7 +467,7 @@ void i2c_MS561101BA_readCalibration(){
 	uint8_t i;
 
     for (i = 0; i < 7; i++) {
-	  i2cRead(I2CBaro, MS561101BA_ADDRESS, 0xA0 + i * 2, 2, B);
+	  i2cRead(1,  MS561101BA_ADDRESS, 0xA0 + i * 2, 2, B);
 	  ms561101ba_ctx.c[i] = ((uint16) B[0] << 8) | B[1];
 	}
 }
@@ -483,19 +483,19 @@ void  Baro_init() {
 
 // read uncompensated temperature value: send command first
 void i2c_MS561101BA_UT_Start() {
-	i2cWriteBlock(I2CBaro, MS561101BA_ADDRESS, MS561101BA_TEMPERATURE + OSR, 0, 0);
+	i2cWriteBlock(1,  MS561101BA_ADDRESS, MS561101BA_TEMPERATURE + OSR, 0, 0);
 }
 
 // read uncompensated pressure value: send command first
 void i2c_MS561101BA_UP_Start () {
-	i2cWriteBlock(I2CBaro, MS561101BA_ADDRESS, MS561101BA_PRESSURE + OSR, 0, 0);
+	i2cWriteBlock(1,  MS561101BA_ADDRESS, MS561101BA_PRESSURE + OSR, 0, 0);
 }
 
 // read uncompensated pressure value: read result bytes
 void i2c_MS561101BA_UP_Read () {
 	uint8 B[3];
 
-	i2cRead(I2CBaro, MS561101BA_ADDRESS, 0, 3, B);
+	i2cRead(1,  MS561101BA_ADDRESS, 0, 3, B);
 	ms561101ba_ctx.upval = ((int32) B[0] << 16) + ((int32) B[1] << 8) + B[2];
 }
 
@@ -503,7 +503,7 @@ void i2c_MS561101BA_UP_Read () {
 void i2c_MS561101BA_UT_Read() {
 	uint8 B[3];
 
-	i2cRead(I2CBaro, MS561101BA_ADDRESS, 0, 3, B);
+	i2cRead(1,  MS561101BA_ADDRESS, 0, 3, B);
 	ms561101ba_ctx.utval = ((int32) B[0] << 16) + ((int32) B[1] << 8) + B[2];
 }
 
@@ -574,7 +574,7 @@ void ACC_init () {
 void ACC_getADC () {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, MMA7455_ADDRESS, 0x00, 3, b, false);
+  i2cBlockreadi16vataddr(1,  MMA7455_ADDRESS, 0x00, 3, b, false);
   ACC_ORIENTATION( b[0], b[1], b[2] );
   ACC_Common();
 }
@@ -603,7 +603,7 @@ void ACC_init () {
 void ACC_getADC () {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, ADXL345_ADDRESS,0x32, 3, b, false);
+  i2cBlockreadi16vataddr(1,  ADXL345_ADDRESS,0x32, 3, b, false);
   ACC_ORIENTATION( b[0], b[1], b[2] );
   ACC_Common();
 }
@@ -652,7 +652,7 @@ void ACC_init () {
 void ACC_getADC () {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, BMA180_ADDRESS,0x02, 3, b, false);
+  i2cBlockreadi16vataddr(1,  BMA180_ADDRESS,0x02, 3, b, false);
   //usefull info is on the 14 bits  [2-15] bits  /4 => [0-13] bits  /4 => 12 bit resolution
   ACC_ORIENTATION( b[0]/16, b[1]/16, b[2]/16 );
   ACC_Common();
@@ -690,7 +690,7 @@ void ACC_init(){
 void ACC_getADC(){
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, BMA020ADDRESS,0x02, 3, b, false);
+  i2cBlockreadi16vataddr(1,  BMA020ADDRESS,0x02, 3, b, false);
   ACC_ORIENTATION( b[0]/64, b[1]/64, b[2]/64);
   ACC_Common();
 }
@@ -709,7 +709,7 @@ void ACC_init(){
 }
 
 void ACC_getADC(){
-  i2cBlockreadi16vataddr(1, LIS3L_ADDRESS0x28+0x80, 3, b, false);
+  i2cBlockreadi16vataddr(1,  LIS3L_ADDRESS0x28+0x80, 3, b, false);
   ACC_ORIENTATION( b[0]/4, b[1]/4, b[2]/4);
   ACC_Common();
 }
@@ -731,7 +731,7 @@ void ACC_init () {
 void ACC_getADC () {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, 0x18,0xA8, 3, b, false);
+  i2cBlockreadi16vataddr(1,  0x18,0xA8, 3, b, false);
   ACC_ORIENTATION( b[0]/16, b[1]/16, b[2]/16);
   ACC_Common();
 }
@@ -771,7 +771,7 @@ void Gyro_init() {
 void Gyro_getADC () {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, L3G4200D_ADDRESS,0x80|0x28, 3, b, false);
+  i2cBlockreadi16vataddr(1,  L3G4200D_ADDRESS,0x80|0x28, 3, b, false);
 
   GYRO_ORIENTATION( b[0]/20, b[1]/20, b[2]/20);
   GYRO_Common();
@@ -805,7 +805,7 @@ void Gyro_init() {
 void Gyro_getADC () {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, ITG3200_ADDRESS,0X1D, 3, b, true);
+  i2cBlockreadi16vataddr(1,  ITG3200_ADDRESS,0X1D, 3, b, true);
   // range: +/- 8192; +/- 2000 deg/sec
   GYRO_ORIENTATION( b[0]/4, b[1]/4, b[2]/4);
   GYRO_Common();
@@ -887,7 +887,7 @@ void Mag_getADC() {
     void Device_Mag_getADC() {
       int16_t b[3];
 
-      i2cBlockreadi16vataddr(1, MAG_ADDRESS,MAG_DATA_REGISTER, 3, b, true);
+      i2cBlockreadi16vataddr(1,  MAG_ADDRESS,MAG_DATA_REGISTER, 3, b, true);
       MAG_ORIENTATION( b[0], b[1], b[2]);
     }
   #endif
@@ -938,7 +938,7 @@ void Mag_getADC() {
 void getADC() {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, MAG_ADDRESS,MAG_DATA_REGISTER, 3, b, true);
+  i2cBlockreadi16vataddr(1,  MAG_ADDRESS,MAG_DATA_REGISTER, 3, b, true);
   #if defined(HMC5843)
     MAG_ORIENTATION( b[0], b[1], b[2] );
   #endif
@@ -974,7 +974,7 @@ void Device_Mag_getADC() {
   void Device_Mag_getADC() {
 	int16_t b[3];
 
-    i2cBlockreadi16vataddr(1, MAG_ADDRESS,MAG_DATA_REGISTER, 3, b, false);
+    i2cBlockreadi16vataddr(1,  MAG_ADDRESS,MAG_DATA_REGISTER, 3, b, false);
     MAG_ORIENTATION( b[0], b[1], b[2] );
     //Start another meassurement
     i2cWrite(1, MAG_ADDRESS,0x0a,0x01);
@@ -1002,7 +1002,7 @@ void Gyro_init() {
 void Gyro_getADC () {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, MPU6050_ADDRESS, 0x43, 3, b, true);
+  i2cBlockreadi16vataddr(1,  MPU6050_ADDRESS, 0x43, 3, b, true);
   // range: +/- 8192; +/- 2000 deg/sec
   GYRO_ORIENTATION(b[0]/4, b[1]/4, b[2]/4);
   GYRO_Common();
@@ -1033,7 +1033,7 @@ void ACC_init () {
 void ACC_getADC () {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, MPU6050_ADDRESS, 0x3B, 3, b, true);
+  i2cBlockreadi16vataddr(1,  MPU6050_ADDRESS, 0x3B, 3, b, true);
   ACC_ORIENTATION( b[0]/8 , b[1]/8 , b[2]/8 );
   ACC_Common();
 }
@@ -1043,7 +1043,7 @@ void ACC_getADC () {
 void Device_Mag_getADC() {
   int16_t b[3];
 
-  i2cBlockreadi16vataddr(1, MPU6050_ADDRESS, 0x49, 3, b, true);
+  i2cBlockreadi16vataddr(1,  MPU6050_ADDRESS, 0x49, 3, b, true);
 
   // the first memory room for EXT_SENS_DATA
   #if defined(HMC5843)
@@ -1166,7 +1166,7 @@ uint16_t i2c_try_readReg(uint8_t add, uint8_t reg) {
 // read a 16bit unsigned int from the i2c bus
 uint16_t i2c_readReg16(int8_t addr, int8_t reg) {
   uint8_t b[2];
-  i2cBlockreadi16vataddr(1, addr, reg, 2, b);
+  i2cBlockreadi16vataddr(1,  addr, reg, 2, b);
   return (b[0]<<8) | b[1];
 }
 
