@@ -235,6 +235,15 @@ int main() {
 	  uint16_t failsafeCnt = 0;//zzz dummy dec
 	  static uint8_t rcDelayCommand; // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
 	  uint8_t axis,i;
+#ifdef GKE_OPT // 32 bit is native for Arm
+	  int32_t errorAngle;
+	  int32_t delta, deltaSum;
+	  int32_t PTerm, ITerm, DTerm;
+	  static int32_t lastGyro[3] = {0,0,0};
+	  static int32_t delta1[3], delta2[3];
+	  static int32_t errorGyroI[3] = {0,0,0};
+	  static int32_t errorAngleI[2] = {0,0};
+#else
 	  int16_t error,errorAngle;
 	  int16_t delta,deltaSum;
 	  int16_t PTerm,ITerm,DTerm;
@@ -242,6 +251,7 @@ int main() {
 	  static int16_t delta1[3],delta2[3];
 	  static int16_t errorGyroI[3] = {0,0,0};
 	  static int16_t errorAngleI[2] = {0,0};
+#endif // GKE_OPT
 	  static uint32_t rcTime  = 0;
 	  static int16_t initialThrottleHold;
 	  #ifdef LCD_TELEMETRY_STEP
@@ -704,8 +714,47 @@ int main() {
       }
     #endif
 
+      //**** PITCH & ROLL & YAW PID ****
 
-    //**** PITCH & ROLL & YAW PID ****
+#ifdef GKE_OPT
+
+	for (axis = 0; axis < 3; axis++) {
+		if (f.ACC_MODE && axis < 2) { //LEVEL MODE
+			errorAngle = Limit1(rcCommand[axis] * 2 + GPS_angle[axis], 500)// 50deg max
+					- angle[axis] + conf.angleTrim[axis];
+
+			PTerm = (errorAngle * conf.P8[PIDLEVEL]) / 100;
+			PTerm = Limit1(PTerm, conf.D8[PIDLEVEL] * 5);
+
+			errorAngleI[axis] = Limit1(errorAngleI[axis] + errorAngle, 10000);
+			ITerm = SRS32(errorAngleI[axis] * conf.I8[PIDLEVEL], 12);
+		} else { //ACRO MODE or YAW axis
+			PTerm = rcCommand[axis];
+
+			if (abs(gyroData[axis]) > 640) // kill integral term at high rates
+				errorGyroI[axis] = ITerm = 0;
+			else {
+				errorGyroI[axis] += ((int32_t) rcCommand[axis] * 80) / conf.P8[axis] - gyroData[axis];
+				errorGyroI[axis] = Limit1(errorGyroI[axis], 16000);
+				ITerm = (errorGyroI[axis] * conf.I8[axis]) / 8000;
+			}
+		}
+		PTerm -= ((int32_t) gyroData[axis] * dynP8[axis]) / 80;
+
+		// moving average on rate delta
+		delta = gyroData[axis] - lastGyro[axis];
+		deltaSum = delta1[axis] + delta2[axis] + delta;
+		delta2[axis] = delta1[axis];
+		delta1[axis] = delta;
+		lastGyro[axis] = gyroData[axis];
+
+		DTerm = SRS32(deltaSum * dynD8[axis], 5);
+
+		axisPID[axis] = PTerm + ITerm - DTerm;
+	}
+
+#else
+
     for(axis=0;axis<3;axis++) {
       if (f.ACC_MODE && axis<2 ) { //LEVEL MODE
         // 50 degrees max inclination
@@ -744,6 +793,8 @@ int main() {
 
       axisPID[axis] =  PTerm + ITerm - DTerm;
     }
+
+#endif // GKE_OPT
 
     mixTable();
     writeServos();

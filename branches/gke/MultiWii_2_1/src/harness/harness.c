@@ -21,6 +21,14 @@
 
 #include "harness.h"
 
+inline int16 SRS16(int16 x, uint8 s) {
+	return ((x < 0) ? -((-x) >> s) : (x >> s));
+} // SRS16
+
+inline int32 SRS32(int32 x, uint8 s) {
+	return ((x < 0) ? -((-x) >> s) : (x >> s));
+} // SRS32
+
 uint8 CurrMaxPWMOutputs = 6;
 
 inline boolean digitalRead(PinDef * d) {

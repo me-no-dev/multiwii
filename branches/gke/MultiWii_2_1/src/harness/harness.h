@@ -272,8 +272,6 @@ extern inline void BeeperOn(void);
 extern inline void BeeperToggle(void);
 extern inline boolean BeeperIsOn(void);
 
-
-
 //______________________________________________________________________________________________
 
 // nonvolatile.c
@@ -593,6 +591,9 @@ extern void InitI2C(uint8 I2CCurr);
 extern void i2cUnstick(uint8 I2CCurr);
 
 extern void InitClocks(void);
+
+extern inline int16 SRS16(int16 x, uint8 s);
+extern inline int32 SRS32(int32 x, uint8 s);
 
 extern inline boolean digitalRead(PinDef * d);
 extern inline void digitalWrite(PinDef * d, uint8 m);
