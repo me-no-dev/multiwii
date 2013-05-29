@@ -13,6 +13,13 @@ http://www.multiwii.com/forum
 For Developers:
 ===============================================================
 
+how to participate :
+-------------------------
+You have this great addition to the software which you feel must become integrated into MultiWii -
+Great. We love contributions. For a successful contribution, the following has worked in the past:
+For your implementation, please observe the notes on features and code format.
+In the forum start a new thread with title '[patch] new gizmo" for your new contribution, describe what it does and include a unified diff (or 'diff -u' output) so we can easily see and follow what changes you made. Most often one of the registered active developers will pick up on the topic and incorporate it. Chances are, it will not happen - then you can always contact a developer who is 'close to your subject' and _kindly_ urge him to take a look. As a last resort everyone is free to contact Alex.
+
 The repository :
 -------------------------
 MultiWii and MultiWiiConf
