@@ -114,6 +114,7 @@ void LoadDefaults(void) {
   conf.I8[PITCH] = 30; 
   conf.D8[PITCH] = 25;
   conf.P8[YAW] = 80; 
+  conf.I8[YAW] = 45; 
  
  conf.rcRate8 = 100; 
    

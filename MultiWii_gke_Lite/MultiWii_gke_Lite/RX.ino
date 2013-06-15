@@ -119,7 +119,7 @@ void inline rxPinCheck(uint8_t pin_pos, uint8_t rc_value_pos) {
       if (pin_pos == 0) 
         failsafeUpdate();
 
-      dTime = cTime-edgeTime[pin_pos]; 
+      dTime = cTime - edgeTime[pin_pos]; 
       if (WidthOK(dTime)) 
         rcValue[rc_value_pos] = dTime;
       else 
@@ -232,6 +232,7 @@ void rxInt(void) {
   if( diff > 3000) { 
     if (chan >= 4) 
       failsafeUpdate();
+    chan = 0;
   }
   else
     if (chan < RC_CHANS) { 
@@ -239,10 +240,11 @@ void rxInt(void) {
         rcValue[chan] = diff;
       else 
         rcFrameOK &= false;
+
       chan++;
     }
 } // rxInt
-#endif
+#endif // SERIAL_SUM_PPM
 
 //_____________________________________________________________________________________________
 
@@ -252,7 +254,7 @@ void rxInt(void) {
 void  readSBus(void){
 #define SBUS_SYNCBYTE 0x0F // Not 100% sure: at the beginning of coding it was 0xF0 !!!
   static uint16_t sbus[25]={
-    0                                                                                                                                                        };
+    0                                                                                                                                                          };
   while(SerialAvailable(1)){
     int val = SerialRead(1);
     if(sbusIndex==0 && val != SBUS_SYNCBYTE)
@@ -449,8 +451,8 @@ bool inline rxReady(void) {
 
   if (f.ARMED && (inFailsafe || (rcIntervaluS > (FAILSAFE_DELAY * 100000))))  {
 
-    inFailsafe = true;
     debug[2] = inFailsafe;
+    inFailsafe = true;
 
 #ifdef FAILSAFE
     rcCommand[ROLL] = rcCommand[PITCH] = AngleIntE[ROLL] = AngleIntE[PITCH] = 0;
@@ -469,6 +471,7 @@ bool inline rxReady(void) {
 
   return (r);
 } // rxReady
+
 
 
 
