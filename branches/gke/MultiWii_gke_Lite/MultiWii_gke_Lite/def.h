@@ -1,4 +1,7 @@
 
+// LIMIT1 MACRO TO REPLACE SYMMETRIC CONSTRAINS
+
+#define Limit1(i,l) (((i) < -(l)) ? -(l) : (((i) > (l)) ? (l) : (i)))
 
 /**************************************************************************************/
 /***************             Proc specific definitions             ********************/
@@ -94,6 +97,7 @@
 
 
 #if defined(NANOWII)
+#define QUADX
 #define MPU6050
 #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -Y; accADC[PITCH]  =  X; accADC[YAW]  =  Z;}
 #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] = -X; gyroADC[PITCH] = -Y; gyroADC[YAW] = -Z;}
@@ -106,6 +110,7 @@
 #endif
 
 #if defined(HK_PocketQuad)
+#define QUADX
 #define DC_MOTORS
 #define MPU6050
 #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  =  -Y; accADC[YAW]  =  Z;}

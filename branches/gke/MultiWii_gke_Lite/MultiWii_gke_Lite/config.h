@@ -19,70 +19,89 @@
  *    Changing those values in config.h and upload will require a 'Reset' from the GUI to take effect
  */
  
-#define Limit1(i,l) (((i) < -(l)) ? -(l) : (((i) > (l)) ? (l) : (i)))
-
 #define GENERAL_USE // default settings that should work for most
+
 #if defined(GENERAL_USE)
 
-//#define FAILSAFE
-#define ACROTRAINER_MODE 200 // inactive if undefined or > 500
-#define USE_THROTTLE_CURVE // GUI throttle curve active
-//#define USE_MW_PARAM_DEFAULTS 
-#define USE_MW_SPEKTRUM_SCALING // simple scaling but does not reflect the actual pulse widths & neutrals!
-//#define USE_MW_RC_FILTER // moving average RC jitter filter
-#define USE_RC_FILTER // simple average
-#define DEADBAND 20 // uSec
-#define ALLOW_ARM_DISARM_VIA_TX_YAW
-//#define ALLOW_ARM_DISARM_VIA_TX_ROLL
-#define MOTOR_STOP
-#define YAW_SCALE  2  // 1,2,3,4 
-#define CYCLETIME 2000 // no point in going faster:)
-#define ACC_LPF_FACTOR 4  // 1, 2, 4 acc smoothing
+  #define FAILSAFE
+  
+  #define ALLOW_ARM_DISARM_VIA_TX_YAW
+  //#define ALLOW_ARM_DISARM_VIA_TX_ROLL
+  #define USE_MW_SPEKTRUM_SCALING // simple original scaling but does not reflect the actual pulse widths & neutrals!
+  #define SPEKTRUM 1024
+  //#define SERIAL_SUM_PPM  PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Graupner/Spektrum
 
-#else
-
-//#define FAILSAFE
-//#define ACROTRAINER_MODE 200 // if undefined or > 500 then inactive
-#define USE_THROTTLE_CURVE
-//#define USE_MW_PARAM_DEFAULTS 
-//#define USE_MW_SPEKTRUM_SCALING // simple scaling but does not reflect the actual pulse widths & neutrals!
-//#define USE_MW_RC_FILTER
-#define USE_RC_FILTER // simple average
-#define DEADBAND 20 // uSec
-#define ALLOW_ARM_DISARM_VIA_TX_ROLL
-//#define ALLOW_ARM_DISARM_VIA_TX_YAW
-//#define MOTOR_STOP
-#define YAW_SCALE  1  // 1,2,3,4
-#define CYCLETIME 2000 // no point in going faster:) and yaw drifts faster!
-#define ACC_LPF_FACTOR 4  // 1, 2, 4 acc smoothing
-
-#endif // GENERAL_USE
-
-//____________________________________________________________________________________________
-
-//#define MW_ECKS
-
-#ifdef MW_ECKS
-  #define NANOWII
-  #define QUADX
-  #define MPU6050_LPF_98HZ
-  //#define MPU6050_LPF_188HZ
-  #define MINCOMMAND  1000
-  #define MINTHROTTLE 1100 // 1064 // special ESC (simonk)
-  #define MAXTHROTTLE 1850
-  #define SERIAL_SUM_PPM  PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Graupner/Spektrum
-#else
+  //#define ACROTRAINER_MODE 200 // inactive if commented out or > 500
+  #define DEADBAND 20 // uSec  
+  #define YAW_SCALE  2  // only use 1,2 or 4 higher value faster yaw
+ 
   // set PWM frequency top Output.ino
   #define HK_PocketQuad
-  #define QUADX
   #define MPU6050_LPF_98HZ
-  //#define MPU6050_LPF_188HZ
+  //#define MPU6050_LPF_188Hz
+  
+  //#define MOTOR_STOP // comment out for slow motor run after arming
   #define MINCOMMAND  1000
   #define MINTHROTTLE 1050
   #define MAXTHROTTLE 1850
-  #define SPEKTRUM 1024
-  //#define SERIAL_SUM_PPM  PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Graupner/Spektrum
-#endif // MW_ECKS
+  
+//_____________________________________________________________________________________________
+
+// Configurations for gke's aircraft - YOU SHOULD NOT CHANGE THESE
+
+#else
+
+ //#define MW_ECKS
+
+  #define FAILSAFE
+  
+  #define ALLOW_ARM_DISARM_VIA_TX_YAW
+  //#define ALLOW_ARM_DISARM_VIA_TX_ROLL
+  #define USE_MW_SPEKTRUM_SCALING // simple scaling but does not reflect the actual pulse widths & neutrals!
+
+  //#define ACROTRAINER_MODE 200 // inactive if commented out or > 500
+  #define DEADBAND 20 // uSec  
+  #define YAW_SCALE  2  // 1,2,3,4 higher values faster yaw
+ 
+  #ifdef MW_ECKS
+  
+    #define NANOWII
+    #define MPU6050_LPF_98HZ
+    //#define MPU6050_LPF_188HZ
+    #define MINCOMMAND  1000
+    #define MINTHROTTLE 1100 // 1064 // special ESC (simonk)
+    #define MAXTHROTTLE 1850
+    #define SERIAL_SUM_PPM  PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Graupner/Spektrum
+    
+  #else // POCKET QUAD
+  
+    // set PWM frequency top Output.ino
+    #define HK_PocketQuad
+    #define MPU6050_LPF_98HZ
+    //#define MPU6050_LPF_188HZ
+    #define MINCOMMAND  1000
+    #define MINTHROTTLE 1050
+    #define MAXTHROTTLE 1850
+    #define SPEKTRUM 1024
+    //#define SERIAL_SUM_PPM  PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Graupner/Spektrum
+    
+  #endif // MW_ECKS
+
+#endif // GENERAL_USE
+
+// Best not to change these ;)
+
+  #define USE_THROTTLE_CURVE // MW GUI throttle curve active
+  //#define USE_MW_PARAM_DEFAULTS 
+  //#define USE_MW_RC_FILTER // moving average RC jitter filter
+  #define USE_RC_FILTER // simple average
+  #define ACC_LPF_FACTOR 4  // 1, 2, 4 acc smoothing
+
+  #define CYCLETIME 2000 // no point in going faster:)
+
+//____________________________________________________________________________________________
+
+
 
 /*************************************************************************************************/
 /*****************                                                                 ***************/
