@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "config.h"
 #include "def.h"
+#include "types.h"
 
 #if defined(MEGA)
   #define UART_NUMBER 4
