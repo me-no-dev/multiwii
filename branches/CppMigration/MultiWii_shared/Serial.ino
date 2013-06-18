@@ -2,6 +2,20 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
+#include "MultiWii.h"
+#include "EEPROM.h"
+#include "Output.h"
+
+uint16_t read16();
+uint8_t read8();
+void serialize8(uint8_t a);
+void UartSendData();
+uint8_t SerialAvailable(uint8_t port);
+uint8_t SerialRead(uint8_t port);
+void evaluateOtherData(uint8_t sr);
+#ifndef SUPPRESS_ALL_SERIAL_MSP
+void evaluateCommand();
+#endif
 
 #if defined(MEGA)
   #define UART_NUMBER 4
@@ -762,7 +776,7 @@ void UartSendData() {
   }
 #endif
 
-static void inline SerialOpen(uint8_t port, uint32_t baud) {
+void SerialOpen(uint8_t port, uint32_t baud) {
   uint8_t h = ((F_CPU  / 4 / baud -1) / 2) >> 8;
   uint8_t l = ((F_CPU  / 4 / baud -1) / 2);
   switch (port) {
@@ -784,7 +798,7 @@ static void inline SerialOpen(uint8_t port, uint32_t baud) {
   }
 }
 
-static void inline SerialEnd(uint8_t port) {
+void SerialEnd(uint8_t port) {
   switch (port) {
     #if defined(PROMINI)
       case 0: UCSR0B &= ~((1<<RXEN0)|(1<<TXEN0)|(1<<RXCIE0)|(1<<UDRIE0)); break;
@@ -801,7 +815,7 @@ static void inline SerialEnd(uint8_t port) {
   }
 }
 
-static void inline store_uart_in_buf(uint8_t data, uint8_t portnum) {
+void store_uart_in_buf(uint8_t data, uint8_t portnum) {
   #if defined(SPEKTRUM)
     if (portnum == SPEK_SERIAL_PORT) {
       if (!spekFrameFlags) { 

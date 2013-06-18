@@ -14,6 +14,14 @@ March  2013     V2.2
 #include "config.h"
 #include "def.h"
 #include "types.h"
+#include "MultiWii.h"
+#include "Alarms.h"
+#include "EEPROM.h"
+#include "IMU.h"
+#include "Output.h"
+#include "RX.h"
+#include "Sensors.h"
+#include "Serial.h"
 
 #include <avr/pgmspace.h>
 #define  VERSION  221
@@ -136,39 +144,39 @@ const uint8_t boxids[] PROGMEM = {// permanent IDs associated to boxes. This way
 };
 
 
-static uint32_t currentTime = 0;
-static uint16_t previousTime = 0;
-static uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
-static uint16_t calibratingA = 0;  // the calibration is done in the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
-static uint16_t calibratingB = 0;  // baro calibration = get new ground pressure value
-static uint16_t calibratingG;
-static int16_t  magHold,headFreeModeHold; // [-180;+180]
-static uint8_t  vbatMin = VBATNOMINAL;  // lowest battery voltage in 0.1V steps
-static uint8_t  rcOptions[CHECKBOXITEMS];
-static int32_t  BaroAlt,AltHold; // in cm
-static int16_t  BaroPID = 0;
-static int16_t  errorAltitudeI = 0;
+uint32_t currentTime = 0;
+uint16_t previousTime = 0;
+uint16_t cycleTime = 0;     // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+uint16_t calibratingA = 0;  // the calibration is done in the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
+uint16_t calibratingB = 0;  // baro calibration = get new ground pressure value
+uint16_t calibratingG;
+int16_t  magHold,headFreeModeHold; // [-180;+180]
+uint8_t  vbatMin = VBATNOMINAL;  // lowest battery voltage in 0.1V steps
+uint8_t  rcOptions[CHECKBOXITEMS];
+int32_t  BaroAlt,AltHold; // in cm
+int16_t  BaroPID = 0;
+int16_t  errorAltitudeI = 0;
 
 // **************
 // gyro+acc IMU
 // **************
-static int16_t gyroZero[3] = {0,0,0};
-static int16_t angle[2]    = {0,0};  // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+int16_t gyroZero[3] = {0,0,0};
+int16_t angle[2]    = {0,0};  // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
-static imu_t imu;
+imu_t imu;
 
-static analog_t analog;
+analog_t analog;
 
-static alt_t alt;
+alt_t alt;
 
-static att_t att;
+att_t att;
 
 #if defined(ARMEDTIMEWARNING)
   static uint32_t  ArmedTimeWarningMicroSeconds = 0;
 #endif
 
-static int16_t  debug[4];
-static int16_t  sonarAlt; //to think about the unit
+int16_t  debug[4];
+int16_t  sonarAlt; //to think about the unit
 
 flags_struct_t f;
 
@@ -184,8 +192,8 @@ flags_struct_t f;
   static uint32_t armedTime = 0;
 #endif
 
-static int16_t  i2c_errors_count = 0;
-static int16_t  annex650_overrun_count = 0;
+int16_t  i2c_errors_count = 0;
+int16_t  annex650_overrun_count = 0;
 
 
 
@@ -217,7 +225,7 @@ static int16_t  annex650_overrun_count = 0;
   static uint32_t pAlarm;                  // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[6]
   static uint16_t powerValue = 0;          // last known current
 #endif
-static uint16_t intPowerTrigger1;
+uint16_t intPowerTrigger1;
 
 // **********************
 // telemetry
@@ -253,12 +261,12 @@ static uint16_t intPowerTrigger1;
 static int16_t failsafeEvents = 0;
 volatile int16_t failsafeCnt = 0;
 
-static int16_t rcData[RC_CHANS];    // interval [1000;2000]
-static int16_t rcSerial[8];         // interval [1000;2000] - is rcData coming from MSP 
-static int16_t rcCommand[4];        // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW 
-static uint8_t rcSerialCount = 0;   // a counter to select legacy RX when there is no more MSP rc serial data 
-static int16_t lookupPitchRollRC[5];// lookup table for expo & RC rate PITCH+ROLL
-static int16_t lookupThrottleRC[11];// lookup table for expo & mid THROTTLE
+int16_t rcData[RC_CHANS];    // interval [1000;2000]
+int16_t rcSerial[8];         // interval [1000;2000] - is rcData coming from MSP
+int16_t rcCommand[4];        // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
+uint8_t rcSerialCount = 0;   // a counter to select legacy RX when there is no more MSP rc serial data
+int16_t lookupPitchRollRC[5];// lookup table for expo & RC rate PITCH+ROLL
+int16_t lookupThrottleRC[11];// lookup table for expo & mid THROTTLE
 
 #if defined(SPEKTRUM)
   volatile uint8_t  spekFrameFlags;
@@ -273,18 +281,18 @@ static int16_t lookupThrottleRC[11];// lookup table for expo & mid THROTTLE
 // *************************
 // motor and servo functions
 // *************************
-static int16_t axisPID[3];
-static int16_t motor[8];
-static int16_t servo[8] = {1500,1500,1500,1500,1500,1500,1500,1000};
+int16_t axisPID[3];
+int16_t motor[8];
+int16_t servo[8] = {1500,1500,1500,1500,1500,1500,1500,1000};
 
 // ************************
 // EEPROM Layout definition
 // ************************
 static uint8_t dynP8[2], dynD8[2];
 
-static global_conf_t global_conf;
+global_conf_t global_conf;
 
-static conf_t conf;
+conf_t conf;
 
 #ifdef LOG_PERMANENT
 static plog_t plog;
@@ -338,12 +346,12 @@ static plog_t plog;
   #define NAV_MODE_WP            2
   static uint8_t nav_mode = NAV_MODE_NONE; // Navigation mode
 
-  static uint8_t alarmArray[16];           // array
+  uint8_t alarmArray[16];           // array
  
 #if BARO
-  static int32_t baroPressure;
-  static int32_t baroTemperature;
-  static int32_t baroPressureSum;
+  int32_t baroPressure;
+  int32_t baroTemperature;
+  int32_t baroPressureSum;
 #endif
 
 void annexCode() { // this code is excetuted at each loop and won't interfere with control loop if it lasts less than 650 microseconds

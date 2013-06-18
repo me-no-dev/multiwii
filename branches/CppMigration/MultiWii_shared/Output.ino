@@ -2,6 +2,7 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
+#include "MultiWii.h"
 
 /**************************************************************************************/
 /***************                  Motor Pin order                  ********************/

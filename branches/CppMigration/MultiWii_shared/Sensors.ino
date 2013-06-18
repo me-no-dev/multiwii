@@ -2,6 +2,20 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
+#include "MultiWii.h"
+#include "Alarms.h"
+#include "EEPROM.h"
+#include "IMU.h"
+
+void waitTransmissionI2C();
+void i2c_MS561101BA_UT_Start();
+#if BARO
+void Baro_Common();
+#endif
+void Device_Mag_getADC();
+#if defined(HMC5843) || defined(HMC5883)
+void getADC();
+#endif
 
 // ************************************************************************************************************
 // board orientation and setup
