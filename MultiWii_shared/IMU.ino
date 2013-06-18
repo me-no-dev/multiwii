@@ -2,6 +2,11 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
+#include "MultiWii.h"
+#include "IMU.h"
+#include "Sensors.h"
+
+void getEstimatedAttitude();
 
 void computeIMU () {
   uint8_t axis;

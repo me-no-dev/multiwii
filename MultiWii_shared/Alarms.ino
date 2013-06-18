@@ -2,6 +2,12 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
+#include "MultiWii.h"
+
+void alarmPatternComposer();
+void setTiming(uint8_t resource, uint16_t pulse, uint16_t pause);
+void turnOff(uint8_t resource);
+void toggleResource(uint8_t resource, uint8_t activate);
 
 static uint8_t cycleDone[5]={0,0,0,0,0}, 
                resourceIsOn[5] = {0,0,0,0,0};
