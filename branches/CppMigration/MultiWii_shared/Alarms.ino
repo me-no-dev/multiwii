@@ -1,3 +1,7 @@
+#include "Arduino.h"
+#include "config.h"
+#include "def.h"
+
 static uint8_t cycleDone[5]={0,0,0,0,0}, 
                resourceIsOn[5] = {0,0,0,0,0};
 static uint32_t LastToggleTime[5] ={0,0,0,0,0};

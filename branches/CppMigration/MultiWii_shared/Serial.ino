@@ -1,3 +1,7 @@
+#include "Arduino.h"
+#include "config.h"
+#include "def.h"
+
 #if defined(MEGA)
   #define UART_NUMBER 4
 #elif defined(PROMICRO)

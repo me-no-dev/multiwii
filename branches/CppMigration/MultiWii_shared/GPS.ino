@@ -1,3 +1,7 @@
+#include "Arduino.h"
+#include "config.h"
+#include "def.h"
+
 #if GPS
 
 #if defined(TINY_GPS)
