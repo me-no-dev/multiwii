@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "config.h"
 #include "def.h"
+#include "types.h"
 
 static uint8_t cycleDone[5]={0,0,0,0,0}, 
                resourceIsOn[5] = {0,0,0,0,0};

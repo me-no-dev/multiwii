@@ -2,6 +2,7 @@
 #include "Arduino.h"
 #include "config.h"
 #include "def.h"
+#include "types.h"
 
 uint8_t calculate_sum(uint8_t *cb , uint8_t siz) {
   uint8_t sum=0x55;  // checksum init
