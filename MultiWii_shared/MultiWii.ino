@@ -10,6 +10,7 @@ March  2013     V2.2
 
 #include <avr/io.h>
 
+#include "Arduino.h"
 #include "config.h"
 #include "def.h"
 

@@ -1,3 +1,6 @@
+#include "Arduino.h"
+#include "config.h"
+#include "def.h"
 
 void computeIMU () {
   uint8_t axis;
