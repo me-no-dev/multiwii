@@ -5,6 +5,8 @@
 
 //----------------------------------------------------------------------------------------------------
 
+#ifndef USE_MW_CONTROL
+
 int16_t Threshold(int16_t v, int16_t t) {
 
   if (v > t)
@@ -21,7 +23,7 @@ uint32_t SmoothRateDerivative(uint8_t axis, int16_t Rate) {
   // simple 3 sample moving average filter
   uint32_t d, deltaSum; 
   static int16_t Ratep[3] = {
-    0,0,0                                             };
+    0,0,0                                                         };
   static int16_t delta[2][3] = {
     {
       0,0,0    
@@ -51,7 +53,7 @@ void doRates(void) {
 
   maxRollPitchStick = min(max(abs(rcCommand[PITCH]), abs(rcCommand[ROLL])), 500);
 
-  Scale = constrain(500 - (abs(rcCommand[YAW] * YAW_SCALE)), 0, 500);
+  Scale = constrain(500 - (((int32_t)abs(rcCommand[YAW]) * conf.yawRate) >> 6), 0, 500);
   dynP8[YAW] = ((int32_t)conf.P8[YAW] * Scale) >> 9;
 
   //(uint16_t)conf.rollPitchRate
@@ -69,20 +71,12 @@ void doRates(void) {
 
 } // DoRates
 
-int16_t doIntegral(uint8_t axis) {
+int16_t doIntegral(uint8_t axis, bool negative) {
   int16_t I;
 
-  if ( axis == YAW ) { 
-    if (abs(gyroData[axis]) > 640) 
-      RateIntE[axis] = 0;
-    else {
-      RateIntE[axis]  -= gyroData[axis]; 
-      RateIntE[axis] = Limit1(RateIntE[axis], 16000);
-    }
-    I = ((RateIntE[axis] >> 7) * conf.I8[axis]) >> 6; 
-  } 
-  else
-    I = Limit1(((int32_t)angle[axis] * conf.I8[axis]) >> 5, 500); 
+  I = -Limit1(((int32_t)angle[axis] * conf.I8[axis]) >> 5, 500); 
+  // if (((I>0) && negative) || ((I<0) && !negative))
+  //   I = 0;
 
   return (I);
 } // doIntegral
@@ -99,16 +93,13 @@ void computeControl(void) {
 
     P =  -((int32_t)gyroData[axis] * conf.P8[axis]) >> 6;
 
-    if ((maxRollPitchStick >= ACROTRAINER_MODE) || (abs(gyroData[axis]) > 640))// zero integral at high rotation rates - Acro
+    if (( f.ANGLE_MODE || f.HORIZON_MODE ) && ( maxRollPitchStick < ACROTRAINER_MODE )) {  
+      I = doIntegral(axis, P > 0); 
+      if ( f.HORIZON_MODE ) 
+        I = ((int32_t)I * (512 - maxRollPitchStick)) >> 9;
+    }
+    else  
       I = 0;
-    else
-      if ( f.ANGLE_MODE || f.HORIZON_MODE ) {  
-        I = -doIntegral(axis); 
-        if ( f.HORIZON_MODE ) 
-          I = ((int32_t)I * (512 - maxRollPitchStick)) >> 9;
-      }
-      else  
-        I = 0;
 
     D = SmoothRateDerivative(axis, gyroData[axis]);
 
@@ -117,83 +108,21 @@ void computeControl(void) {
 
   // Yaw
   P = ((int32_t)gyroData[YAW] * dynP8[YAW]) >> 6;
-  I = doIntegral(YAW); 
+
+ // RateIntE[YAW]  += gyroData[YAW]; 
+ // RateIntE[YAW] = Limit1(RateIntE[YAW], 500);
+ // I = (RateIntE[YAW] * conf.I8[YAW]) >> 7;
+  I = 0;
 
   Temp = Limit1(rcCommand[YAW] - (P + I) , 500); 
   axisPID[YAW] = Limit1(Temp, abs(rcCommand[YAW]) + 100); //prevent "yaw jump" - slew limit?
 
 } // computeControl
 
-//----------------------------------------------------------------------------------------------------
+#endif // !USE_MW_CONTROL
 
-// Original MultiWii Control code for reference only - not flyable
 
-void MWControl(void) {
-  uint8_t axis;
-  int16_t PTerm, ITerm, DTerm, PTermGYRO, ITermGYRO, error, errorAngle;
-  static int16_t lastGyro[3] = {
-    0,0,0            };
-  static int32_t delta1[3] = {
-    0,0,0            };
-  static int32_t delta2[3] = {
-    0,0,0              };
-  int32_t delta, deltaSum, PTermACC, ITermACC;
 
-  //**** PITCH & ROLL & YAW PID ****
-  int16_t prop;
-  prop = min(max(abs(rcCommand[PITCH]),abs(rcCommand[ROLL])),500); // range [0;500]
-
-  for(axis=0;axis<3;axis++) {
-    if ((f.ANGLE_MODE || f.HORIZON_MODE) && (axis != YAW) ) { // MODE relying on ACC
-      // 50 degrees max inclination
-      errorAngle = constrain((rcCommand[axis]<<1) + GPS_angle[axis],-500,+500);// - angle[axis] + conf.angleTrim[axis]; //16 bits is ok here
-      PTermACC = ((int32_t)errorAngle*conf.P8[PIDLEVEL])>>7;  // 32 bits is needed for calculation: errorAngle*P8[PIDLEVEL] could exceed 32768   16 bits is ok for result
-      PTermACC = constrain(PTermACC,-conf.D8[PIDLEVEL]*5,+conf.D8[PIDLEVEL]*5);
-
-      AngleIntE[axis] = constrain(AngleIntE[axis]+errorAngle,-10000,+10000); // WindUp 16 bits is ok here
-      ITermACC = ((int32_t)AngleIntE[axis]*conf.I8[PIDLEVEL])>>12; // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
-    }
-    if ( !f.ANGLE_MODE || f.HORIZON_MODE || axis == 2 ) { // MODE relying on GYRO or YAW axis
-      if (abs(rcCommand[axis])<500) error = (rcCommand[axis]<<6)/conf.P8[axis] ; // 16 bits is needed for calculation: 500*64 = 32000      16 bits is ok for result if P8>5 (P>0.5)
-      else error = ((int32_t)rcCommand[axis]<<6)/conf.P8[axis] ; // 32 bits is needed for calculation
-
-      error -= gyroData[axis];
-
-      PTermGYRO = rcCommand[axis];
-
-      RateIntE[axis]  = constrain(RateIntE[axis]+error,-16000,+16000); // WindUp   16 bits is ok here
-      if (abs(gyroData[axis])>640) RateIntE[axis] = 0;
-      ITermGYRO = ((RateIntE[axis]>>7)*conf.I8[axis])>>6;  // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
-    }
-    if ( f.HORIZON_MODE && (axis != YAW)) {
-      PTerm = ((int32_t)PTermACC*(512-prop) + (int32_t)PTermGYRO*prop)>>9; // the real factor should be 500, but 512 is ok
-      ITerm = ((int32_t)ITermACC*(512-prop) + (int32_t)ITermGYRO*prop)>>9;
-    } 
-    else {
-      if ( f.ANGLE_MODE && (axis != YAW)) {
-        PTerm = PTermACC;
-        ITerm = ITermACC;
-      } 
-      else {
-        PTerm = PTermGYRO;
-        ITerm = ITermGYRO;
-      }
-    }
-
-    PTerm -= ((int32_t)gyroData[axis]*dynP8[axis])>>6; // 32 bits is needed for calculation   
-
-    delta          = gyroData[axis] - lastGyro[axis];  // 16 bits is ok here, the diff between 2 consecutive gyro reads is limited to 800
-    lastGyro[axis] = gyroData[axis];
-    deltaSum       = delta1[axis]+delta2[axis]+delta;
-    delta2[axis]   = delta1[axis];
-    delta1[axis]   = delta;
-
-    DTerm = ((int32_t)deltaSum*dynD8[axis])>>5;        // 32 bits is needed for calculation
-
-    axisPID[axis] =  PTerm + ITerm - DTerm;
-  }
-
-} // MWControl
 
 
 

@@ -66,13 +66,16 @@ void conditionGyro(void) {
     }
     calibratingG--;
   }
-
+  
   for (axis = 0; axis < 3; axis++) {
-    gyroADC[axis]  -= gyroZero[axis];
-    gyroADC[axis] = Limit1(gyroADC[axis], gyroADCp[axis] + 800); // slew limit    
-    gyroADC[axis] =  gyroADCp[axis] = (gyroADC[axis] + gyroADCp[axis]) >> 1;   
+    gyroADC[axis]  -= gyroZero[axis];    
+    gyroADC[axis] = gyroADCp[axis] = (gyroADC[axis] + gyroADCp[axis]) >> 1; 
     gyroData[axis] = gyroADC[axis]; // used in PID
   }
+  
+  debug[2] = gyroData[ROLL];
+  debug[3] = gyroData[PITCH];
+  
 } // conditionGyro
 
 

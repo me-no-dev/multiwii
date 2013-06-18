@@ -58,7 +58,7 @@ void writeParams(uint8_t b) {
 
 void LoadDefaults(void) {
 
-#if defined(USE_MW_PARAM_DEFAULTS)
+#if defined(USE_MW_CONTROL)
 
   conf.P8[ROLL] = 33;  
   conf.I8[ROLL] = 30; 
@@ -107,16 +107,17 @@ void LoadDefaults(void) {
 
   memset(&conf, 0, sizeof(conf));
 
-  conf.P8[ROLL] = 30;   
-  conf.I8[ROLL] = 30; 
+  conf.P8[ROLL] = 35;   
+  conf.I8[ROLL] = 50; 
   conf.D8[ROLL] = 25;
-  conf.P8[PITCH] = 30;  
-  conf.I8[PITCH] = 30; 
+  conf.P8[PITCH] = 35;  
+  conf.I8[PITCH] = 50; 
   conf.D8[PITCH] = 25;
   conf.P8[YAW] = 80; 
-  conf.I8[YAW] = 45; 
  
- conf.rcRate8 = 100; 
+  conf.yawRate = 100; 
+ 
+  conf.rcRate8 = 100; 
    
 #ifdef USE_THROTTLE_CURVE
   conf.thrMid8 = 45; 
@@ -126,7 +127,7 @@ void LoadDefaults(void) {
   conf.thrExpo8 = 100; 
 #endif // USE_THROTTLE_CURVE
 
-#endif // USE_MW_PARAM_DEFAULTS
+#endif // USE_MW_CONTROL
 
   for(uint8_t i = 0; i < CHECKBOXITEMS; i++)
     conf.activate[i] = 0;

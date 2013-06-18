@@ -451,13 +451,13 @@ bool inline rxReady(void) {
 
   if (f.ARMED && (inFailsafe || (rcIntervaluS > (FAILSAFE_DELAY * 100000))))  {
 
-    debug[2] = inFailsafe;
+    //debug[2] = inFailsafe;
     inFailsafe = true;
 
 #ifdef FAILSAFE
-    rcCommand[ROLL] = rcCommand[PITCH] = AngleIntE[ROLL] = AngleIntE[PITCH] = 0;
     f.ANGLE_MODE = true;  
     f.HORIZON_MODE = false;
+    rcCommand[ROLL] = rcCommand[PITCH] = 0;
 
     if (rcIntervaluS > (FAILSAFE_OFF_DELAY * 100000)) {
       rcCommand[THROTTLE] = MINCOMMAND;
