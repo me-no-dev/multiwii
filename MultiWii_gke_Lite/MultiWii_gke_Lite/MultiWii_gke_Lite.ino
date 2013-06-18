@@ -317,12 +317,12 @@ void annexCode() { // this code is executed at each loop and won't interfere wit
 
   if ( (calibratingA>0 ) || (calibratingG>0) ) // Calibration phase
     LEDPIN_TOGGLE;
-  else
+  else {
     if (f.ACC_CALIBRATED)
       LEDPIN_OFF;
-    else
-      if (f.ARMED)
-        LEDPIN_ON;
+    if (f.ARMED)
+      LEDPIN_ON;
+  }
     
   doRates();
   serialCom();
@@ -354,7 +354,7 @@ void doStickArming(uint8_t rcSticks, bool stickArm) {
         if (rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_HI) go_arm(); 
 #endif        
     } else {
-#if defined(ALLOW_ARM_DISARM_VIA_TX_ROLL)
+#if defined(ALLOW_ARM_DISARM_VIA_TX_YAW)
         if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) go_disarm();
 #endif
 #if defined(ALLOW_ARM_DISARM_VIA_TX_ROLL)
@@ -410,10 +410,10 @@ void doStickProgramming(void) {
       if (!f.ARMED) {
 
         switch (rcSticks) {
-        case THR_LO + YAW_LO + PIT_LO + ROL_CE: calibratingG = 512; break;
-        case THR_HI + YAW_LO + PIT_LO + ROL_CE: calibratingA = 512; break;
-        case THR_LO + YAW_HI + PIT_HI + ROL_CE: break; // Enter LCD config
         case THR_HI + YAW_HI + PIT_LO + ROL_CE: f.CALIBRATE_MAG = true; break; 
+        case THR_HI + YAW_LO + PIT_LO + ROL_CE: calibratingA = 512; break;
+        case THR_LO + YAW_LO + PIT_LO + ROL_CE: calibratingG = 512; break;
+        case THR_LO + YAW_HI + PIT_HI + ROL_CE: break; // Enter LCD config
         default: 
           break;
         } // switch
@@ -445,7 +445,7 @@ void doStickProgramming(void) {
 
   if ( rcOptions[BOXANGLE] || inFailsafe ) { // bumpless transfer to Level mode
     if (!f.ANGLE_MODE) {
-      AngleIntE[ROLL] = AngleIntE[PITCH] = 0;
+      RateIntE[ROLL] = RateIntE[PITCH] = RateIntE[YAW] = AngleIntE[ROLL] = AngleIntE[PITCH] = 0;
       f.ANGLE_MODE = true;
     }  
   } 
@@ -478,10 +478,11 @@ void setup() {
   STABLEPIN_PINMODE;
   POWERPIN_OFF;
   initOutput();
-  global_conf.currentSet=0;
+  global_conf.currentSet = 0;
   readEEPROM();
   readGlobalSet();
-  readEEPROM();                                    // load current setting data
+  readEEPROM(); // load current setting data
+
   blinkLED(2,40,global_conf.currentSet+1);          
   configureReceiver();
   initSensors();
@@ -495,6 +496,7 @@ void setup() {
 
   f.ARMED = false;
   f.SMALL_ANGLES_25 = false; 
+  RateIntE[ROLL] = RateIntE[PITCH] = RateIntE[YAW] = AngleIntE[ROLL] = AngleIntE[PITCH] = 0;
 
 } // setup
 

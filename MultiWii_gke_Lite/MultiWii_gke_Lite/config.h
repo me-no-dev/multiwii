@@ -24,7 +24,7 @@
 #if defined(GENERAL_USE)
 
   #define FAILSAFE
-  
+   
   #define ALLOW_ARM_DISARM_VIA_TX_YAW
   //#define ALLOW_ARM_DISARM_VIA_TX_ROLL
   #define USE_MW_SPEKTRUM_SCALING // simple original scaling but does not reflect the actual pulse widths & neutrals!
@@ -32,13 +32,13 @@
   //#define SERIAL_SUM_PPM  PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Graupner/Spektrum
 
   //#define ACROTRAINER_MODE 200 // inactive if commented out or > 500
-  #define DEADBAND 20 // uSec  
-  #define YAW_SCALE  2  // only use 1,2 or 4 higher value faster yaw
+  #define DEADBAND 20 // 20 // uSec  
  
   // set PWM frequency top Output.ino
   #define HK_PocketQuad
-  #define MPU6050_LPF_98HZ
-  //#define MPU6050_LPF_188Hz
+  //#define MPU6050_LPF_42HZ
+  //#define MPU6050_LPF_98HZ
+  #define MPU6050_LPF_188Hz
   
   //#define MOTOR_STOP // comment out for slow motor run after arming
   #define MINCOMMAND  1000
@@ -55,13 +55,13 @@
 
   #define FAILSAFE
   
-  #define ALLOW_ARM_DISARM_VIA_TX_YAW
-  //#define ALLOW_ARM_DISARM_VIA_TX_ROLL
-  #define USE_MW_SPEKTRUM_SCALING // simple scaling but does not reflect the actual pulse widths & neutrals!
+  //#define USE_MW_CONTROL
+  
+  //#define ALLOW_ARM_DISARM_VIA_TX_YAW
+  #define ALLOW_ARM_DISARM_VIA_TX_ROLL
 
   //#define ACROTRAINER_MODE 200 // inactive if commented out or > 500
   #define DEADBAND 20 // uSec  
-  #define YAW_SCALE  2  // 1,2,3,4 higher values faster yaw
  
   #ifdef MW_ECKS
   
@@ -345,6 +345,9 @@
     /* Train Acro with auto recovery. Value set the point where ANGLE_MODE takes over.
        Remember to activate ANGLE_MODE first!...
        A Value on 200 will give a very distinct transfer */
+    #if !defined(ACROTRAINER_MODE)
+       #define ACROTRAINER_MODE 1000
+    #endif
     //#define ACROTRAINER_MODE 200   // http://www.multiwii.com/forum/viewtopic.php?f=16&t=1944#p17437
 
 
