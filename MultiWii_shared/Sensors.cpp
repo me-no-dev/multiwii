@@ -6,6 +6,7 @@
 #include "Alarms.h"
 #include "EEPROM.h"
 #include "IMU.h"
+#include "LCD.h"
 
 void waitTransmissionI2C();
 void i2c_MS561101BA_UT_Start();
@@ -16,6 +17,9 @@ void Device_Mag_getADC();
 #if defined(HMC5843) || defined(HMC5883)
 void getADC();
 #endif
+void Baro_init();
+void Mag_init();
+void ACC_init();
 
 // ************************************************************************************************************
 // board orientation and setup

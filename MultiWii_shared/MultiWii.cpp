@@ -18,6 +18,7 @@ March  2013     V2.2
 #include "Alarms.h"
 #include "EEPROM.h"
 #include "IMU.h"
+#include "LCD.h"
 #include "Output.h"
 #include "RX.h"
 #include "Sensors.h"
@@ -182,14 +183,14 @@ flags_struct_t f;
 
 //for log
 #if defined(LOG_VALUES) || defined(LCD_TELEMETRY)
-  static uint16_t cycleTimeMax = 0;       // highest ever cycle timen
-  static uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
-  static int32_t  BAROaltMax;             // maximum value
-  static uint8_t  GPS_speedMax = 0;    // maximum speed from gps
-  static uint16_t powerValueMaxMAH = 0;
+  uint16_t cycleTimeMax = 0;       // highest ever cycle timen
+  uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
+  int32_t  BAROaltMax;             // maximum value
+  uint8_t  GPS_speedMax = 0;    // maximum speed from gps
+  uint16_t powerValueMaxMAH = 0;
 #endif
 #if defined(LOG_VALUES) || defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING) || defined(LOG_PERMANENT)
-  static uint32_t armedTime = 0;
+  uint32_t armedTime = 0;
 #endif
 
 int16_t  i2c_errors_count = 0;
@@ -219,11 +220,10 @@ int16_t  annex650_overrun_count = 0;
 // power meter
 // **********************
 #if defined(POWERMETER) || ( defined(LOG_VALUES) && (LOG_VALUES >= 3) )
-  #define PMOTOR_SUM 8                     // index into pMeter[] for sum
-  static uint32_t pMeter[PMOTOR_SUM + 1];  // we use [0:7] for eight motors,one extra for sum
-  static uint8_t pMeterV;                  // dummy to satisfy the paramStruct logic in ConfigurationLoop()
-  static uint32_t pAlarm;                  // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[6]
-  static uint16_t powerValue = 0;          // last known current
+  uint32_t pMeter[PMOTOR_SUM + 1];  // we use [0:7] for eight motors,one extra for sum
+  uint8_t pMeterV;                  // dummy to satisfy the paramStruct logic in ConfigurationLoop()
+  uint32_t pAlarm;                  // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[6]
+  uint16_t powerValue = 0;          // last known current
 #endif
 uint16_t intPowerTrigger1;
 
@@ -231,12 +231,12 @@ uint16_t intPowerTrigger1;
 // telemetry
 // **********************
 #if defined(LCD_TELEMETRY)
-  static uint8_t telemetry = 0;
-  static uint8_t telemetry_auto = 0;
+  uint8_t telemetry = 0;
+  uint8_t telemetry_auto = 0;
 #endif
 #ifdef LCD_TELEMETRY_STEP
-  static char telemetryStepSequence []  = LCD_TELEMETRY_STEP;
-  static uint8_t telemetryStepIndex = 0;
+  char telemetryStepSequence []  = LCD_TELEMETRY_STEP;
+  uint8_t telemetryStepIndex = 0;
 #endif
 
 // ******************
@@ -258,7 +258,7 @@ uint16_t intPowerTrigger1;
 #define THR_CE  (3<<(2*THROTTLE))
 #define THR_HI  (2<<(2*THROTTLE))
 
-static int16_t failsafeEvents = 0;
+int16_t failsafeEvents = 0;
 volatile int16_t failsafeCnt = 0;
 
 int16_t rcData[RC_CHANS];    // interval [1000;2000]

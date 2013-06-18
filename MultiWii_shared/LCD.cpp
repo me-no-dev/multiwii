@@ -2,6 +2,28 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
+#include "MultiWii.h"
+#include "Alarms.h"
+#include "EEPROM.h"
+#include "Output.h"
+#include "RX.h"
+#include "Serial.h"
+
+void __u8Inc(void * var, int16_t inc);
+void __s8Inc(void * var, int16_t inc);
+void __u16Inc(void * var, int16_t inc);
+void __s16Inc(void * var, int16_t inc);
+void __nullInc(void * var, int16_t inc);
+void __u8Fmt(void * var, uint8_t mul, uint8_t dec);
+void __u16Fmt(void * var, uint8_t mul, uint8_t dec);
+void __s8BitsFmt(void * var, uint8_t mul, uint8_t dec);
+void __s16Fmt(void * var, uint8_t mul, uint8_t dec);
+void __uAuxFmt(void * var, uint8_t mul, uint8_t dec, uint8_t aux);
+void __uAuxFmt1(void * var, uint8_t mul, uint8_t dec);
+void __uAuxFmt2(void * var, uint8_t mul, uint8_t dec);
+void __uAuxFmt3(void * var, uint8_t mul, uint8_t dec);
+void __uAuxFmt4(void * var, uint8_t mul, uint8_t dec);
+void __upMFmt(void * var, uint8_t mul, uint8_t dec);
 
 // ************************************************************************************************************
 // LCD & display & monitoring
