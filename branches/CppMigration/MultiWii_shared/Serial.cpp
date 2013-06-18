@@ -4,6 +4,7 @@
 #include "types.h"
 #include "MultiWii.h"
 #include "EEPROM.h"
+#include "LCD.h"
 #include "Output.h"
 
 uint16_t read16();

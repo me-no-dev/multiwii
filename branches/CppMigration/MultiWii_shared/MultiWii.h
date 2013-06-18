@@ -70,12 +70,43 @@ extern int16_t axisPID[3];
 extern int16_t motor[8];
 extern int16_t servo[8];
 
+extern int16_t failsafeEvents;
+extern volatile int16_t failsafeCnt;
+
 extern int16_t rcData[RC_CHANS];
 extern int16_t rcSerial[8];
 extern int16_t rcCommand[4];
 extern uint8_t rcSerialCount;
 extern int16_t lookupPitchRollRC[5];
 extern int16_t lookupThrottleRC[11];
+
+#if defined(POWERMETER) || ( defined(LOG_VALUES) && (LOG_VALUES >= 3) )
+  #define PMOTOR_SUM 8                     // index into pMeter[] for sum
+  extern uint32_t pMeter[PMOTOR_SUM + 1];  // we use [0:7] for eight motors,one extra for sum
+  extern uint8_t pMeterV;                  // dummy to satisfy the paramStruct logic in ConfigurationLoop()
+  extern uint32_t pAlarm;                  // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[6]
+  extern uint16_t powerValue;              // last known current
+#endif
+
+#if defined(LCD_TELEMETRY)
+  extern uint8_t telemetry;
+  extern uint8_t telemetry_auto;
+#endif
+#ifdef LCD_TELEMETRY_STEP
+  extern char telemetryStepSequence[];
+  extern uint8_t telemetryStepIndex;
+#endif
+
+#if defined(LOG_VALUES) || defined(LCD_TELEMETRY)
+  extern uint16_t cycleTimeMax;       // highest ever cycle timen
+  extern uint16_t cycleTimeMin;       // lowest ever cycle timen
+  extern int32_t  BAROaltMax;         // maximum value
+  extern uint8_t  GPS_speedMax;       // maximum speed from gps
+  extern uint16_t powerValueMaxMAH;
+#endif
+#if defined(LOG_VALUES) || defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING) || defined(LOG_PERMANENT)
+  extern uint32_t armedTime;
+#endif
 
 void annexCode();
 
