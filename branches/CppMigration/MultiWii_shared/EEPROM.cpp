@@ -3,10 +3,12 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
+#include "EEPROM.h"
 #include "MultiWii.h"
 #include "Alarms.h"
+#include "GPS.h"
 
-void LoadDefaults();
+void LoadDefaults(void);
 
 uint8_t calculate_sum(uint8_t *cb , uint8_t siz) {
   uint8_t sum=0x55;  // checksum init
@@ -181,7 +183,7 @@ void LoadDefaults() {
 }
 
 #ifdef LOG_PERMANENT
-void readPLog() {
+void readPLog(void) {
   eeprom_read_block((void*)&plog, (void*)(E2END - 4 - sizeof(plog)), sizeof(plog));
   if(calculate_sum((uint8_t*)&plog, sizeof(plog)) != plog.checksum) {
     blinkLED(9,100,3);
@@ -195,7 +197,7 @@ void readPLog() {
     writePLog();
   }
 }
-void writePLog() {
+void writePLog(void) {
   plog.checksum = calculate_sum((uint8_t*)&plog, sizeof(plog));
   eeprom_write_block((const void*)&plog, (void*)(E2END - 4 - sizeof(plog)), sizeof(plog));
 }

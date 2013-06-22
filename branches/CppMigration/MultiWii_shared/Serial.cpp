@@ -2,10 +2,10 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
-#include "MultiWii.h"
 #include "EEPROM.h"
 #include "LCD.h"
 #include "Output.h"
+#include "MultiWii.h"
 
 uint16_t read16();
 uint8_t read8();
@@ -17,6 +17,9 @@ void evaluateOtherData(uint8_t sr);
 #ifndef SUPPRESS_ALL_SERIAL_MSP
 void evaluateCommand();
 #endif
+void serialize32(uint32_t a);
+void serialize16(int16_t a);
+void serialize8(uint8_t a);
 
 #if defined(MEGA)
   #define UART_NUMBER 4

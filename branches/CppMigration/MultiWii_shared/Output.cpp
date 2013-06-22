@@ -4,6 +4,8 @@
 #include "types.h"
 #include "MultiWii.h"
 
+void initializeSoftPWM(void);
+
 #if defined(SERVO)
 void initializeServo();
 #endif
@@ -879,7 +881,7 @@ void initializeServo() {
   #endif
   
   /****************         Initialize Timers and PWM Channels         ******************/
-  void initializeSoftPWM() {
+  void initializeSoftPWM(void) {
     #if !defined(PROMICRO)
       TCCR0A = 0; // normal counting mode
       #if (NUMBER_MOTOR > 4) && !defined(HWPWM6) 

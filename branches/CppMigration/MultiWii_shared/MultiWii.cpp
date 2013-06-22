@@ -23,6 +23,7 @@ March  2013     V2.2
 #include "RX.h"
 #include "Sensors.h"
 #include "Serial.h"
+#include "GPS.h"
 
 #include <avr/pgmspace.h>
 #define  VERSION  221
@@ -173,7 +174,7 @@ alt_t alt;
 att_t att;
 
 #if defined(ARMEDTIMEWARNING)
-  static uint32_t  ArmedTimeWarningMicroSeconds = 0;
+  uint32_t  ArmedTimeWarningMicroSeconds = 0;
 #endif
 
 int16_t  debug[4];
@@ -209,11 +210,11 @@ int16_t  annex650_overrun_count = 0;
 //Automatic ACC Offset Calibration
 // **********************
 #if defined(INFLIGHT_ACC_CALIBRATION)
-  static uint16_t InflightcalibratingA = 0;
-  static int16_t AccInflightCalibrationArmed;
-  static uint16_t AccInflightCalibrationMeasurementDone = 0;
-  static uint16_t AccInflightCalibrationSavetoEEProm = 0;
-  static uint16_t AccInflightCalibrationActive = 0;
+  uint16_t InflightcalibratingA = 0;
+  int16_t AccInflightCalibrationArmed;
+  uint16_t AccInflightCalibrationMeasurementDone = 0;
+  uint16_t AccInflightCalibrationSavetoEEProm = 0;
+  uint16_t AccInflightCalibrationActive = 0;
 #endif
 
 // **********************
@@ -295,56 +296,32 @@ global_conf_t global_conf;
 conf_t conf;
 
 #ifdef LOG_PERMANENT
-static plog_t plog;
+  plog_t plog;
 #endif
 
 // **********************
 // GPS common variables
 // **********************
-  static int16_t  GPS_angle[2] = { 0, 0};                      // the angles that must be applied for GPS correction
-  static int32_t  GPS_coord[2];
-  static int32_t  GPS_home[2];
-  static int32_t  GPS_hold[2];
-  static uint8_t  GPS_numSat;
-  static uint16_t GPS_distanceToHome;                          // distance to home  - unit: meter
-  static int16_t  GPS_directionToHome;                         // direction to home - unit: degree
-  static uint16_t GPS_altitude;                                // GPS altitude      - unit: meter
-  static uint16_t GPS_speed;                                   // GPS speed         - unit: cm/s
-  static uint8_t  GPS_update = 0;                              // a binary toogle to distinct a GPS position update
-  static uint16_t GPS_ground_course = 0;                       //                   - unit: degree*10
-  static uint8_t  GPS_Present = 0;                             // Checksum from Gps serial
-  static uint8_t  GPS_Enable  = 0;
+  int16_t  GPS_angle[2] = { 0, 0};                      // the angles that must be applied for GPS correction
+  int32_t  GPS_coord[2];
+  int32_t  GPS_home[2];
+  int32_t  GPS_hold[2];
+  uint8_t  GPS_numSat;
+  uint16_t GPS_distanceToHome;                          // distance to home  - unit: meter
+  int16_t  GPS_directionToHome;                         // direction to home - unit: degree
+  uint16_t GPS_altitude;                                // GPS altitude      - unit: meter
+  uint16_t GPS_speed;                                   // GPS speed         - unit: cm/s
+  uint8_t  GPS_update = 0;                              // a binary toogle to distinct a GPS position update
+  uint16_t GPS_ground_course = 0;                       //                   - unit: degree*10
+  uint8_t  GPS_Present = 0;                             // Checksum from Gps serial
+  uint8_t  GPS_Enable  = 0;
 
-  #define LAT  0
-  #define LON  1
   // The desired bank towards North (Positive) or South (Negative) : latitude
   // The desired bank towards East (Positive) or West (Negative)   : longitude
-  static int16_t  nav[2];
-  static int16_t  nav_rated[2];    //Adding a rate controller to the navigation to make it smoother
+  int16_t  nav[2];
+  int16_t  nav_rated[2];    //Adding a rate controller to the navigation to make it smoother
 
-  // default POSHOLD control gains
-  #define POSHOLD_P              .11
-  #define POSHOLD_I              0.0
-  #define POSHOLD_IMAX           20        // degrees
-
-  #define POSHOLD_RATE_P         2.0
-  #define POSHOLD_RATE_I         0.08      // Wind control
-  #define POSHOLD_RATE_D         0.045     // try 2 or 3 for POSHOLD_RATE 1
-  #define POSHOLD_RATE_IMAX      20        // degrees
-
-  // default Navigation PID gains
-  #define NAV_P                  1.4
-  #define NAV_I                  0.20      // Wind control
-  #define NAV_D                  0.08      //
-  #define NAV_IMAX               20        // degrees
-
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Serial GPS only variables
-  //navigation mode
-  #define NAV_MODE_NONE          0
-  #define NAV_MODE_POSHOLD       1
-  #define NAV_MODE_WP            2
-  static uint8_t nav_mode = NAV_MODE_NONE; // Navigation mode
+  uint8_t nav_mode = NAV_MODE_NONE; // Navigation mode
 
   uint8_t alarmArray[16];           // array
  

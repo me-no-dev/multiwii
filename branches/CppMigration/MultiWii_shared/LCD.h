@@ -7,5 +7,6 @@ void lcd_telemetry();
 void initLCD();
 void LCDclear();
 void toggle_telemetry(uint8_t t);
+void dumpPLog(uint8_t full);
 
 #endif /* LCD_H_ */
