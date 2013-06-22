@@ -8,6 +8,8 @@
 #include "IMU.h"
 #include "LCD.h"
 
+void i2c_BMP085_UT_Start(void);
+
 void waitTransmissionI2C();
 void i2c_MS561101BA_UT_Start();
 #if BARO
@@ -513,7 +515,7 @@ void  Baro_init() {
 }
 
 // read uncompensated temperature value: send command first
-void i2c_BMP085_UT_Start() {
+void i2c_BMP085_UT_Start(void) {
   i2c_writeReg(BMP085_ADDRESS,0xf4,0x2e);
   i2c_rep_start(BMP085_ADDRESS<<1);
   i2c_write(0xF6);

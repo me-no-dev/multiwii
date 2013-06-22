@@ -2,6 +2,7 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
+#include "Serial.h"
 #include "MultiWii.h"
 
 /**************************************************************************************/
@@ -35,6 +36,8 @@
 #endif
 
 #define FAILSAFE_DETECT_TRESHOLD  985
+
+void rxInt(void);
 
 /**************************************************************************************/
 /***************                   RX Pin Setup                    ********************/
@@ -262,7 +265,7 @@ void configureReceiver() {
 
 // Read PPM SUM RX Data
 #if defined(SERIAL_SUM_PPM)
-  void rxInt() {
+  void rxInt(void) {
     uint16_t now,diff;
     static uint16_t last = 0;
     static uint8_t chan = 0;
@@ -341,7 +344,7 @@ void  readSBus(){
 /***************          combine and sort the RX Datas            ********************/
 /**************************************************************************************/
 #if defined(SPEKTRUM)
-void readSpektrum() {
+void readSpektrum(void) {
   if ((!f.ARMED) && 
      #if defined(FAILSAFE) || (SPEK_SERIAL_PORT != 0) 
         (failsafeCnt > 5) &&
