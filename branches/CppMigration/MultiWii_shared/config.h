@@ -209,6 +209,12 @@
 /****************  SECTION  2 - COPTER TYPE SPECIFIC OPTIONS                               *******/
 /*****************                                                                 ***************/
 /*************************************************************************************************/
+  /********************************  PID Controller *********************************/
+    /* choose one of the alternate PID control algorithms
+     * 1 = evolved oldschool algorithm (similar to v2.2)
+     * 2 = new experimental algorithm from Alex Khoroshko http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671&start=10#p37387
+     * */
+    #define PID_CONTROLLER 1
 
     /* NEW: not used anymore for servo coptertypes  <== NEEDS FIXING - MOVE TO WIKI */
     #define YAW_DIRECTION 1
