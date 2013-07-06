@@ -253,12 +253,12 @@
   /***********************          Airplane                       ***********************/
     //#define USE_THROTTLESERVO // For use of standard 50Hz servo on throttle.
 
-    //#define FLAPPERONS    AUX4          // Mix Flaps with Aileroins.
+    #define FLAPPERONS    AUX2          // Mix Flaps with Aileroins.
     #define FLAPPERON_EP   { 1500, 1700 } // Endpooints for flaps on a 2 way switch else set {1020,2000} and program in radio.
     #define FLAPPERON_INVERT { -1, 1 }    // Change direction om flapperons { Wing1, Wing2 }
     
     //#define FLAPS                       // Traditional Flaps on SERVO3.
-    //#define FLAPSPEED     3             // Make flaps move slowm Higher value is Higher Speed.
+    #define FLAPSPEED     1             // Make flaps move slowm Higher value is Higher Speed.
 
   /***********************      Common for Heli & Airplane         ***********************/
 
