@@ -77,7 +77,7 @@
 								<option id="de.innot.avreclipse.cpplinker.option.libpath.994792822" name="Libraries Path (-L)" superClass="de.innot.avreclipse.cpplinker.option.libpath" valueType="stringList">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Arduino/Mega}&quot;"/>
 								</option>
-								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.1081794015" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
+								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.1081794015" name="Other Arguments" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
 								<inputType id="de.innot.avreclipse.tool.cpplinker.input.1652890015" name="OBJ Files" superClass="de.innot.avreclipse.tool.cpplinker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -171,7 +171,7 @@
 								<option id="de.innot.avreclipse.cpplinker.option.libpath.989985675" name="Libraries Path (-L)" superClass="de.innot.avreclipse.cpplinker.option.libpath" valueType="stringList">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Arduino/EightAnalogInputs}&quot;"/>
 								</option>
-								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.497971169" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
+								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.497971169" name="Other Arguments" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
 								<inputType id="de.innot.avreclipse.tool.cpplinker.input.1984653768" name="OBJ Files" superClass="de.innot.avreclipse.tool.cpplinker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -220,8 +220,8 @@
 								<option id="de.innot.avreclipse.compiler.option.optimize.929527748" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.size" valueType="enumerated"/>
 								<option id="de.innot.avreclipse.compiler.option.otherflags.1074440995" name="Other flags" superClass="de.innot.avreclipse.compiler.option.otherflags" value="-ffunction-sections -fdata-sections" valueType="string"/>
 								<option id="de.innot.avreclipse.compiler.option.def.975748035" name="Define Syms (-D)" superClass="de.innot.avreclipse.compiler.option.def" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="USB_PID=null"/>
-									<listOptionValue builtIn="false" value="USB_VID=null"/>
+									<listOptionValue builtIn="false" value="USB_PID=0x2341"/>
+									<listOptionValue builtIn="false" value="USB_VID=0x8036"/>
 									<listOptionValue builtIn="false" value="ARDUINO=105"/>
 								</option>
 								<option id="de.innot.avreclipse.compiler.option.debug.type.1713785386" name="Debug Info Format" superClass="de.innot.avreclipse.compiler.option.debug.type" value="de.innot.avreclipse.compiler.option.debug.level.default" valueType="enumerated"/>
@@ -240,8 +240,8 @@
 								<option id="de.innot.avreclipse.cppcompiler.option.debug.level.715024426" name="Generate Debugging Info" superClass="de.innot.avreclipse.cppcompiler.option.debug.level"/>
 								<option id="de.innot.avreclipse.cppcompiler.option.optimize.720630290" name="Optimization Level" superClass="de.innot.avreclipse.cppcompiler.option.optimize" value="de.innot.avreclipse.cppcompiler.optimize.size" valueType="enumerated"/>
 								<option id="de.innot.avreclipse.cppcompiler.option.def.1866348579" name="Define Syms (-D)" superClass="de.innot.avreclipse.cppcompiler.option.def" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="USB_PID=null"/>
-									<listOptionValue builtIn="false" value="USB_VID=null"/>
+									<listOptionValue builtIn="false" value="USB_PID=0x2341"/>
+									<listOptionValue builtIn="false" value="USB_VID=0x8036"/>
 									<listOptionValue builtIn="false" value="ARDUINO=105"/>
 								</option>
 								<option id="de.innot.avreclipse.cppcompiler.option.debug.type.1915844307" name="Debug Info Format" superClass="de.innot.avreclipse.cppcompiler.option.debug.type" value="de.innot.avreclipse.cppcompiler.option.debug.level.default" valueType="enumerated"/>
@@ -265,7 +265,7 @@
 								<option id="de.innot.avreclipse.cpplinker.option.libpath.671617363" name="Libraries Path (-L)" superClass="de.innot.avreclipse.cpplinker.option.libpath" valueType="stringList">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Arduino/Leonardo}&quot;"/>
 								</option>
-								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.1742879800" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
+								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.1742879800" name="Other Arguments" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
 								<inputType id="de.innot.avreclipse.tool.cpplinker.input.35605442" name="OBJ Files" superClass="de.innot.avreclipse.tool.cpplinker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -314,8 +314,8 @@
 								<option id="de.innot.avreclipse.compiler.option.optimize.941729803" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.size" valueType="enumerated"/>
 								<option id="de.innot.avreclipse.compiler.option.otherflags.222053445" name="Other flags" superClass="de.innot.avreclipse.compiler.option.otherflags" value="-ffunction-sections -fdata-sections" valueType="string"/>
 								<option id="de.innot.avreclipse.compiler.option.def.1735527304" name="Define Syms (-D)" superClass="de.innot.avreclipse.compiler.option.def" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="USB_PID=null"/>
-									<listOptionValue builtIn="false" value="USB_VID=null"/>
+									<listOptionValue builtIn="false" value="USB_PID=0x2341"/>
+									<listOptionValue builtIn="false" value="USB_VID=0x8037"/>
 									<listOptionValue builtIn="false" value="ARDUINO=105"/>
 								</option>
 								<option id="de.innot.avreclipse.compiler.option.debug.type.1855083044" name="Debug Info Format" superClass="de.innot.avreclipse.compiler.option.debug.type" value="de.innot.avreclipse.compiler.option.debug.level.default" valueType="enumerated"/>
@@ -334,8 +334,8 @@
 								<option id="de.innot.avreclipse.cppcompiler.option.debug.level.824950034" name="Generate Debugging Info" superClass="de.innot.avreclipse.cppcompiler.option.debug.level"/>
 								<option id="de.innot.avreclipse.cppcompiler.option.optimize.987506185" name="Optimization Level" superClass="de.innot.avreclipse.cppcompiler.option.optimize" value="de.innot.avreclipse.cppcompiler.optimize.size" valueType="enumerated"/>
 								<option id="de.innot.avreclipse.cppcompiler.option.def.1682253031" name="Define Syms (-D)" superClass="de.innot.avreclipse.cppcompiler.option.def" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="USB_PID=null"/>
-									<listOptionValue builtIn="false" value="USB_VID=null"/>
+									<listOptionValue builtIn="false" value="USB_PID=0x2341"/>
+									<listOptionValue builtIn="false" value="USB_VID=0x8037"/>
 									<listOptionValue builtIn="false" value="ARDUINO=105"/>
 								</option>
 								<option id="de.innot.avreclipse.cppcompiler.option.debug.type.44789137" name="Debug Info Format" superClass="de.innot.avreclipse.cppcompiler.option.debug.type" value="de.innot.avreclipse.cppcompiler.option.debug.level.default" valueType="enumerated"/>
@@ -359,7 +359,7 @@
 								<option id="de.innot.avreclipse.cpplinker.option.libpath.2054208263" name="Libraries Path (-L)" superClass="de.innot.avreclipse.cpplinker.option.libpath" valueType="stringList">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Arduino/Micro}&quot;"/>
 								</option>
-								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.726822725" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
+								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.726822725" name="Other Arguments" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
 								<inputType id="de.innot.avreclipse.tool.cpplinker.input.1875465666" name="OBJ Files" superClass="de.innot.avreclipse.tool.cpplinker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -408,8 +408,8 @@
 								<option id="de.innot.avreclipse.compiler.option.optimize.338597545" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.size" valueType="enumerated"/>
 								<option id="de.innot.avreclipse.compiler.option.otherflags.136853344" name="Other flags" superClass="de.innot.avreclipse.compiler.option.otherflags" value="-ffunction-sections -fdata-sections" valueType="string"/>
 								<option id="de.innot.avreclipse.compiler.option.def.1201808864" name="Define Syms (-D)" superClass="de.innot.avreclipse.compiler.option.def" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="USB_PID=null"/>
-									<listOptionValue builtIn="false" value="USB_VID=null"/>
+									<listOptionValue builtIn="false" value="USB_PID=0x2341"/>
+									<listOptionValue builtIn="false" value="USB_VID=0x8038"/>
 									<listOptionValue builtIn="false" value="ARDUINO=105"/>
 								</option>
 								<option id="de.innot.avreclipse.compiler.option.debug.type.1157316190" name="Debug Info Format" superClass="de.innot.avreclipse.compiler.option.debug.type" value="de.innot.avreclipse.compiler.option.debug.level.default" valueType="enumerated"/>
@@ -428,8 +428,8 @@
 								<option id="de.innot.avreclipse.cppcompiler.option.debug.level.1262995800" name="Generate Debugging Info" superClass="de.innot.avreclipse.cppcompiler.option.debug.level"/>
 								<option id="de.innot.avreclipse.cppcompiler.option.optimize.1262424653" name="Optimization Level" superClass="de.innot.avreclipse.cppcompiler.option.optimize" value="de.innot.avreclipse.cppcompiler.optimize.size" valueType="enumerated"/>
 								<option id="de.innot.avreclipse.cppcompiler.option.def.1584765192" name="Define Syms (-D)" superClass="de.innot.avreclipse.cppcompiler.option.def" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="USB_PID=null"/>
-									<listOptionValue builtIn="false" value="USB_VID=null"/>
+									<listOptionValue builtIn="false" value="USB_PID=0x2341"/>
+									<listOptionValue builtIn="false" value="USB_VID=0x8038"/>
 									<listOptionValue builtIn="false" value="ARDUINO=105"/>
 								</option>
 								<option id="de.innot.avreclipse.cppcompiler.option.debug.type.846524846" name="Debug Info Format" superClass="de.innot.avreclipse.cppcompiler.option.debug.type" value="de.innot.avreclipse.cppcompiler.option.debug.level.default" valueType="enumerated"/>
@@ -453,7 +453,7 @@
 								<option id="de.innot.avreclipse.cpplinker.option.libpath.196448576" name="Libraries Path (-L)" superClass="de.innot.avreclipse.cpplinker.option.libpath" valueType="stringList">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Arduino/RobotControl}&quot;"/>
 								</option>
-								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.1349657669" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
+								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.1349657669" name="Other Arguments" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
 								<inputType id="de.innot.avreclipse.tool.cpplinker.input.1431745087" name="OBJ Files" superClass="de.innot.avreclipse.tool.cpplinker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -502,8 +502,8 @@
 								<option id="de.innot.avreclipse.compiler.option.optimize.1121789098" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.size" valueType="enumerated"/>
 								<option id="de.innot.avreclipse.compiler.option.otherflags.912226674" name="Other flags" superClass="de.innot.avreclipse.compiler.option.otherflags" value="-ffunction-sections -fdata-sections" valueType="string"/>
 								<option id="de.innot.avreclipse.compiler.option.def.1759659157" name="Define Syms (-D)" superClass="de.innot.avreclipse.compiler.option.def" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="USB_PID=null"/>
-									<listOptionValue builtIn="false" value="USB_VID=null"/>
+									<listOptionValue builtIn="false" value="USB_PID=0x2341"/>
+									<listOptionValue builtIn="false" value="USB_VID=0x8039"/>
 									<listOptionValue builtIn="false" value="ARDUINO=105"/>
 								</option>
 								<option id="de.innot.avreclipse.compiler.option.debug.type.1800037956" name="Debug Info Format" superClass="de.innot.avreclipse.compiler.option.debug.type" value="de.innot.avreclipse.compiler.option.debug.level.default" valueType="enumerated"/>
@@ -522,8 +522,8 @@
 								<option id="de.innot.avreclipse.cppcompiler.option.debug.level.1456586367" name="Generate Debugging Info" superClass="de.innot.avreclipse.cppcompiler.option.debug.level"/>
 								<option id="de.innot.avreclipse.cppcompiler.option.optimize.192150587" name="Optimization Level" superClass="de.innot.avreclipse.cppcompiler.option.optimize" value="de.innot.avreclipse.cppcompiler.optimize.size" valueType="enumerated"/>
 								<option id="de.innot.avreclipse.cppcompiler.option.def.1525837230" name="Define Syms (-D)" superClass="de.innot.avreclipse.cppcompiler.option.def" valueType="definedSymbols">
-									<listOptionValue builtIn="false" value="USB_PID=null"/>
-									<listOptionValue builtIn="false" value="USB_VID=null"/>
+									<listOptionValue builtIn="false" value="USB_PID=0x2341"/>
+									<listOptionValue builtIn="false" value="USB_VID=0x8039"/>
 									<listOptionValue builtIn="false" value="ARDUINO=105"/>
 								</option>
 								<option id="de.innot.avreclipse.cppcompiler.option.debug.type.1574259444" name="Debug Info Format" superClass="de.innot.avreclipse.cppcompiler.option.debug.type" value="de.innot.avreclipse.cppcompiler.option.debug.level.default" valueType="enumerated"/>
@@ -547,7 +547,7 @@
 								<option id="de.innot.avreclipse.cpplinker.option.libpath.1458443233" name="Libraries Path (-L)" superClass="de.innot.avreclipse.cpplinker.option.libpath" valueType="stringList">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Arduino/RobotMotor}&quot;"/>
 								</option>
-								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.2081617466" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
+								<option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.2081617466" name="Other Arguments" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs" value="-Wl,--gc-sections" valueType="string"/>
 								<inputType id="de.innot.avreclipse.tool.cpplinker.input.1235308252" name="OBJ Files" superClass="de.innot.avreclipse.tool.cpplinker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -666,21 +666,57 @@
 	<storageModule moduleId="refreshScope" versionNumber="1">
 		<resource resourceType="PROJECT" workspacePath="/MultiWii"/>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.824751559;de.innot.avreclipse.configuration.app.debug.70402572.941505789.824751559.;de.innot.avreclipse.tool.cppcompiler.app.debug.1905814298;de.innot.avreclipse.cppcompiler.input.1440095643">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.1968410390;de.innot.avreclipse.configuration.app.debug.70402572.941505789.1968410390.;de.innot.avreclipse.tool.compiler.winavr.app.debug.1880005089;de.innot.avreclipse.compiler.winavr.input.850115069">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.release.164898359;de.innot.avreclipse.configuration.app.release.164898359.;de.innot.avreclipse.tool.compiler.winavr.app.release.723527256;de.innot.avreclipse.compiler.winavr.input.1380642960">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.1246605338;de.innot.avreclipse.configuration.app.debug.70402572.941505789.1246605338.;de.innot.avreclipse.tool.cppcompiler.app.debug.1438416422;de.innot.avreclipse.cppcompiler.input.2110080174">
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.589697118;de.innot.avreclipse.configuration.app.debug.70402572.941505789.589697118.;de.innot.avreclipse.tool.cppcompiler.app.debug.881188997;de.innot.avreclipse.cppcompiler.input.804010228">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789;de.innot.avreclipse.configuration.app.debug.70402572.941505789.;de.innot.avreclipse.tool.compiler.winavr.app.debug.915458188;de.innot.avreclipse.compiler.winavr.input.1533186655">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.release.164898359;de.innot.avreclipse.configuration.app.release.164898359.;de.innot.avreclipse.tool.cppcompiler.app.release.1800292449;de.innot.avreclipse.cppcompiler.input.1953221676">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileCPP"/>
 		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789;de.innot.avreclipse.configuration.app.debug.70402572.941505789.;de.innot.avreclipse.tool.cppcompiler.app.debug.487686821;de.innot.avreclipse.cppcompiler.input.248130514">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.1810673880;de.innot.avreclipse.configuration.app.debug.70402572.941505789.1810673880.;de.innot.avreclipse.tool.compiler.winavr.app.debug.307024551;de.innot.avreclipse.compiler.winavr.input.1261146431">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.1810673880;de.innot.avreclipse.configuration.app.debug.70402572.941505789.1810673880.;de.innot.avreclipse.tool.cppcompiler.app.debug.1018713029;de.innot.avreclipse.cppcompiler.input.809995841">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.1246605338;de.innot.avreclipse.configuration.app.debug.70402572.941505789.1246605338.;de.innot.avreclipse.tool.cppcompiler.app.debug.1438416422;de.innot.avreclipse.cppcompiler.input.2110080174">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.1968410390;de.innot.avreclipse.configuration.app.debug.70402572.941505789.1968410390.;de.innot.avreclipse.tool.cppcompiler.app.debug.1598530468;de.innot.avreclipse.cppcompiler.input.1383335367">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.1664315822;de.innot.avreclipse.configuration.app.debug.70402572.941505789.1664315822.;de.innot.avreclipse.tool.compiler.winavr.app.debug.1959653092;de.innot.avreclipse.compiler.winavr.input.1189823278">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.589697118;de.innot.avreclipse.configuration.app.debug.70402572.941505789.589697118.;de.innot.avreclipse.tool.compiler.winavr.app.debug.603354994;de.innot.avreclipse.compiler.winavr.input.1627363800">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.824751559;de.innot.avreclipse.configuration.app.debug.70402572.941505789.824751559.;de.innot.avreclipse.tool.compiler.winavr.app.debug.1724871370;de.innot.avreclipse.compiler.winavr.input.2004649813">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.1246605338;de.innot.avreclipse.configuration.app.debug.70402572.941505789.1246605338.;de.innot.avreclipse.tool.compiler.winavr.app.debug.1600999647;de.innot.avreclipse.compiler.winavr.input.1061634474">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="de.innot.avreclipse.configuration.app.debug.70402572.941505789.1664315822;de.innot.avreclipse.configuration.app.debug.70402572.941505789.1664315822.;de.innot.avreclipse.tool.cppcompiler.app.debug.1747933312;de.innot.avreclipse.cppcompiler.input.960172163">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="de.innot.avreclipse.core.AVRGCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
 	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
-	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 </cproject>
