@@ -3,6 +3,7 @@
 #include "def.h"
 #include "types.h"
 #include "MultiWii.h"
+#include "Alarms.h"
 
 void initializeSoftPWM(void);
 
@@ -146,7 +147,7 @@ void writeServos() {
         #endif
       }
     #endif
-    #if defined(SEC_SERVO_FROM)   // write secundary servos
+    #if defined(SEC_SERVO_FROM) && !defined(HW_PWM_SERVOS)  // write secundary servos
       #if (defined(SERVO_TILT)|| defined(SERVO_MIX_TILT)) && defined(MMSERVOGIMBAL)
         // Moving Average Servo Gimbal by Magnetron1
         static int16_t mediaMobileServoGimbalADC[3][MMSERVOGIMBALVECTORLENGHT];
@@ -1393,6 +1394,7 @@ void mixTable() {
       servo[4] = servo[1];    // copy CamRoll  value to propper output servo for A0_A1_PIN_HEX
     #endif
     #if defined(TRI) && defined(MEGA_HW_PWM_SERVOS) && defined(MEGA)
+      servo[5] = constrain(servo[5], conf.servoConf[5].min, conf.servoConf[5].max); // servo[5] is still use by gui for this config (more genereic)
       servo[3] = servo[5];    // copy TRI serwo value to propper output servo for MEGA_HW_PWM_SERVOS
     #endif
   #endif
@@ -1423,16 +1425,12 @@ void mixTable() {
       if (maxMotor > MAXTHROTTLE) // this is a way to still have good gyro corrections if at least one motor reaches its max.
         motor[i] -= maxMotor - MAXTHROTTLE;
       motor[i] = constrain(motor[i], conf.minthrottle, MAXTHROTTLE);
-      #if defined(ALTHOLD_FAST_THROTTLE_CHANGE)
-        if (rcData[THROTTLE] < MINCHECK)
+      if ((rcData[THROTTLE] < MINCHECK) && !f.BARO_MODE)
+      #ifndef MOTOR_STOP
+        motor[i] = conf.minthrottle;
       #else
-        if ((rcData[THROTTLE] < MINCHECK) && !f.BARO_MODE)
+        motor[i] = MINCOMMAND;
       #endif
-        #ifndef MOTOR_STOP
-          motor[i] = conf.minthrottle;
-        #else
-          motor[i] = MINCOMMAND;
-        #endif
       if (!f.ARMED)
         motor[i] = MINCOMMAND;
     }

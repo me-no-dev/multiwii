@@ -47,11 +47,9 @@ void computeIMU () {
       gyroADCp[axis] =  imu.gyroADC[axis];
     timeInterleave=micros();
     annexCode();
-    if ((uint16_t)(micros()-timeInterleave)>650) {
-       annex650_overrun_count++;
-    } else {
-       while((uint16_t)(micros()-timeInterleave)<650) ; //empirical, interleaving delay between 2 consecutive reads
-    }
+    uint8_t t=0;
+    while((uint16_t)(micros()-timeInterleave)<650) t=1; //empirical, interleaving delay between 2 consecutive reads
+    if (!t) annex650_overrun_count++;
     #if GYRO
       Gyro_getADC();
     #endif
@@ -267,7 +265,6 @@ void getEstimatedAttitude(){
 uint8_t getEstimatedAltitude(){
   static int32_t baroGroundPressure;
   static float vel = 0.0f;
-  int16_t vel_tmp;
   static uint16_t previousT;
   uint16_t currentT = micros();
   uint16_t dTime;
@@ -312,7 +309,8 @@ uint8_t getEstimatedAltitude(){
     applyDeadband(accZ, ACC_Z_DEADBAND);
 
     static int32_t lastBaroAlt;
-    int16_t baroVel = (alt.EstAlt - lastBaroAlt) * 1000000.0f / dTime;
+    //int16_t baroVel = (alt.EstAlt - lastBaroAlt) * 1000000.0f / dTime;
+    int16_t baroVel = (alt.EstAlt - lastBaroAlt) * (1000000 / UPDATE_INTERVAL);
     lastBaroAlt = alt.EstAlt;
 
     baroVel = constrain(baroVel, -300, 300); // constrain baro velocity +/- 300cm/s
@@ -326,10 +324,9 @@ uint8_t getEstimatedAltitude(){
     vel = vel * 0.985f + baroVel * 0.015f;
 
     //D
-    vel_tmp = vel;
-    applyDeadband(vel_tmp, 5);
-    alt.vario = vel_tmp;
-    BaroPID -= constrain(conf.pid[PIDALT].D8 * vel_tmp >>4, -150, 150);
+    alt.vario = vel;
+    applyDeadband(alt.vario, 5);
+    BaroPID -= constrain(conf.pid[PIDALT].D8 * alt.vario >>4, -150, 150);
   #endif
   return 1;
 }

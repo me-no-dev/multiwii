@@ -24,6 +24,7 @@ March  2013     V2.2
 #include "Sensors.h"
 #include "Serial.h"
 #include "GPS.h"
+#include "Protocol.h"
 
 #include <avr/pgmspace.h>
 #define  VERSION  221
@@ -163,7 +164,6 @@ int16_t  errorAltitudeI = 0;
 // gyro+acc IMU
 // **************
 int16_t gyroZero[3] = {0,0,0};
-int16_t angle[2]    = {0,0};  // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
 imu_t imu;
 
@@ -187,7 +187,7 @@ flags_struct_t f;
   uint16_t cycleTimeMax = 0;       // highest ever cycle timen
   uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
   int32_t  BAROaltMax;             // maximum value
-  uint8_t  GPS_speedMax = 0;    // maximum speed from gps
+  uint16_t  GPS_speedMax = 0;    // maximum speed from gps
   uint16_t powerValueMaxMAH = 0;
 #endif
 #if defined(LOG_VALUES) || defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING) || defined(LOG_PERMANENT)
@@ -200,8 +200,8 @@ int16_t  annex650_overrun_count = 0;
 
 
 #if defined(THROTTLE_ANGLE_CORRECTION)
-  static int16_t throttleAngleCorrection = 0;	// correction of throttle in lateral wind,
-  static int8_t  cosZ = 100;					// cos(angleZ)*100
+  int16_t throttleAngleCorrection = 0;	// correction of throttle in lateral wind,
+  int8_t  cosZ = 100;					// cos(angleZ)*100
 #endif
 
 
@@ -399,6 +399,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
       p = psum / PSENSOR_SMOOTH;
     #endif
     powerValue = ( conf.psensornull > p ? conf.psensornull - p : p - conf.psensornull); // do not use abs(), it would induce implicit cast to uint and overrun
+    analog.amperage = powerValue * conf.pint2ma;
     if ( powerValue > 307) powerValue = 307;  // only accept reasonable values. 307 is empirical
     pMeter[PMOTOR_SUM] += ((currentTime-lastRead) * (uint32_t)(powerValue*conf.pint2ma))/100000; // [10 mA * msec]
     lastRead = currentTime;
@@ -691,7 +692,7 @@ void setup() {
     plog.armed_time = 0;   // lifetime in seconds
     //plog.running = 0;       // toggle on arm & disarm to monitor for clean shutdown vs. powercut
   #endif
-
+  
   debugmsg_append_str("initialization completed\n");
 }
 
@@ -701,9 +702,10 @@ void go_arm() {
     && failsafeCnt < 2
   #endif
     ) {
-    if(!f.ARMED) { // arm now!
+    if(!f.ARMED && !f.BARO_MODE) { // arm now!
       f.ARMED = 1;
       headFreeModeHold = att.heading;
+      magHold = att.heading;
       #if defined(VBAT)
         if (analog.vbat > NO_VBAT) vbatMin = analog.vbat;
       #endif
@@ -754,9 +756,9 @@ void loop () {
   int16_t delta;
   int16_t PTerm = 0,ITerm = 0,DTerm, PTermACC, ITermACC;
   static int16_t lastGyro[2] = {0,0};
-  static int32_t errorGyroI_YAW;
   static int16_t errorAngleI[2] = {0,0};
 #if PID_CONTROLLER == 1
+  static int32_t errorGyroI_YAW;
   static int16_t delta1[2],delta2[2];
   static int16_t errorGyroI[2] = {0,0};
 #elif PID_CONTROLLER == 2
@@ -817,7 +819,12 @@ void loop () {
     
     // perform actions    
     if (rcData[THROTTLE] <= MINCHECK) {            // THROTTLE at minimum
-      errorGyroI[ROLL] = 0; errorGyroI[PITCH] = 0; errorGyroI_YAW = 0; 
+      errorGyroI[ROLL] = 0; errorGyroI[PITCH] = 0;
+      #if PID_CONTROLLER == 1
+        errorGyroI_YAW = 0;
+      #elif PID_CONTROLLER == 2
+        errorGyroI[YAW] = 0;
+      #endif
       errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
       if (conf.activate[BOXARM] > 0) {             // Arming/Disarming via ARM BOX
         if ( rcOptions[BOXARM] && f.OK_TO_ARM ) go_arm(); else if (f.ARMED) go_disarm();
@@ -975,15 +982,19 @@ void loop () {
     #if BARO
       #if (!defined(SUPPRESS_BARO_ALTHOLD))
         if (rcOptions[BOXBARO]) {
-            if (!f.BARO_MODE) {
-              f.BARO_MODE = 1;
-              AltHold = alt.EstAlt;
+          if (!f.BARO_MODE) {
+            f.BARO_MODE = 1;
+            AltHold = alt.EstAlt;
+            #if defined(ALT_HOLD_THROTTLE_MIDPOINT)
+              initialThrottleHold = ALT_HOLD_THROTTLE_MIDPOINT;
+            #else
               initialThrottleHold = rcCommand[THROTTLE];
-              errorAltitudeI = 0;
-              BaroPID=0;
-            }
+            #endif
+            errorAltitudeI = 0;
+            BaroPID=0;
+          }
         } else {
-            f.BARO_MODE = 0;
+          f.BARO_MODE = 0;
         }
       #endif
       #ifdef VARIOMETER
@@ -1149,37 +1160,26 @@ void loop () {
   #endif
 
   #if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
+    /* Smooth alt change routine , for slow auto and aerophoto modes (in general solution from alexmos). It's slowly increase/decrease 
+     * altitude proportional to stick movement (+/-100 throttle gives about +/-50 cm in 1 second with cycle time about 3-4ms)
+     */
     if (f.BARO_MODE) {
       static uint8_t isAltHoldChanged = 0;
-      #if defined(ALTHOLD_FAST_THROTTLE_CHANGE)
-        if (abs(rcCommand[THROTTLE]-initialThrottleHold) > ALT_HOLD_THROTTLE_NEUTRAL_ZONE) {
-          errorAltitudeI = 0;
-          isAltHoldChanged = 1;
-          rcCommand[THROTTLE] += (rcCommand[THROTTLE] > initialThrottleHold) ? -ALT_HOLD_THROTTLE_NEUTRAL_ZONE : ALT_HOLD_THROTTLE_NEUTRAL_ZONE;
-        } else {
-          if (isAltHoldChanged) {
-            AltHold = alt.EstAlt;
-            isAltHoldChanged = 0;
-          }
-          rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
+      static int16_t AltHoldCorr = 0;
+      if (abs(rcCommand[THROTTLE]-initialThrottleHold)>ALT_HOLD_THROTTLE_NEUTRAL_ZONE) {
+        // Slowly increase/decrease AltHold proportional to stick movement ( +100 throttle gives ~ +50 cm in 1 second with cycle time about 3-4ms)
+        AltHoldCorr+= rcCommand[THROTTLE] - initialThrottleHold;
+        if(abs(AltHoldCorr) > 512) {
+          AltHold += AltHoldCorr/512;
+          AltHoldCorr %= 512;
         }
-      #else
-        static int16_t AltHoldCorr = 0;
-        if (abs(rcCommand[THROTTLE]-initialThrottleHold)>ALT_HOLD_THROTTLE_NEUTRAL_ZONE) {
-          // Slowly increase/decrease AltHold proportional to stick movement ( +100 throttle gives ~ +50 cm in 1 second with cycle time about 3-4ms)
-          AltHoldCorr+= rcCommand[THROTTLE] - initialThrottleHold;
-          if(abs(AltHoldCorr) > 500) {
-            AltHold += AltHoldCorr/500;
-            AltHoldCorr %= 500;
-          }
-          errorAltitudeI = 0;
-          isAltHoldChanged = 1;
-        } else if (isAltHoldChanged) {
-          AltHold = alt.EstAlt;
-          isAltHoldChanged = 0;
-        }
-        rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
-      #endif
+        errorAltitudeI = 0;
+        isAltHoldChanged = 1;
+      } else if (isAltHoldChanged) {
+        AltHold = alt.EstAlt;
+        isAltHoldChanged = 0;
+      }
+      rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
     }
   #endif
 
@@ -1256,11 +1256,11 @@ void loop () {
   #define GYRO_P_MAX 300
   #define GYRO_I_MAX 250
 
-  rc = (int32_t)rcCommand[YAW] * (conf.yawRate + 60)  >> 5;
+  rc = (int32_t)rcCommand[YAW] * (2*conf.yawRate + 30)  >> 5;
 
   error = rc - imu.gyroData[YAW];
   errorGyroI_YAW  += (int32_t)error*conf.pid[YAW].I8;
-  errorGyroI_YAW  = constrain(errorGyroI_YAW, -(int32_t)1<<30, (int32_t)1<<30);
+  errorGyroI_YAW  = constrain(errorGyroI_YAW, 2-((int32_t)1<<28), -2+((int32_t)1<<28));
   if (abs(rc) > 50) errorGyroI_YAW = 0;
   
   PTerm = (int32_t)error*conf.pid[YAW].P8>>6;
@@ -1281,7 +1281,7 @@ void loop () {
     //-----Get the desired angle rate depending on flight mode
     if ((f.ANGLE_MODE || f.HORIZON_MODE) && axis<2 ) { // MODE relying on ACC
       // calculate error and limit the angle to 50 degrees max inclination
-      errorAngle = constrain((rcCommand[axis]<<1) + GPS_angle[axis],-500,+500) - angle[axis] + conf.angleTrim[axis]; //16 bits is ok here
+      errorAngle = constrain((rcCommand[axis]<<1) + GPS_angle[axis],-500,+500) - att.angle[axis] + conf.angleTrim[axis]; //16 bits is ok here
     }
     if (axis == 2) {//YAW is always gyro-controlled (MAG correction is applied to rcCommand)
       AngleRateTmp = (((int32_t) (conf.yawRate + 27) * rcCommand[2]) >> 5);

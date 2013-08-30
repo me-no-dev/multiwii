@@ -93,7 +93,8 @@ typedef struct {
 typedef struct {
   uint8_t  vbat;               // battery voltage in 0.1V steps
   uint16_t intPowerMeterSum;
-  uint16_t rssi;               // range: [0;1023]
+  uint16_t rssi;              // range: [0;1023]
+  uint16_t amperage;
 } analog_t;
 
 typedef struct {
@@ -102,8 +103,8 @@ typedef struct {
 } alt_t;
 
 typedef struct {
-  int16_t angle[2];
-  int16_t heading;              // variometer in cm/s
+  int16_t angle[2];            // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+  int16_t heading;             // variometer in cm/s
 } att_t;
 
 typedef struct {

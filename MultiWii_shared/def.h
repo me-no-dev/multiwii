@@ -79,6 +79,36 @@
   #define DISPLAY_FONT_DSIZE
   #define OLED_DIGOLE
   #define LCD_CONF
+#elif COPTERTEST == 7
+  #define HELI_120_CCPM
+  #define NANOWII
+  #define FORCE_ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  = X; imu.accADC[PITCH]  =  Y; imu.accADC[YAW]  =  Z;}
+  #define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -Y; imu.gyroADC[PITCH] = X; imu.gyroADC[YAW] = -Z;}
+  #define A32U4_4_HW_PWM_SERVOS
+  #define SERVO_RFR_RATE  200    // 200 for graupner is ok
+  #define SERVO_PIN5_RFR_RATE  165    // In Hz, you can set it from 20 to 400Hz, used only in HW PWM mode for mega and 32u4
+  #define SPEKTRUM 1024
+  #define BUZZER
+  #define RCOPTIONSBEEP // ca. 80byte
+  #define VBAT
+  #define LOG_VALUES 1
+  #define DISPLAY_FONT_DSIZE
+  #define OLED_DIGOLE
+  #define LCD_CONF
+  #define LCD_TELEMETRY
+  #define LCD_TELEMETRY_AUTO "1"
+  #define LCD_TELEMETRY_STEP "F14$5R"
+  #define LOG_PERMANENT
+  #define LOG_PERMANENT_SHOW_AFTER_CONFIG
+  #define SUPPRESS_OTHER_SERIAL_COMMANDS
+  #define SUPPRESS_DEFAULTS_FROM_GUI
+  #define NO_FLASH_CHECK
+  #define DEBUG_FREE
+#elif COPTERTEST == 8
+  #define BI
+  #define ITG3200
+  #define PID_CONTROLLER 2
+  #define ESC_CALIB_CANNOT_FLY
 #elif defined(COPTERTEST)
   #error "*** this test is not yet defined"
 #endif
@@ -1701,6 +1731,9 @@
     #define SERVO_4_PIN_HIGH           ;
     #define SERVO_4_PIN_LOW            ;
   #else
+    #undef POWERPIN_PINMODE
+    #undef POWERPIN_ON
+    #undef POWERPIN_OFF
     #define POWERPIN_PINMODE           ;
     #define POWERPIN_ON                ;
     #define POWERPIN_OFF               ;
@@ -1913,6 +1946,9 @@
   #if !(defined(MULTILINE_POST))
     #define MULTILINE_POST 3
   #endif
+  #if !(defined(DISPLAY_COLUMNS))
+    #define DISPLAY_COLUMNS 21
+  #endif
 #elif (defined(OLED_I2C_128x64))
   #if !(defined(MULTILINE_PRE))
     #define MULTILINE_PRE 3
@@ -1946,9 +1982,6 @@
   #define DISPLAY_COLUMNS 16
 #endif
 
-#if !defined(ALT_HOLD_THROTTLE_NEUTRAL_ZONE)
-  #define ALT_HOLD_THROTTLE_NEUTRAL_ZONE 40
-#endif 
 
 /**************************************************************************************/
 /***************               override defaults                   ********************/
@@ -1956,18 +1989,27 @@
 
   /***************               pin assignments ?  ********************/
   #ifdef OVERRIDE_V_BATPIN
+    #undef V_BATPIN
     #define V_BATPIN OVERRIDE_V_BATPIN
   #endif
   #ifdef OVERRIDE_PSENSORPIN
+    #undef PSENSORPIN
     #define PSENSORPIN OVERRIDE_PSENSORPIN
   #endif
   #ifdef OVERRIDE_LEDPIN_PINMODE
+    #undef LEDPIN_PINMODE
+    #undef LEDPIN_TOGGLE
+    #undef LEDPIN_OFF
+    #undef LEDPIN_ON
     #define LEDPIN_PINMODE OVERRIDE_LEDPIN_PINMODE
     #define LEDPIN_TOGGLE  OVERRIDE_LEDPIN_TOGGLE
     #define LEDPIN_OFF     OVERRIDE_LEDPIN_OFF
     #define LEDPIN_ON      OVERRIDE_LEDPIN_ON
   #endif
   #ifdef OVERRIDE_BUZZERPIN_PINMODE
+    #undef BUZZERPIN_PINMODE
+    #undef BUZZERPIN_ON
+    #undef BUZZERPIN_OFF
     #define BUZZERPIN_PINMODE OVERRIDE_BUZZERPIN_PINMODE
     #define BUZZERPIN_ON      OVERRIDE_BUZZERPIN_ON
     #define BUZZERPIN_OFF     OVERRIDE_BUZZERPIN_OFF
@@ -1975,17 +2017,21 @@
 
   /*********  sensors orientation - possibly overriding board defaults  *****/
   #ifdef FORCE_GYRO_ORIENTATION
+    #undef GYRO_ORIENTATION
     #define GYRO_ORIENTATION FORCE_GYRO_ORIENTATION
   #endif
   #ifdef FORCE_ACC_ORIENTATION
+    #undef ACC_ORIENTATION
     #define ACC_ORIENTATION FORCE_ACC_ORIENTATION
   #endif
   #ifdef FORCE_MAG_ORIENTATION
+    #undef MAG_ORIENTATION
     #define MAG_ORIENTATION FORCE_MAG_ORIENTATION
   #endif
 
   /*********  servo rates                                               *****/
   #ifdef FORCE_SERVO_RATES
+    #undef SERVO_RATES
     #define SERVO_RATES FORCE_SERVO_RATES
   #endif
 /**************************************************************************************/

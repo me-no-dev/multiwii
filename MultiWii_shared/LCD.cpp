@@ -9,6 +9,7 @@
 #include "RX.h"
 #include "Serial.h"
 #include "Sensors.h"
+#include "LCD.h"
 
 void __u8Inc(void * var, int16_t inc);
 void __s8Inc(void * var, int16_t inc);
@@ -753,7 +754,7 @@ void LCDprintInt16(int16_t v) {
 }
 void lcdprint_uint32(uint32_t v) {
   static char line[14] = "-.---.---.---";
-  //               0 2 4 6 8   12
+  //                      0 2 4 6 8   12
   line[0]  = '0' + v  / 1000000000;
   line[2]  = '0' + v  / 100000000 - (v/1000000000) * 10;
   line[3]  = '0' + v  / 10000000  - (v/100000000)  * 10;
@@ -1077,6 +1078,9 @@ const char PROGMEM lcd_param_text133 [] = "Govern  P";
 const char PROGMEM lcd_param_text134 [] = "Govern  D";
 const char PROGMEM lcd_param_text135 [] = "GovernRpm";
 #endif
+#ifdef MULTIPLE_CONFIGURATION_PROFILES
+const char PROGMEM lcd_param_text150 [] = "writeCset";
+#endif
 //                                         0123456789
 
 PROGMEM const void * const lcd_param_ptr_table [] = {
@@ -1089,7 +1093,9 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
   &lcd_param_text07, &conf.pid[PITCH].D8, &__D,
   &lcd_param_text08, &conf.pid[YAW].P8, &__P,
   &lcd_param_text09, &conf.pid[YAW].I8, &__I,
+#if PID_CONTROLLER == 2
   &lcd_param_text10, &conf.pid[YAW].D8, &__D,
+#endif
 #if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
   &lcd_param_text11, &conf.pid[PIDALT].P8, &__P,
   &lcd_param_text12, &conf.pid[PIDALT].I8, &__I,
@@ -1302,28 +1308,9 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
 #endif
 #endif
 #endif
-#ifdef POWERMETER
-  &lcd_param_text33, &pMeter[PMOTOR_SUM], &__PM,
-  &lcd_param_text34, &conf.powerTrigger1, &__PT,
-  &lcd_param_text114, &conf.pint2ma, &__PT,
-  #ifdef POWERMETER_HARD
-    &lcd_param_text111, &conf.psensornull, &__SE1,
-  #endif
-#endif
-#if defined(ARMEDTIMEWARNING)
-  &lcd_param_text132, &conf.armedtimewarning, &__SE,
-#endif
   &lcd_param_text131, &conf.minthrottle, &__ST,
 #if defined (FAILSAFE)
   &lcd_param_text101, &conf.failsafe_throttle, &__ST,
-#endif
-#ifdef VBAT
-  &lcd_param_text35, &analog.vbat, &__VB,
-  &lcd_param_text102, &conf.vbatscale, &__PT,
-  &lcd_param_text103, &conf.vbatlevel_warn1, &__P,
-  &lcd_param_text104, &conf.vbatlevel_warn2, &__P,
-  &lcd_param_text106, &conf.vbatlevel_crit, &__P,
-//  &lcd_param_text107, &conf.no_vbat, &__P,
 #endif
 #ifdef FLYING_WING
   &lcd_param_text36, &conf.servoConf[3].middle, &__SE,
@@ -1360,6 +1347,28 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
 #endif
 #ifdef MMGYRO
   &lcd_param_text121, &conf.mmgyro, &__D,
+#endif
+#ifdef VBAT
+//  &lcd_param_text35, &analog.vbat, &__VB,
+  &lcd_param_text102, &conf.vbatscale, &__PT,
+  &lcd_param_text103, &conf.vbatlevel_warn1, &__P,
+  &lcd_param_text104, &conf.vbatlevel_warn2, &__P,
+  &lcd_param_text106, &conf.vbatlevel_crit, &__P,
+//  &lcd_param_text107, &conf.no_vbat, &__P,
+#endif
+#ifdef POWERMETER
+//  &lcd_param_text33, &pMeter[PMOTOR_SUM], &__PM,
+  &lcd_param_text114, &conf.pint2ma, &__PT,
+  #ifdef POWERMETER_HARD
+    &lcd_param_text111, &conf.psensornull, &__SE1,
+  #endif
+  &lcd_param_text34, &conf.powerTrigger1, &__PT,
+#endif
+#if defined(ARMEDTIMEWARNING)
+  &lcd_param_text132, &conf.armedtimewarning, &__SE,
+#endif
+#ifdef MULTIPLE_CONFIGURATION_PROFILES
+  &lcd_param_text150, &global_conf.currentSet, &__D,
 #endif
 
 //#ifdef LOG_VALUES
@@ -1523,6 +1532,9 @@ void configurationLoop() {
   uint8_t refreshLCD = 1;
   uint8_t key = 0;
   uint8_t allow_exit = 0;
+  #ifdef MULTIPLE_CONFIGURATION_PROFILES
+    uint8_t currentSet = global_conf.currentSet; // keep a copy for abort.case
+  #endif
   initLCD();
   #if defined OLED_I2C_128x64LOGO_PERMANENT
     LCDclear();
@@ -1565,6 +1577,7 @@ void configurationLoop() {
     #if defined(PRI_SERVO_TO)
       #define MAX_SERV 7
       #if(PRI_SERVO_TO < MAX_SERV)
+        #undef  MAX_SERV
         #define MAX_SERV PRI_SERVO_TO
       #endif
       for(i=PRI_SERVO_FROM-1; i<MAX_SERV; i++) servo[i] = conf.servoConf[i].middle;
@@ -1586,10 +1599,16 @@ void configurationLoop() {
   if (LCD == 0) {
     strcpy_P(line1,PSTR("Saving..."));
     LCDprintChar(line1);
+    #ifdef MULTIPLE_CONFIGURATION_PROFILES
+      writeGlobalSet(0);
+    #endif
     writeParams(1);
   } else {
     strcpy_P(line1,PSTR("Aborting"));
     LCDprintChar(line1);
+    #ifdef MULTIPLE_CONFIGURATION_PROFILES
+      global_conf.currentSet = currentSet; // restore
+    #endif
     readEEPROM(); // roll back all values to last saved state
   }
   LCDsetLine(2);
@@ -1726,12 +1745,15 @@ void output_Vmin() {
 }
 void output_mAh() {
   #ifdef POWERMETER
+    uint16_t mah = analog.intPowerMeterSum; // fallback: display consumed mAh
+    if (analog.intPowerMeterSum < conf.powerTrigger1 * PLEVELSCALE)
+      mah = conf.powerTrigger1 * PLEVELSCALE - analog.intPowerMeterSum; // display mah mAh
     strcpy_P(line1,PSTR(" -----mAh"));
-    line1[1] = digit10000(analog.intPowerMeterSum);
-    line1[2] = digit1000(analog.intPowerMeterSum);
-    line1[3] = digit100(analog.intPowerMeterSum);
-    line1[4] = digit10(analog.intPowerMeterSum);
-    line1[5] = digit1(analog.intPowerMeterSum);
+    line1[1] = digit10000(mah);
+    line1[2] = digit1000(mah);
+    line1[3] = digit100(mah);
+    line1[4] = digit10(mah);
+    line1[5] = digit1(mah);
     if (conf.powerTrigger1) {
       int8_t v = 100 - ( analog.intPowerMeterSum/(uint16_t)conf.powerTrigger1) *2; // bar graph powermeter (scale intPowerMeterSum/powerTrigger1 with *100/PLEVELSCALE)
       #ifndef OLED_I2C_128x64
@@ -2161,11 +2183,15 @@ void lcd_telemetry() {
               #ifndef OLED_I2C_128x64
                 if (ats > conf.armedtimewarning) { LCDattributesReverse(); }
               #endif
-              LCDbar(DISPLAY_COLUMNS-9, (ats < conf.armedtimewarning ? (((conf.armedtimewarning-ats+1)*50)/(conf.armedtimewarning+1)*2) : 0 ));
+              LCDbar(DISPLAY_COLUMNS-9, (ats < conf.armedtimewarning ? (((conf.armedtimewarning-ats+1)*25)/(conf.armedtimewarning+1)*4) : 0 ));
               LCDattributesOff();
             #endif
             LCDprint(' ');
-            print_uptime(ats);
+            #ifdef ARMEDTIMEWARNING
+              print_uptime( (conf.armedtimewarning > ats ? conf.armedtimewarning - ats : ats) );
+            #else
+              print_uptime(ats);
+            #endif
           }
           break;
         case 6:// height
