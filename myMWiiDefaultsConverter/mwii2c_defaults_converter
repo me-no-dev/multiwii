@@ -9,11 +9,22 @@
 # mwii2c_defaults_converter < your.mwi > your.c
 # this will read your.mwi file andwrite the c-code section to your.c file
 #
+# License:
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version. see <http://www.gnu.org/licenses/>
+#
+# Version history (latest at top)
+#
+# v0.3 - 31.08.2013
+# - explicitl license note added
 # v0.2
 # - fix some format conversions
 # v0.1
 # - initial version
 #
+# a product broght to you by hamburger (der.fliegende.hamburger@googlemail.com)
 
 $\ = "\n";
 $t = localtime(time());
