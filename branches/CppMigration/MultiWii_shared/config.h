@@ -20,8 +20,7 @@
  */
 
 /* Notes:
- * 1. parameters marked with (*) in the comment are stored in eeprom and cannot currently be changed via the GUI but
- *    can be changed via serial monitor or LCD.
+ * 1. parameters marked with (*) in the comment are stored in eeprom and can be changed via serial monitor or LCD.
  * 2. parameters marked with (**) in the comment are stored in eeprom and can be changed via the GUI
  */
 
@@ -122,6 +121,7 @@
       //#define MONGOOSE1_0     // mongoose 1.0    http://store.ckdevices.com/
       //#define CRIUS_LITE      // Crius MultiWii Lite
       //#define CRIUS_SE        // Crius MultiWii SE
+      //#define CRIUS_SE_v2_0   // Crius MultiWii SE 2.0 with MPU6050, HMC5883 and BMP085
       //#define OPENLRSv2MULTI  // OpenLRS v2 Multi Rc Receiver board including ITG3205 and ADXL345
       //#define BOARD_PROTO_1   // with MPU6050 + HMC5883L + MS baro
       //#define BOARD_PROTO_2   // with MPU6050 + slave  MAG3110 + MS baro
@@ -153,6 +153,7 @@
       //#define MultiWii_32U4_SE         // Hextronik MultiWii_32U4_SE
       //#define MultiWii_32U4_SE_no_baro // Hextronik MultiWii_32U4_SE without the MS561101BA for more free flash-memory
       //#define Flyduino9DOF       // Flyduino 9DOF IMU MPU6050+HMC5883l
+      //#define Nano_Plane         // Multiwii Plane version with tail-front LSM330 sensor http://www.radiosait.ru/en/page_5324.html
       
     /***************************    independent sensors    ********************************/
       /* leave it commented if you already checked a specific board above */
@@ -161,7 +162,8 @@
       //#define ITG3200
       //#define L3G4200D
       //#define MPU6050       //combo + ACC
-
+      //#define LSM330        //combo + ACC
+      
       /* I2C accelerometer */
       //#define NUNCHUCK  // if you want to use the nunckuk connected to a WMP
       //#define MMA7455
@@ -294,11 +296,19 @@
     //#define HELI_USE_SERVO_FOR_THROTTLE
 
   /***********************      your individual mixing     ***********************/
-    /* if you want to override an existing entry in the mixing table, you may want to avoid esditing the
+    /* if you want to override an existing entry in the mixing table, you may want to avoid editing the
      * mixTable() function for every version again and again. 
      * howto: http://www.multiwii.com/wiki/index.php?title=Config.h#Individual_Mixing
      */
     //#define MY_PRIVATE_MIXING "filename.h"
+
+  /***********************      your individual defaults     ***********************/
+    /* if you want to replace the hardcoded default values with your own (e.g. from a previous save to an .mwi file),
+     * you may want to avoid editing the LoadDefaults() function for every version again and again.
+     * howto: http://www.multiwii.com/forum/viewtopic.php?f=8&t=3987
+     */
+    //#define MY_PRIVATE_DEFAULTS "filename.h"
+
 
 /*************************************************************************************************/
 /*****************                                                                 ***************/
@@ -345,10 +355,11 @@
       //#define SPEK_BIND_DATA   6
 
     /*******************************    SBUS RECIVER    ************************************/
-      /* The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1).
+      /* The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1) or PROMICRO boards.
          You have to invert the S-Bus-Serial Signal e.g. with a Hex-Inverter like IC SN74 LS 04 */
       //#define SBUS
       //#define SBUS_SERIAL_PORT 1
+      #define SBUS_MID_OFFSET 988 //SBUS Mid-Point at 1500
 
 /*************************************************************************************************/
 /*****************                                                                 ***************/
@@ -556,6 +567,8 @@
     #define FAILSAFE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
     #define FAILSAFE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
     #define FAILSAFE_THROTTLE  (MINTHROTTLE + 200)    // (*) Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
+    
+    #define FAILSAFE_DETECT_TRESHOLD  985
 
 
   /*****************                DFRobot LED RING    *********************************/

@@ -27,7 +27,6 @@ March  2013     V2.2
 #include "Protocol.h"
 
 #include <avr/pgmspace.h>
-#define  VERSION  221
 
 /*********** RC alias *****************/
 
@@ -156,7 +155,8 @@ uint16_t calibratingG;
 int16_t  magHold,headFreeModeHold; // [-180;+180]
 uint8_t  vbatMin = VBATNOMINAL;  // lowest battery voltage in 0.1V steps
 uint8_t  rcOptions[CHECKBOXITEMS];
-int32_t  BaroAlt,AltHold; // in cm
+int32_t  AltHold; // in cm
+int16_t  sonarAlt;
 int16_t  BaroPID = 0;
 int16_t  errorAltitudeI = 0;
 
@@ -178,7 +178,6 @@ att_t att;
 #endif
 
 int16_t  debug[4];
-int16_t  sonarAlt; //to think about the unit
 
 flags_struct_t f;
 
@@ -187,7 +186,7 @@ flags_struct_t f;
   uint16_t cycleTimeMax = 0;       // highest ever cycle timen
   uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
   int32_t  BAROaltMax;             // maximum value
-  uint16_t  GPS_speedMax = 0;    // maximum speed from gps
+  uint16_t GPS_speedMax = 0;       // maximum speed from gps
   uint16_t powerValueMaxMAH = 0;
 #endif
 #if defined(LOG_VALUES) || defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING) || defined(LOG_PERMANENT)
@@ -548,7 +547,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     #endif
     #ifdef LCD_TELEMETRY
       #if BARO
-        if ( (BaroAlt > BAROaltMax) ) BAROaltMax = BaroAlt;
+        if ( (alt.EstAlt > BAROaltMax) ) BAROaltMax = alt.EstAlt;
       #endif
       #if GPS
         if ( (GPS_speed > GPS_speedMax) ) GPS_speedMax = GPS_speed;
@@ -711,7 +710,7 @@ void go_arm() {
       #endif
       #ifdef LCD_TELEMETRY // reset some values when arming
         #if BARO
-          BAROaltMax = BaroAlt;
+          BAROaltMax = alt.EstAlt;
         #endif
         #if GPS
           GPS_speedMax = 0;
@@ -1173,7 +1172,6 @@ void loop () {
           AltHold += AltHoldCorr/512;
           AltHoldCorr %= 512;
         }
-        errorAltitudeI = 0;
         isAltHoldChanged = 1;
       } else if (isAltHoldChanged) {
         AltHold = alt.EstAlt;
@@ -1265,12 +1263,14 @@ void loop () {
   
   PTerm = (int32_t)error*conf.pid[YAW].P8>>6;
   #ifndef COPTER_WITH_SERVO
-    PTerm = constrain(PTerm,-GYRO_P_MAX,+GYRO_P_MAX);
+    int16_t limit = GYRO_P_MAX-conf.pid[YAW].D8;
+    PTerm = constrain(PTerm,-limit,+limit);
   #endif
   
   ITerm = constrain((int16_t)(errorGyroI_YAW>>13),-GYRO_I_MAX,+GYRO_I_MAX);
   
   axisPID[YAW] =  PTerm + ITerm;
+  
 #elif PID_CONTROLLER == 2 // alexK
   #define GYRO_I_MAX 256
   #define ACC_I_MAX 256
