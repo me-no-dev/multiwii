@@ -193,10 +193,12 @@ void getEstimatedAttitude(){
   for (axis = 0; axis < 3; axis++) {
     deltaGyroAngle[axis] = imu.gyroADC[axis]  * scale; // radian
 
+    /* Modified moving average filter for Acc */
     accLPF32[axis]    -= accLPF32[axis]>>ACC_LPF_FACTOR;
     accLPF32[axis]    += imu.accADC[axis];
     imu.accSmooth[axis]    = accLPF32[axis]>>ACC_LPF_FACTOR;
 
+    /* Accumulate a^2 to calculate vector magnitude later */
     accMag += (int32_t)imu.accSmooth[axis]*imu.accSmooth[axis] ;
   }
 
@@ -211,7 +213,9 @@ void getEstimatedAttitude(){
     f.SMALL_ANGLES_25 = 0;
   }
 
+  /* accMag is the square of percentage about 1G force */
   accMag = accMag*100/((int32_t)ACC_1G*ACC_1G);
+  /* Lower limit: 0.85^2 = 0.72, Upper limit: 1.15^2 = 1.33 */
   validAcc = 72 < (uint16_t)accMag && (uint16_t)accMag < 133;
   // Apply complimentary filter (Gyro drift correction)
   // If accel magnitude >1.15G or <0.85G and ACC vector outside of the limit range => we neutralize the effect of accelerometers in the angle estimation.
