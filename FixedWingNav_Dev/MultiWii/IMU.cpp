@@ -47,11 +47,9 @@ void computeIMU () {
       gyroADCp[axis] =  imu.gyroADC[axis];
     timeInterleave=micros();
     annexCode();
-    if ((uint16_t)(micros()-timeInterleave)>650) {
-       annex650_overrun_count++;
-    } else {
-       while((uint16_t)(micros()-timeInterleave)<650) ; //empirical, interleaving delay between 2 consecutive reads
-    }
+    uint8_t t=0;
+    while((uint16_t)(micros()-timeInterleave)<650) t=1; //empirical, interleaving delay between 2 consecutive reads
+    if (!t) annex650_overrun_count++;
     #if GYRO
       Gyro_getADC();
     #endif
@@ -207,12 +205,6 @@ void getEstimatedAttitude(){
     rotateV(&EstM.V,deltaGyroAngle);
   #endif
 
-  if ( abs(imu.accSmooth[ROLL])<ACC_25deg && abs(imu.accSmooth[PITCH])<ACC_25deg && imu.accSmooth[YAW]>0) {
-    f.SMALL_ANGLES_25 = 1;
-  } else {
-    f.SMALL_ANGLES_25 = 0;
-  }
-
   accMag = accMag*100/((int32_t)ACC_1G*ACC_1G);
   validAcc = 72 < (uint16_t)accMag && (uint16_t)accMag < 133;
   // Apply complimentary filter (Gyro drift correction)
@@ -227,6 +219,11 @@ void getEstimatedAttitude(){
       EstM32.A[axis] = EstM.A[axis];
     #endif
   }
+  
+  if ((int16_t)EstG32.A[2] > ACCZ_25deg)
+    f.SMALL_ANGLES_25 = 1;
+  else
+    f.SMALL_ANGLES_25 = 0;
 
   // Attitude of the estimated vector
   int32_t sqGX_sqGZ = sq(EstG32.V.X) + sq(EstG32.V.Z);
@@ -265,7 +262,8 @@ void getEstimatedAttitude(){
 
 #if BARO
 uint8_t getEstimatedAltitude(){
-  static int32_t baroGroundPressure;
+  int32_t  BaroAlt;
+  static float baroGroundTemperatureScale,logBaroGroundPressureSum;
   static float vel = 0.0f;
   static uint16_t previousT;
   uint16_t currentT = micros();
@@ -276,14 +274,14 @@ uint8_t getEstimatedAltitude(){
   previousT = currentT;
 
   if(calibratingB > 0) {
-    baroGroundPressure = baroPressureSum/(BARO_TAB_SIZE - 1);
+    logBaroGroundPressureSum = log(baroPressureSum);
+    baroGroundTemperatureScale = (baroTemperature + 27315) *  29.271267f;
     calibratingB--;
   }
 
-  // pressure relative to ground pressure with temperature compensation (fast!)
-  // baroGroundPressure is not supposed to be 0 here
+  // baroGroundPressureSum is not supposed to be 0 here
   // see: https://code.google.com/p/ardupilot-mega/source/browse/libraries/AP_Baro/AP_Baro.cpp
-  BaroAlt = log( baroGroundPressure * (BARO_TAB_SIZE - 1)/ (float)baroPressureSum ) * (baroTemperature+27315) * 29.271267f; // in cemtimeter 
+  BaroAlt = ( logBaroGroundPressureSum - log(baroPressureSum) ) * baroGroundTemperatureScale;
 
   alt.EstAlt = (alt.EstAlt * 6 + BaroAlt * 2) >> 3; // additional LPF to reduce baro noise (faster by 30 µs)
 
@@ -311,7 +309,8 @@ uint8_t getEstimatedAltitude(){
     applyDeadband(accZ, ACC_Z_DEADBAND);
 
     static int32_t lastBaroAlt;
-    int16_t baroVel = (alt.EstAlt - lastBaroAlt) * 1000000.0f / dTime;
+    //int16_t baroVel = (alt.EstAlt - lastBaroAlt) * 1000000.0f / dTime;
+    int16_t baroVel = (alt.EstAlt - lastBaroAlt) * (1000000 / UPDATE_INTERVAL);
     lastBaroAlt = alt.EstAlt;
 
     baroVel = constrain(baroVel, -300, 300); // constrain baro velocity +/- 300cm/s

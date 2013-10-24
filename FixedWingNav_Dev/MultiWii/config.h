@@ -4,7 +4,7 @@
 /*************************************************************************************************/
 /****           CONFIGURABLE PARAMETERS                                                       ****/
 /*************************************************************************************************/
-//#define COPTERTEST 99
+//#define COPTERTEST 99  // PatrikE DevPlane
 /* this file consists of several sections
  * to create a working combination you must at least make your choices in section 1.
  * 1 - BASIC SETUP - you must select an option in every block.
@@ -20,8 +20,7 @@
  */
 
 /* Notes:
- * 1. parameters marked with (*) in the comment are stored in eeprom and cannot currently be changed via the GUI but
- *    can be changed via serial monitor or LCD.
+ * 1. parameters marked with (*) in the comment are stored in eeprom and can be changed via serial monitor or LCD.
  * 2. parameters marked with (**) in the comment are stored in eeprom and can be changed via the GUI
  */
 
@@ -122,6 +121,7 @@
       //#define MONGOOSE1_0     // mongoose 1.0    http://store.ckdevices.com/
       //#define CRIUS_LITE      // Crius MultiWii Lite
       //#define CRIUS_SE        // Crius MultiWii SE
+      //#define CRIUS_SE_v2_0   // Crius MultiWii SE 2.0 with MPU6050, HMC5883 and BMP085
       //#define OPENLRSv2MULTI  // OpenLRS v2 Multi Rc Receiver board including ITG3205 and ADXL345
       //#define BOARD_PROTO_1   // with MPU6050 + HMC5883L + MS baro
       //#define BOARD_PROTO_2   // with MPU6050 + slave  MAG3110 + MS baro
@@ -153,6 +153,7 @@
       //#define MultiWii_32U4_SE         // Hextronik MultiWii_32U4_SE
       //#define MultiWii_32U4_SE_no_baro // Hextronik MultiWii_32U4_SE without the MS561101BA for more free flash-memory
       //#define Flyduino9DOF       // Flyduino 9DOF IMU MPU6050+HMC5883l
+      //#define Nano_Plane         // Multiwii Plane version with tail-front LSM330 sensor http://www.radiosait.ru/en/page_5324.html
       
     /***************************    independent sensors    ********************************/
       /* leave it commented if you already checked a specific board above */
@@ -161,7 +162,8 @@
       //#define ITG3200
       //#define L3G4200D
       //#define MPU6050       //combo + ACC
-
+      //#define LSM330        //combo + ACC
+      
       /* I2C accelerometer */
       //#define NUNCHUCK  // if you want to use the nunckuk connected to a WMP
       //#define MMA7455
@@ -213,13 +215,15 @@
   /********************************  PID Controller *********************************/
     /* choose one of the alternate PID control algorithms
      * 1 = evolved oldschool algorithm (similar to v2.2)
-     * 2 = new experimental algorithm from Alex Khoroshko http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671&start=10#p37387
+     * 2 = new experimental algorithm from Alex Khoroshko - unsupported - http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671&start=10#p37387
      * */
     #define PID_CONTROLLER 1
 
     /* NEW: not used anymore for servo coptertypes  <== NEEDS FIXING - MOVE TO WIKI */
     #define YAW_DIRECTION 1
     //#define YAW_DIRECTION -1 // if you want to reverse the yaw correction direction
+
+    #define ONLYARMWHENFLAT //prevent the copter from arming when the copter is tilted
 
    /********************************    ARM/DISARM    *********************************/
    /* optionally disable stick combinations to arm/disarm the motors.
@@ -228,9 +232,9 @@
     //#define ALLOW_ARM_DISARM_VIA_TX_ROLL
 
     /********************************    SERVOS      *********************************/
-    /* temporary info on which servos connect where is here
-     * http://www.multiwii.com/forum/viewtopic.php?f=8&t=3498 <== NEEDS FIXING - MOVE TO WIKI
-     * http://www.multiwii.com/forum/viewtopic.php?f=8&t=3498&start=30#p36023  <== NEEDS FIXING - MOVE TO WIKI  */
+    /* info on which servos connect where and how to setup can be found here
+     * http://www.multiwii.com/wiki/index.php?title=Config.h#Servos_configuration
+     */
 
 
     /* if you want to preset min/middle/max values for servos right after flashing, because of limited physical
@@ -294,11 +298,19 @@
     //#define HELI_USE_SERVO_FOR_THROTTLE
 
   /***********************      your individual mixing     ***********************/
-    /* if you want to override an existing entry in the mixing table, you may want to avoid esditing the
+    /* if you want to override an existing entry in the mixing table, you may want to avoid editing the
      * mixTable() function for every version again and again. 
      * howto: http://www.multiwii.com/wiki/index.php?title=Config.h#Individual_Mixing
      */
     //#define MY_PRIVATE_MIXING "filename.h"
+
+  /***********************      your individual defaults     ***********************/
+    /* if you want to replace the hardcoded default values with your own (e.g. from a previous save to an .mwi file),
+     * you may want to avoid editing the LoadDefaults() function for every version again and again.
+     * http://www.multiwii.com/wiki/index.php?title=Config.h#Individual_defaults
+     */
+    //#define MY_PRIVATE_DEFAULTS "filename.h"
+
 
 /*************************************************************************************************/
 /*****************                                                                 ***************/
@@ -345,10 +357,11 @@
       //#define SPEK_BIND_DATA   6
 
     /*******************************    SBUS RECIVER    ************************************/
-      /* The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1).
+      /* The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1) or PROMICRO boards.
          You have to invert the S-Bus-Serial Signal e.g. with a Hex-Inverter like IC SN74 LS 04 */
       //#define SBUS
       //#define SBUS_SERIAL_PORT 1
+      #define SBUS_MID_OFFSET 988 //SBUS Mid-Point at 1500
 
 /*************************************************************************************************/
 /*****************                                                                 ***************/
@@ -556,6 +569,8 @@
     #define FAILSAFE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
     #define FAILSAFE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
     #define FAILSAFE_THROTTLE  (MINTHROTTLE + 200)    // (*) Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
+    
+    #define FAILSAFE_DETECT_TRESHOLD  985
 
 
   /*****************                DFRobot LED RING    *********************************/
@@ -643,13 +658,6 @@
     //#define I2C_GPS
     // If your I2C GPS board has Sonar support enabled
     //#define I2C_GPS_SONAR
-
-    /* I2C GPS device made with an indeedent ATTiny[24]313 + GPS device and
-       optional sonar device.    https://github.com/wertarbyte/tiny-gps/ */
-    /* get GPS data from Tiny-GPS */
-    //#define TINY_GPS
-    /* get sonar data from Tiny-GPS */
-    //#define TINY_GPS_SONAR
 
     /* GPS data readed from Misio-OSD - GPS module connected to OSD, and MultiWii read GPS data from OSD - tested and working OK ! */
     //#define GPS_FROM_OSD
@@ -1030,7 +1038,7 @@
        example: with cycle time of approx 3ms, do action every 6*3ms=18ms
        value must be [1; 65535] */
     #define LCD_TELEMETRY_FREQ 23       // to send telemetry data over serial 23 <=> 60ms <=> 16Hz (only sending interlaced, so 8Hz update rate)
-    #define LCD_TELEMETRY_AUTO_FREQ 1967// to step to next telemetry page 967 <=> 3s
+    #define LCD_TELEMETRY_AUTO_FREQ  967// to step to next telemetry page 967 <=> 3s
     #define PSENSOR_SMOOTH 16           // len of averaging vector for smoothing the PSENSOR readings; should be power of 2; set to 1 to disable
     #define VBAT_SMOOTH 16              // len of averaging vector for smoothing the VBAT readings; should be power of 2; set to 1 to disable
     #define RSSI_SMOOTH 16              // len of averaging vector for smoothing the RSSI readings; should be power of 2; set to 1 to disable

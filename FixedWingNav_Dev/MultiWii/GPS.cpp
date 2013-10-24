@@ -9,6 +9,10 @@
 
 #if GPS
 
+#if defined(FIXEDWING)
+  static int16_t naverrorI,naverrorD ;
+#endif
+
 bool GPS_newFrame(char c);
 #if defined(NMEA)
   bool GPS_NMEA_newFrame(char c);
@@ -32,10 +36,6 @@ void GPS_calc_longitude_scaling(int32_t lat);
 static void GPS_update_crosstrack(void);
 int32_t wrap_36000(int32_t ang);
 
-#if defined(TINY_GPS)
-  #include "tinygps.h"
-#endif
-
 #if defined(INIT_MTK_GPS)
   #define MTK_SET_BINARY          PSTR("$PGCMD,16,0,0,0,0,0*6A\r\n")
   #define MTK_SET_NMEA            PSTR("$PGCMD,16,1,1,1,1,1*6B\r\n")
@@ -49,7 +49,7 @@ int32_t wrap_36000(int32_t ang);
   #define SBAS_TEST_MODE          PSTR("$PMTK319,0*25\r\n")  //Enable test use of sbas satelite in test mode (usually PRN124 is in test mode)
 #endif
 
-#if defined(GPS_SERIAL) || defined(GPS_FROM_OSD) || defined(TINY_GPS)
+#if defined(GPS_SERIAL) || defined(GPS_FROM_OSD)
 
 #if defined(GPS_LEAD_FILTER)
 // Set up gps lag
@@ -241,7 +241,7 @@ static int16_t nav_takeoff_bearing;
 #if defined(GPS_SERIAL) 
  #if defined(INIT_MTK_GPS) || defined(UBLOX)
   uint32_t init_speed[5] = {9600,19200,38400,57600,115200};
-  void SerialGpsPrint(prog_char* str) {
+  void SerialGpsPrint(const char PROGMEM * str) {
     char b;
     while(str && (b = pgm_read_byte(str++))) {
       SerialWrite(GPS_SERIAL, b); 
@@ -346,6 +346,18 @@ void GPS_NewData(void) {
 
     GPS_numSat = (_i2c_gps_status & 0xf0) >> 4;
     _i2c_gps_status = i2c_readReg(I2C_GPS_ADDRESS,I2C_GPS_STATUS_00);                 //Get status register 
+
+    uint8_t *varptr;
+    #if defined(I2C_GPS_SONAR)
+      i2c_rep_start(I2C_GPS_ADDRESS<<1);
+      i2c_write(I2C_GPS_SONAR_ALT);         
+      i2c_rep_start((I2C_GPS_ADDRESS<<1)|1);
+
+      varptr = (uint8_t *)&sonarAlt;          // altitude (in cm? maybe)
+      *varptr++ = i2c_readAck();
+      *varptr   = i2c_readNak();
+    #endif	
+    
     if (_i2c_gps_status & I2C_GPS_STATUS_3DFIX) {                                     //Check is we have a good 3d fix (numsats>5)
       f.GPS_FIX = 1;
 
@@ -369,7 +381,7 @@ void GPS_NewData(void) {
         i2c_write(I2C_GPS_NAV_BEARING);                                               //Start read from here 2x2 bytes distance and direction
         i2c_rep_start((I2C_GPS_ADDRESS<<1)|1);
 
-        uint8_t *varptr = (uint8_t *)&nav_bearing;
+        varptr = (uint8_t *)&nav_bearing;
         *varptr++ = i2c_readAck();
         *varptr   = i2c_readAck();
 
@@ -419,17 +431,7 @@ void GPS_NewData(void) {
 
         varptr = (uint8_t *)&GPS_altitude;       // altitude in meters for OSD
         *varptr++ = i2c_readAck();
-        *varptr   = i2c_readAck();
-		
-#if defined(I2C_GPS_SONAR)
-        i2c_rep_start(I2C_GPS_ADDRESS<<1);
-        i2c_write(I2C_GPS_SONAR_ALT);         
-        i2c_rep_start((I2C_GPS_ADDRESS<<1)|1);
-
-        varptr = (uint8_t *)&sonarAlt;          // altitude (in cm? maybe)
-        *varptr++ = i2c_readAck();
-        *varptr   = i2c_readNak();
-#endif		
+        *varptr   = i2c_readAck();	
 
         //GPS_ground_course
         varptr = (uint8_t *)&GPS_ground_course;
@@ -472,16 +474,12 @@ void GPS_NewData(void) {
     }
   #endif     
 
-  #if defined(GPS_SERIAL) || defined(TINY_GPS) || defined(GPS_FROM_OSD)
+  #if defined(GPS_SERIAL) || defined(GPS_FROM_OSD)
     #if defined(GPS_SERIAL)
     uint8_t c = SerialAvailable(GPS_SERIAL);
     while (c--) {
     //while (SerialAvailable(GPS_SERIAL)) {
       if (GPS_newFrame(SerialRead(GPS_SERIAL))) {
-    #elif defined(TINY_GPS)
-    {
-      {
-      tinygps_query();
     #elif defined(GPS_FROM_OSD)
     {
       if(GPS_update & 2) {  // Once second bit of GPS_update is set, indicate new GPS datas is readed from OSD - all in right format.
@@ -624,11 +622,15 @@ void GPS_reset_nav(void) {
       nav_mode = NAV_MODE_NONE;
     #endif
   }
+  #if defined(FIXEDWING)
+    naverrorI=0;
+    naverrorD=0;
+  #endif
 }
 
 //Get the relevant P I D values and set the PID controllers 
 void GPS_set_pids(void) {
-  #if defined(GPS_SERIAL)  || defined(GPS_FROM_OSD) || defined(TINY_GPS)
+  #if defined(GPS_SERIAL) || defined(GPS_FROM_OSD) || ( defined(FIXEDWING) && defined(I2C_GPS))
     posholdPID_PARAM.kP   = (float)conf.pid[PIDPOS].P8/100.0;
     posholdPID_PARAM.kI   = (float)conf.pid[PIDPOS].I8/100.0;
     posholdPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
@@ -683,29 +685,6 @@ void GPS_set_pids(void) {
   #endif
 }
 
-#if defined (TINY_GPS)
-  int32_t GPS_coord_to_decimal(struct coord *c) {
-    #define GPS_SCALE_FACTOR 10000000L
-    uint32_t deg = 0;
-    uint8_t i;
-    deg = (uint32_t)c->deg * GPS_SCALE_FACTOR;
-  
-    uint32_t min = 0;
-    /* add up the BCD fractions */
-    uint16_t divisor = 1000;
-    for (i=0; i<NMEA_MINUTE_FRACTS; i++) {
-      uint8_t b = c->frac[i/2];
-      uint8_t n = (i%2 ? b>>4 : b&0x0F);
-      min += n*(divisor);
-      divisor /= 10;
-    }
-    min *= 1000; // <-- NEW
-    min += (uint32_t)c->min * GPS_SCALE_FACTOR;
-    /* now sum up degrees and minutes */
-    return deg + min/60;
-  }
-#endif
-
 //It was mobed here since even i2cgps code needs it
 int32_t wrap_18000(int32_t ang) {
   if (ang > 18000)  ang -= 36000;
@@ -716,7 +695,7 @@ int32_t wrap_18000(int32_t ang) {
 
 
 //OK here is the onboard GPS code
-#if defined(GPS_SERIAL) || defined(GPS_FROM_OSD) || defined(TINY_GPS)
+#if defined(GPS_SERIAL) || defined(GPS_FROM_OSD)
 
 ////////////////////////////////////////////////////////////////////////////////////
 //PID based GPS navigation functions
@@ -1479,7 +1458,6 @@ restart:
 void FW_NAV(){
 // Navigation with Planes Separated from MWii Tab for Devlopment.
 
-  static int16_t naverrorI,naverrorD ;
   
 // Only use MAG with small Tilt angle
      #if MAG
@@ -1490,13 +1468,12 @@ void FW_NAV(){
 
 // Calculate Navigation errors
       int16_t dif = GPS_FwTarget - att.heading;	 // Navigation Error
-      GPS_AltErr = GPS_altitude - GPS_hold[ALT]; // Altitude error - means your'e to low
-
+      GPS_AltErr = GPS_altitude - GPS_hold[ALT]; // Negative Altitude error means your'e to low
       int16_t TX_Thro = rcData[THROTTLE];	 // Read and store Throttle pos.
 
 // Altitude controll
       int16_t curr_Gps_Alt = GPS_home[ALT] - GPS_altitude;              // Calculate Altitude over home
-      GPS_angle[PITCH]= GPS_AltErr * GPS_ALTCORR ;                      // Calculate Elevator compensation.
+      GPS_angle[PITCH]= GPS_AltErr * conf.pid[PIDALT].P8/10.0 ;         // Calculate Elevator compensation.
       if(GPS_AltErr >=0) GPS_angle[PITCH] = GPS_angle[PITCH]/3;         // Limit throw for descending.
       GPS_angle[PITCH]+=(abs(att.angle[ROLL]) * ELEVATORCOMPENSATION /100); // Compensate elevator compared with rollAngle
 
@@ -1509,10 +1486,10 @@ void FW_NAV(){
 
 // Climb out before RTH
       if(GPS_AltErr < 0 && f.CLIMBOUT_FW && f.GPS_HOME_MODE ){
-        GPS_angle[PITCH]= GPS_ALTCORR * -GPS_MAXCLIMB *10 ; // Max climbAngle
-        rcData[THROTTLE]= CLIMBTHROTTLE;                    // Max Allowed Throttle
-        #if RTH_BAILOUT
-          dif=0; // Forced Climbout with Level Wings
+        GPS_angle[PITCH]= conf.pid[PIDALT].P8/10.0 * -GPS_MAXCLIMB *10 ; // Max climbAngle
+        rcData[THROTTLE]= CLIMBTHROTTLE;                                 // Max Allowed Throttle        
+        #if CLIMBOUT && defined SAFE_NAV_ALT
+          if(curr_Gps_Alt < SAFE_NAV_ALT )dif=0; // Forced Climbout with Level Wings for "AutoLaunch          
         #endif  
       }else{   //  Minimum RTH Alt have been reached
 
@@ -1520,12 +1497,12 @@ void FW_NAV(){
         if (f.CLIMBOUT_FW && GPS_AltErr > 0 ){f.CLIMBOUT_FW = 0;}
 
 // Navigation while Altitude is higher than RTH Alt
-        if (f.GPS_HOME_MODE && !f.CLIMBOUT_FW && GPS_AltErr <=0 ){        // While we are higher than RTH alt.
-          if (GPS_distanceToHome >100){ GPS_angle[PITCH]=0 ;}             // RTH Nav Stage Use only ACC to maintain altitude
-          else { rcData[THROTTLE]= IDLE_THROTTLE;}                        // RTH Descend only when within 100 meters
-          #if FAILSAFE_RTH_ENABLE
-            if (GPS_distanceToHome <5 && GPS_AltErr >=-5 ){f.ARMED = 0;}  // Home is within 5 meters DISARM and glide.
-          #endif
+        if (f.GPS_HOME_MODE && !f.CLIMBOUT_FW && GPS_AltErr >=0 ){           // While we are higher than RTH alt.
+          if (GPS_distanceToHome >SAFE_DECSCEND_ZONE){ GPS_angle[PITCH]=0 ;} // RTH Nav Stage Use only ACC to maintain altitude
+          else { rcData[THROTTLE]= IDLE_THROTTLE;}                           // RTH Descend only when within 100 meters
+          if( f.FAILSAFE_RTH_ENABLE){
+            if (GPS_distanceToHome <20  && GPS_AltErr <=5 ){f.ARMED = 0;}    // Home is within 20 meters DISARM and glide.
+          }
         }
       }
 
@@ -1534,7 +1511,7 @@ void FW_NAV(){
       if (dif >= + 180) dif -= 360;
       
   static int16_t gpsTimer=0;
-  static int16_t gpsFreq =1000/GPS_UPD_HZ;  // 5HZ 200ms DT
+  static int16_t gpsFreq =1000/GPS_UPD_HZ;  // 2HZ 500ms DT
   
   if( millis() - gpsTimer >= gpsFreq ){
     gpsTimer = millis(); 
@@ -1552,19 +1529,15 @@ void FW_NAV(){
     oldif = dif;
     dif *= navPID_PARAM.kP;
 
-    dif += naverrorI/100-naverrorD/100;
- //******************************
+    dif += naverrorI-naverrorD;
+ //******************************        
 
 // Limit outputs
       GPS_angle[PITCH] = constrain(GPS_angle[PITCH],-GPS_MAXCLIMB*10,GPS_MAXCLIMB*10);
       GPS_angle[ROLL]  = constrain(dif,-GPS_MAXCORR*10, GPS_MAXCORR*10 );
       rcCommand[YAW]  += constrain(dif,-GPS_MAXCORR*10, GPS_MAXCORR*10 );
   }
-  
-// Safety switch for auto throttle
-      #if defined(SAFETY_SWITCH)
-        if(rcData[SAFETY_SWITCH] < 1700) rcData[THROTTLE]= TX_Thro;
-      #endif
+
 
 // PassThru for throttle In AcroMode
       if( !f.ANGLE_MODE && !f.HORIZON_MODE ) rcData[THROTTLE]= TX_Thro;
