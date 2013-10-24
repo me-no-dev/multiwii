@@ -32,32 +32,37 @@ void GPS_reset_nav(void);
    Set to Zero to  disable         */
    
 
-// Moved to Gui.
-// Use Gui NavR
-//#define GPS_RUDDCORR   1    // P for Rudder.
+// Moved to GUI.
+// Use GUI NavR
 //#define GPS_NAVCORR    3    // P for Roll.
+//#define GPS_RUDDCORR   1    // P for Rudder. common from GUI
 
-#define GPS_ALTCORR    10   // P for Elevator.
+// Moved to GUI.
+// Use GUI PIDALT P
+//#define GPS_ALTCORR    10   // P for Elevator.
 
-#define GPS_UPD_HZ     2   // Set looptime for NavUpdate
+#define GPS_UPD_HZ     2   // Set loop time for NavUpdate
 
-/* Set Maximum Limits for PID-controlls */
-#define MAX_I 4000    // Increase steps by 1000 for more controll
-#define MAX_D 2000
+/* Set Maximum Limits for PID-controls */
+#define MAX_I 200    // Increase steps by 10 for more control (1 degree)
+#define MAX_D 200    // 100 = 10 degree
 
-/* Maximum Limits for controlls */
-#define GPS_MAXCORR    15   // Degrees banking aplyed by GPS.
-#define GPS_MAXCLIMB   15   // Degrees climbing . To much can stall plane.
+/* Maximum Limits for controls */
+#define GPS_MAXCORR    30   // Degrees banking aplyed by GPS.
+#define GPS_MAXCLIMB   20   // Degrees climbing . To much can stall plane.
 
-//#define SAFETY_SWITCH  AUX4 // Use a Safty switch for AutoThrottle. Must be over 1700ms THROTTLE can also be used
+
 #define CLIMBTHROTTLE  1800 // Max allowed throttle in GPS modes .
-#define CRUICETHROTTLE 1500 // Throttle to set in cruice.
+#define CRUICETHROTTLE 1500 // Throttle to set in cruise.
 
-// ....!!! New Defs !!!....
-#define IDLE_THROTTLE 1200  // Lowest throttleValue during Descend
-#define SCALER_THROTTLE 8   // Adjust to Match Power/Weiget ratio of your model
-#define RTH_BAILOUT  false  // Forced RTH Climbout with Level Wings
-#define FAILSAFE_RTH true   // Enable RTH for failsafe incl Auto DisARM at home
+#define IDLE_THROTTLE   1200  // Lowest throttleValue during Descend
+#define SCALER_THROTTLE  8    // Adjust to Match Power/Weight ratio of your model
+
+#define FAILSAFE_RTH    true  // Enable RTH for failsafe incl Auto DisARM at home for autoland
+
+#define CLIMBOUT          true // Forced RTH Climbout with Level Wings For Auto launch etc.
+#define SAFE_NAV_ALT        20 // Safe Altitude during climbouts Wings Level below this Alt. (ex. treetop height..)
+#define SAFE_DECSCEND_ZONE  100// Radius around home where descending is OK
 
 
 #define ELEVATORCOMPENSATION 100 // Compensate elevator with % of rollAngle

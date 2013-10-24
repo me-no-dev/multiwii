@@ -882,6 +882,7 @@ void initLCD() {
 // -------------------- configuration menu to LCD over serial/i2c ----------------------------------
 
 #ifdef LCD_CONF
+static uint8_t reset_to_defaults;
 
 typedef void (*formatter_func_ptr)(void *, uint8_t, uint8_t);
 typedef void (*inc_func_ptr)(void *, int16_t);
@@ -990,6 +991,8 @@ const char PROGMEM lcd_param_text37 [] = "SERvTRIM2";
 #ifdef TRI //                             0123456789
 const char PROGMEM lcd_param_text38 [] = "SERvTRIMy";
 const char PROGMEM lcd_param_text39 [] = "SERvINVy";
+const char PROGMEM lcd_param_text152 [] = "SERvMINy";
+const char PROGMEM lcd_param_text153 [] = "SERvMAXy";
 #endif
 //#ifdef LOG_VALUES
 //const char PROGMEM lcd_param_text39 [] = "failsafes ";
@@ -1081,6 +1084,7 @@ const char PROGMEM lcd_param_text135 [] = "GovernRpm";
 #ifdef MULTIPLE_CONFIGURATION_PROFILES
 const char PROGMEM lcd_param_text150 [] = "writeCset";
 #endif
+const char PROGMEM lcd_param_text151 [] = "Reset (7)";
 //                                         0123456789
 
 PROGMEM const void * const lcd_param_ptr_table [] = {
@@ -1093,9 +1097,7 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
   &lcd_param_text07, &conf.pid[PITCH].D8, &__D,
   &lcd_param_text08, &conf.pid[YAW].P8, &__P,
   &lcd_param_text09, &conf.pid[YAW].I8, &__I,
-#if PID_CONTROLLER == 2
   &lcd_param_text10, &conf.pid[YAW].D8, &__D,
-#endif
 #if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
   &lcd_param_text11, &conf.pid[PIDALT].P8, &__P,
   &lcd_param_text12, &conf.pid[PIDALT].I8, &__I,
@@ -1317,6 +1319,8 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
   &lcd_param_text37, &conf.servoConf[4].middle, &__SE,
 #endif
 #ifdef TRI
+  &lcd_param_text152, &conf.servoConf[5].min, &__SE,
+  &lcd_param_text153, &conf.servoConf[5].max, &__SE,
   &lcd_param_text38, &conf.servoConf[5].middle, &__SE,
   &lcd_param_text39, &conf.servoConf[5].rate, &__BITS,
 #endif
@@ -1370,7 +1374,7 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
 #ifdef MULTIPLE_CONFIGURATION_PROFILES
   &lcd_param_text150, &global_conf.currentSet, &__D,
 #endif
-
+&lcd_param_text151, &reset_to_defaults, &__D,
 //#ifdef LOG_VALUES
 //  &lcd_param_text39, &failsafeEvents, &__L,
 //  &lcd_param_text40, &i2c_errors_count, &__L,
@@ -1539,6 +1543,7 @@ void configurationLoop() {
   #if defined OLED_I2C_128x64LOGO_PERMANENT
     LCDclear();
   #endif
+  reset_to_defaults = 0;
   p = 0;
   while (LCD == 1) {
     if (refreshLCD) {
@@ -1602,7 +1607,15 @@ void configurationLoop() {
     #ifdef MULTIPLE_CONFIGURATION_PROFILES
       writeGlobalSet(0);
     #endif
-    writeParams(1);
+    if (reset_to_defaults == 7) {
+      // magic number lucky 7 hit, then do the reset to defaults
+      strcpy_P(line1,PSTR("RESET.."));
+      //                   0123456789.12345
+      LCDprintChar(line1);
+      LoadDefaults(); // this invokes writeParams()
+    } else {
+      writeParams(1);
+    }
   } else {
     strcpy_P(line1,PSTR("Aborting"));
     LCDprintChar(line1);
@@ -1746,7 +1759,7 @@ void output_Vmin() {
 void output_mAh() {
   #ifdef POWERMETER
     uint16_t mah = analog.intPowerMeterSum; // fallback: display consumed mAh
-    if (analog.intPowerMeterSum < conf.powerTrigger1 * PLEVELSCALE)
+    if (analog.intPowerMeterSum < (uint16_t)conf.powerTrigger1 * PLEVELSCALE)
       mah = conf.powerTrigger1 * PLEVELSCALE - analog.intPowerMeterSum; // display mah mAh
     strcpy_P(line1,PSTR(" -----mAh"));
     line1[1] = digit10000(mah);
@@ -2197,7 +2210,7 @@ void lcd_telemetry() {
         case 6:// height
           #if BARO
             {
-              int16_t h = BaroAlt / 100;
+              int16_t h = alt.EstAlt / 100;
               LCDprint('A'); LCDprintInt16(h); LCDprint('m');
               h = BAROaltMax / 100;
               LCDprintChar(" ("); LCDprintInt16(h);

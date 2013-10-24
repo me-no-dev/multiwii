@@ -62,6 +62,16 @@ void ACC_init();
   //#define MPU6050_ADDRESS     0x69 // address pin AD0 high (VCC)
 #endif
 
+#if !defined(LSM330_ACC_ADDRESS)
+  #define LSM330_ACC_ADDRESS     0x18 // 30 >> 1 = 18  -> address pin SDO_A low (GND)
+  //#define LSM330_ACC_ADDRESS     0x19 // 32 >> 1 = 19  -> address pin SDO_A high (VCC)
+#endif
+
+#if !defined(LSM330_GYRO_ADDRESS)
+  #define LSM330_GYRO_ADDRESS     0x6A // D4 >> 1 = 6A  -> address pin SDO_G low (GND)
+  //#define LSM330_GYRO_ADDRESS     0x6B // D6 >> 1 = 6B  -> address pin SDO_G high (VCC)
+#endif
+
 #if !defined(MPU3050_ADDRESS)
   #define MPU3050_ADDRESS     0x68 // Switch in "ON" position
   //#define MPU3050_ADDRESS     0x69 // Switch in "1" position
@@ -158,11 +168,6 @@ void ACC_init();
 #else
     //Default settings LPF 256Hz/8000Hz sample
     #define MPU3050_DLPF_CFG   0
-#endif
-
-#if defined(TINY_GPS) | defined(TINY_GPS_SONAR)
-#define TINY_GPS_TWI_ADD 0x11
-#include "tinygps.h"
 #endif
 
 uint8_t rawADC[6];
@@ -1406,6 +1411,81 @@ void ACC_getADC () {
 #endif
 
 // ************************************************************************************************************
+// Start Of I2C Gyroscope and Accelerometer LSM330
+// ************************************************************************************************************
+#if defined(LSM330)
+////////////////////////////////////	
+//           ACC start            //
+////////////////////////////////////
+void ACC_init () {
+
+  delay(10);
+  //i2c_writeReg(LSM330_ACC_ADDRESS ,0x20 ,0x17 ); // 1Hz
+  //i2c_writeReg(LSM330_ACC_ADDRESS ,0x20 ,0x27 ); // 10Hz
+  i2c_writeReg(LSM330_ACC_ADDRESS ,0x20 ,0x37 );  // 25Hz
+  //i2c_writeReg(LSM330_ACC_ADDRESS ,0x20 ,0x47 ); // 50Hz
+  //i2c_writeReg(LSM330_ACC_ADDRESS ,0x20 ,0x57 ); // 100Hz
+  
+  delay(5);
+  //i2c_writeReg(LSM330_ACC_ADDRESS ,0x23 ,0x08 ); // 2G
+  //i2c_writeReg(LSM330_ACC_ADDRESS ,0x23 ,0x18 ); // 4G
+  i2c_writeReg(LSM330_ACC_ADDRESS ,0x23 ,0x28 ); // 8G
+  //i2c_writeReg(LSM330_ACC_ADDRESS ,0x23 ,0x38 ); // 16G 
+  
+  delay(5);
+  i2c_writeReg(LSM330_ACC_ADDRESS,0x21,0x00);// no high-pass filter
+}
+
+//#define ACC_DELIMITER 5 // for 2g
+#define ACC_DELIMITER 4 // for 4g
+//#define ACC_DELIMITER 3 // for 8g
+//#define ACC_DELIMITER 2 // for 16g
+
+  void ACC_getADC () {
+  TWBR = ((F_CPU / 400000L) - 16) / 2;// change the I2C clock rate to 400kHz
+  i2c_getSixRawADC(LSM330_ACC_ADDRESS,0x80|0x28);// Start multiple read at reg 0x28
+
+  ACC_ORIENTATION( ((rawADC[1]<<8) | rawADC[0])>>ACC_DELIMITER ,
+                   ((rawADC[3]<<8) | rawADC[2])>>ACC_DELIMITER ,
+                   ((rawADC[5]<<8) | rawADC[4])>>ACC_DELIMITER );
+  ACC_Common();
+}
+////////////////////////////////////
+//            ACC end             //
+////////////////////////////////////	
+	
+////////////////////////////////////	
+//           Gyro start           //
+////////////////////////////////////
+void Gyro_init() {
+  delay(100);
+  i2c_writeReg(LSM330_GYRO_ADDRESS ,0x20 ,0x8F ); // CTRL_REG1   400Hz ODR, 20hz filter, run!
+  delay(5);
+  i2c_writeReg(LSM330_GYRO_ADDRESS ,0x24 ,0x02 ); // CTRL_REG5   low pass filter enable
+  delay(5);
+  i2c_writeReg(LSM330_GYRO_ADDRESS ,0x23 ,0x30); // CTRL_REG4 Select 2000dps
+}
+
+void Gyro_getADC () {
+  TWBR = ((F_CPU / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
+  i2c_getSixRawADC(LSM330_GYRO_ADDRESS,0x80|0x28);
+
+  GYRO_ORIENTATION( ((rawADC[1]<<8) | rawADC[0])>>2  ,
+                    ((rawADC[3]<<8) | rawADC[2])>>2  ,
+                    ((rawADC[5]<<8) | rawADC[4])>>2  );
+  GYRO_Common();
+}
+////////////////////////////////////
+//            Gyro end            //
+////////////////////////////////////
+
+#endif /* LSM330 */
+
+// ************************************************************************************************************
+// End Of I2C Gyroscope and Accelerometer LSM330
+// ************************************************************************************************************
+
+// ************************************************************************************************************
 // I2C Gyroscope MPU3050
 // ************************************************************************************************************
 #if defined(MPU3050)
@@ -1491,29 +1571,6 @@ void Gyro_getADC() {
   }
 #endif
 
-#endif
-
-#if defined(TINY_GPS) | defined(TINY_GPS_SONAR)
-void tinygps_query(void) {
-  struct nav_data_t navi;
-  int16_t i2c_errors = i2c_errors_count;
-  /* copy GPS data to local struct */
-  i2c_read_to_buf(TINY_GPS_TWI_ADD, &navi, sizeof(navi));
-  /* did we generate any errors? */
-  if (i2c_errors == i2c_errors_count) {
-    #if defined(TINY_GPS)
-    GPS_numSat = navi.gps.sats;
-    f.GPS_FIX = (navi.gps.quality > 0);
-    GPS_coord[LAT] = (navi.gps.flags & 1<<NMEA_RMC_FLAGS_LAT_NORTH ? 1 : -1) * GPS_coord_to_decimal(&navi.gps.lat);
-    GPS_coord[LON] = (navi.gps.flags & 1<<NMEA_RMC_FLAGS_LON_EAST ? 1 : -1) * GPS_coord_to_decimal(&navi.gps.lon);
-    GPS_altitude = navi.gps.alt.m;
-    #endif
-
-    #if defined(TINY_GPS_SONAR)
-    sonarAlt = navi.sonar.distance;
-    #endif
-  }
-}
 #endif
 
 // ************************************************************************************************************
@@ -1697,21 +1754,9 @@ void Sonar_update() {
   } 
 sonarAlt = srf08_ctx.range[0]; //tmp
 }
-#elif defined(TINY_GPS_SONAR)
-inline void Sonar_init() {}
-void Sonar_update() {
-  /* do not query the module again if the GPS loop already did */
-  #if defined(TINY_GPS)
-    if (!GPS_Enable) {
-  #else
-    {
-  #endif
-      tinygps_query();
-    }
-}
 #else
 inline void Sonar_init() {}
-inline void Sonar_update() {}
+void Sonar_update() {}
 #endif
 
 
