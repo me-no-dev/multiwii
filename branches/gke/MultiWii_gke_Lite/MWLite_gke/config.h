@@ -32,7 +32,7 @@
  
 // CONFIGURABLE PARAMETERS
 
-//#define GENERAL_USE // default settings that should work for most quads
+#define GENERAL_USE // default settings that should work for most quads
 
 #if defined(GENERAL_USE)
 
