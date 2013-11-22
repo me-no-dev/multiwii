@@ -1456,91 +1456,108 @@ restart:
 
 #if defined(FIXEDWING)
 void FW_NAV(){
-// Navigation with Planes Separated from MWii Tab for Devlopment.
-
+// Navigation with Planes under Devlopment.
+int8_t Current_Heading; // Store current bearing
+static int8_t Nav_Throttle; // Store current Angle of attack
   
-// Only use MAG with small Tilt angle
+// Only use MAG with small Tilt angle and if Mag and Gps.heading aligns
      #if MAG
-        if ( !f.SMALL_ANGLES_25 ){ att.heading =GPS_ground_course/10 ;}
+        if ( !f.SMALL_ANGLES_25 || abs(att.heading - GPS_ground_course/10)< 10 ){ Current_Heading =GPS_ground_course/10 ;}
       #else
-        att.heading =GPS_ground_course/10 ;
+        Current_Heading =GPS_ground_course/10 ;
       #endif 
+//        Current_Heading =GPS_ground_course/10 ; // Test always use Gps-heading
 
 // Calculate Navigation errors
-      int16_t dif = GPS_FwTarget - att.heading;	 // Navigation Error
-      GPS_AltErr = GPS_altitude - GPS_hold[ALT]; // Negative Altitude error means your'e to low
-      int16_t TX_Thro = rcData[THROTTLE];	 // Read and store Throttle pos.
-
-// Altitude controll
-      int16_t curr_Gps_Alt = GPS_home[ALT] - GPS_altitude;              // Calculate Altitude over home
+      int16_t navDiff = GPS_FwTarget - Current_Heading;	// Navigation Error
+      GPS_AltErr = GPS_altitude - GPS_hold[ALT];        // Negative Altitude error means your'e to low
+      int16_t TX_Thro = rcData[THROTTLE];	        // Read and store Throttle pos.
+      
+      Nav_Throttle = att.angle[PITCH] * 2; // Feature, Controll throttle by angle of attack
+      
+  static int16_t gpsTimer=0;
+  static int16_t gpsFreq = 1000/GPS_UPD_HZ;  // 2HZ 500ms DT  
+  if( millis() - gpsTimer >= gpsFreq ){
+    gpsTimer = millis();
+    
+// Altitude controll 
+   int16_t curr_Gps_Alt = GPS_home[ALT] - GPS_altitude;              // Calculate Altitude over home
+   if(GPS_AltErr > abs(1)) {  // Deadspan for elevator at correct alt.
       GPS_angle[PITCH]= GPS_AltErr * conf.pid[PIDALT].P8/10.0 ;         // Calculate Elevator compensation.
       if(GPS_AltErr >=0) GPS_angle[PITCH] = GPS_angle[PITCH]/3;         // Limit throw for descending.
-      GPS_angle[PITCH]+=(abs(att.angle[ROLL]) * ELEVATORCOMPENSATION /100); // Compensate elevator compared with rollAngle
+   }else{GPS_angle[PITCH] =0 ;}
+   
 
 // Throttle controll
-      if (GPS_AltErr > 2 || GPS_AltErr < 2) {  // Deadspan for throttle at correct alt.
+      if (GPS_AltErr > abs(2)) {  // Deadspan for throttle at correct alt.
 
 // Add AltitudeError  and scale up with a factor to throttle
         rcData[THROTTLE]=constrain(CRUICETHROTTLE - (GPS_AltErr *SCALER_THROTTLE) , IDLE_THROTTLE ,CLIMBTHROTTLE);
       }else{ rcData[THROTTLE]= CRUICETHROTTLE; }   // Just cruice along.
 
+// Reset Climbout Flag when Alt have been reached
+        if (f.CLIMBOUT_FW && GPS_AltErr > 0 ){f.CLIMBOUT_FW = 0;}
+        
 // Climb out before RTH
-      if(GPS_AltErr < 0 && f.CLIMBOUT_FW && f.GPS_HOME_MODE ){
+      if(f.CLIMBOUT_FW && f.GPS_HOME_MODE ){
         GPS_angle[PITCH]= conf.pid[PIDALT].P8/10.0 * -GPS_MAXCLIMB *10 ; // Max climbAngle
         rcData[THROTTLE]= CLIMBTHROTTLE;                                 // Max Allowed Throttle        
-        #if CLIMBOUT && defined SAFE_NAV_ALT
-          if(curr_Gps_Alt < SAFE_NAV_ALT )dif=0; // Forced Climbout with Level Wings for "AutoLaunch          
+        if(curr_Gps_Alt < SAFE_NAV_ALT) navDiff=0; // Forced AutoLaunch with Level Wings below safe alt
+        #if CLIMBOUT
+          navDiff=0; // Forced Climbout with Level Wings to Minimum RTH          
         #endif  
       }else{   //  Minimum RTH Alt have been reached
 
-// Reset Climbout Flag when Alt have been reached
-        if (f.CLIMBOUT_FW && GPS_AltErr > 0 ){f.CLIMBOUT_FW = 0;}
 
 // Navigation while Altitude is higher than RTH Alt
-        if (f.GPS_HOME_MODE && !f.CLIMBOUT_FW && GPS_AltErr >=0 ){           // While we are higher than RTH alt.
-          if (GPS_distanceToHome >SAFE_DECSCEND_ZONE){ GPS_angle[PITCH]=0 ;} // RTH Nav Stage Use only ACC to maintain altitude
-          else { rcData[THROTTLE]= IDLE_THROTTLE;}                           // RTH Descend only when within 100 meters
-          if( f.FAILSAFE_RTH_ENABLE){
-            if (GPS_distanceToHome <20  && GPS_AltErr <=5 ){f.ARMED = 0;}    // Home is within 20 meters DISARM and glide.
-          }
+        if (f.GPS_HOME_MODE && f.GPS_HOME_MODE && !f.CLIMBOUT_FW && GPS_AltErr >=0 ){  // While we are higher than RTH alt.
+          if (GPS_distanceToHome >SAFE_DECSCEND_ZONE){ GPS_angle[PITCH]=0 ;}           // RTH Nav Stage Use only ACC to maintain altitude
+          else { rcData[THROTTLE]= IDLE_THROTTLE;}                                     // RTH Descend only when within 100 meters
         }
       }
+      
+      //Overides CLIMBOUT_FW and Kill motor in failsafeMode if close to home
+      if( f.FAILSAFE_RTH_ENABLE && GPS_distanceToHome <10 ){  // Only if FC is in failsafe.
+        f.ARMED = 0;                                          // Home is within 10 meters DISARM and glide.
+        //rcData[THROTTLE]= MINTHROTTLE-100;
+      }     
 
 // Wrap Heading 180
-      if (dif <= - 180) dif += 360; 
-      if (dif >= + 180) dif -= 360;
-      
-  static int16_t gpsTimer=0;
-  static int16_t gpsFreq =1000/GPS_UPD_HZ;  // 2HZ 500ms DT
-  
-  if( millis() - gpsTimer >= gpsFreq ){
-    gpsTimer = millis(); 
+      if (navDiff <= - 180) navDiff += 360; 
+      if (navDiff >= + 180) navDiff -= 360;
+      if abs(navDiff > 160) navDiff  = 180;          // Forced leftturn.
+	  
+
     
   /******************************  
   PID Test for Navigating planes.
   ******************************/
     static int16_t oldif;
     
-    naverrorI += (dif * (navPID_PARAM.kI)) *gpsFreq;
+    naverrorI += (navDiff * (navPID_PARAM.kI)) *gpsFreq;
     naverrorI =constrain(naverrorI,-MAX_I,MAX_I);
     
-    naverrorD += ((dif - oldif) *navPID_PARAM.kD) * gpsFreq;
-    naverrorD =constrain(naverrorD,-MAX_D,MAX_D);
-    oldif = dif;
-    dif *= navPID_PARAM.kP;
+    naverrorD = ((navDiff - oldif) *navPID_PARAM.kD) * gpsFreq;
+    naverrorD = constrain(naverrorD,-MAX_D,MAX_D);
+    oldif = navDiff;
+    navDiff *= navPID_PARAM.kP;
 
-    dif += naverrorI-naverrorD;
+    navDiff += naverrorI-naverrorD;
  //******************************        
 
 // Limit outputs
       GPS_angle[PITCH] = constrain(GPS_angle[PITCH],-GPS_MAXCLIMB*10,GPS_MAXCLIMB*10);
-      GPS_angle[ROLL]  = constrain(dif,-GPS_MAXCORR*10, GPS_MAXCORR*10 );
-      rcCommand[YAW]  += constrain(dif,-GPS_MAXCORR*10, GPS_MAXCORR*10 );
+      GPS_angle[ROLL]  = constrain(navDiff,-GPS_MAXCORR*10, GPS_MAXCORR*10 );
+      rcCommand[YAW]  += constrain(navDiff,-GPS_MAXCORR*10, GPS_MAXCORR*10 );
   }
 
 
 // PassThru for throttle In AcroMode
-      if( !f.ANGLE_MODE && !f.HORIZON_MODE ) rcData[THROTTLE]= TX_Thro;
+      if( (!f.ANGLE_MODE && !f.HORIZON_MODE) || f.PASSTHRU_MODE ){
+        rcData[THROTTLE]= TX_Thro;
+         GPS_angle[PITCH] =0;
+         GPS_angle[ROLL]  =0;
+      }
 
 // Compensate elevator compared with rollAngle
       GPS_angle[PITCH]-= ( abs(att.angle[ROLL]) * ELEVATORCOMPENSATION ) /100;
@@ -1553,9 +1570,9 @@ void FW_NAV(){
 // rcData[THROTTLE]= TX_Thro;   // Disable ThrottleControll
 // GPS_angle[PITCH]=0;          // Disable ElevatorControll
 // GPS_angle[ROLL]=0;           // Disable Ail NavControll
-// rcCommand[YAW] -=  constrain(dif*GPS_RUDDCORR,-GPS_MAXCORR*10, GPS_MAXCORR*10 ); // Disable YAW NavControll
+// rcCommand[YAW] -=  constrain(navDiff*GPS_RUDDCORR,-GPS_MAXCORR*10, GPS_MAXCORR*10 ); // Disable YAW NavControll
 
-// debug[1]=dif;
+// debug[1]=navDiff;
 // debug[1]=curr_Gps_Alt;
 // debug[2]=GPS_AltErr;
 // debug[3]=(abs(att.angle[ROLL]) * ELEVATORCOMPENSATION) /100;

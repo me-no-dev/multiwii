@@ -109,74 +109,43 @@
   #define ITG3200
   #define PID_CONTROLLER 2
   #define ESC_CALIB_CANNOT_FLY
-#elif COPTERTEST == 50
-// FotoQuad
-  #define QUADX 
-  #define CRIUS_SE
-  #define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Robe/Hitec/Futaba
-  #define SERVO_TILT
-  #define CAMTRIG
-  #define ITG3200_LPF_42HZ
-  #define GPS_PROMINI_SERIAL
-/* Defaut Servo settings exported from MultiWiiConf.
-   Place the defines in config.h
-   The Values will default if Eeprom is reset from Gui. */
-  #define  SERVO_MIN  {1020, 1020, 1150, 1020, 1020, 1020, 1020, 1020}
-  #define  SERVO_MAX  {2000, 2000, 1806, 2000, 2000, 2000, 2000, 2000}
-  #define  SERVO_MID  {6, 1500, 7, 1500, 1500, 1500, 1500, 1500}
-  #define  FORCE_SERVO_RATES  {47, 156, 0, 100, 100, 100, 100, 100}  
-#elif COPTERTEST == 450
-  //DJI 450
-  #define QUADX 
-  #define PPM_ON_THROTTLE
-  #define CRIUS_AIO_PRO_V1
-  #define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Robe/Hitec/Futaba
-
-  #define MPU6050_LPF_42HZ
-  #define GPS_SERIAL 2
-  #define NMEA
-//  #define ACROTRAINER_MODE 30
-  #define MIDRC 1545
-  #define GPS_BAUD   115200
-//#define SERVO_TILT
-//#define  SERVO_MIN  {1020, 1020, 1020, 1020, 1020, 1020, 1020, 1020}
-//#define  SERVO_MAX  {2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000}
-//#define  SERVO_MID  {7, 1383, 1500, 1500, 1500, 1500, 1500, 1500}
-//#define  FORCE_SERVO_RATES  {54, 221, 1, 100, 100, 100, 100, 100}
-#elif COPTERTEST == 400 
-  //#define AIRPLANE
-  //#define FLYING_WING
-  //#define HELI_120_CCPM
-  #define FLYDUINO_MPU
-  #define MPU6050_LPF_42HZ
-
 
 #elif COPTERTEST == 99
-  #define PATRIKE
-  #define NMEA
+// Settings for Fixedwing_RTH
 #define GPS_PROMINI_SERIAL
-//#define GPS_SERIAL 3
-  #define GPS_BAUD   115200
-  #define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11
-  #define AIRPLANE
-  //#define FLYING_WING
-#define NO_FLASH_CHECK
-  #define DONT_RESET_HOME_AT_ARM 
+//#define GPS_SERIAL 2
+#define GPS_BAUD   115200
+#define NMEA
 
+#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11
+#define AIRPLANE
+
+#define MINTHROTTLE 1000
+#define MAXTHROTTLE 2000
+
+#define NO_FLASH_CHECK
+
+// Make rearming in air possible/easier
+#undef ONLYARMWHENFLAT
+#define DONT_RESET_HOME_AT_ARM
+
+#define MAG_DECLINATION  3.6f 
+    
 #define  SERVO_MIN  {1020, 1020, 1020, 1020, 1020, 1020, 1020, 1020}
 #define  SERVO_MAX  {2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000}
 #define  SERVO_MID  {1500, 1500, 1500, 1500, 1550, 1500, 1572, 1500}
 #define  FORCE_SERVO_RATES  {30, 30, 100, 89, 88, 100, 100, 100}
 
 //#define FLYDUINO_MPU
-//#define MPU6050_LPF_42HZ
-
+//#define CRIUS_AIO_PRO_V1
+//#define PPM_ON_THROTTLE
+  
 //#define CRIUS_SE
-//#define RCAUXPIN8
+
 #define MONGOOSE1_0 // W BARO Rotated 90Degrees
-
-
+  
   #if defined (MONGOOSE1_0)
+    #define PATRIKE  // Remapping for MONGOOSE1_0
     #define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] =  -X; imu.gyroADC[PITCH] = -Y; imu.gyroADC[YAW] = -Z;}
     #define FORCE_ACC_ORIENTATION(Y, X, Z)  {imu.accADC[ROLL]  =  -X; imu.accADC[PITCH]  =  Y; imu.accADC[YAW]  =  Z;}
     #define FORCE_MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =   Y; imu.magADC[PITCH]  = -X; imu.magADC[YAW]  = -Z;}
@@ -209,12 +178,15 @@
 
 #if defined (AIRPLANE) || defined(FLYING_WING)
   #define FIXEDWING
-  #ifndef DONT_RESET_HOME_AT_ARM
-    #define DONT_RESET_HOME_AT_ARM
-  #endif
-  #if FAILSAFE_RTH  && !defined (FAILSAFE)
-    #define FAILSAFE
-  #endif
+  #define DONT_RESET_HOME_AT_ARM
+  
+  #if defined (GPS_SERIAL) || defined(GPS_PROMINI_SERIAL)
+    #include "GPS.h"
+    #if FAILSAFE_RTH
+      #define FAILSAFE
+    #endif
+  #endif 
+  
 #endif
 
 #if defined(HELI_120_CCPM) || defined(HELI_90_DEG)
@@ -1617,9 +1589,9 @@
   
   #define NOP() __asm__ __volatile__("nop") 
  
-  #define RF22B_PWRSTATE_READY      01 
-  #define RF22B_PWRSTATE_TX       0x09 
-  #define RF22B_PWRSTATE_RX         05 
+  #define RF22B_PWRSTATE_READY    01 
+  #define RF22B_PWRSTATE_TX        0x09 
+  #define RF22B_PWRSTATE_RX       05 
   #define RF22B_Rx_packet_received_interrupt   0x02 
   #define RF22B_PACKET_SENT_INTERRUPT  04 
   #define RF22B_PWRSTATE_POWERDOWN  00    

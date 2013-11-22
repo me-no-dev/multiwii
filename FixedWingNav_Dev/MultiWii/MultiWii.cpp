@@ -961,15 +961,17 @@ void loop () {
         if (!f.ANGLE_MODE) {
           errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
           f.ANGLE_MODE = 1;
+          #if FAILSAFE_RTH
+            if (failsafeCnt > 5*FAILSAFE_DELAY)f.FAILSAFE_RTH_ENABLE = 1;
+          #endif
         }
-        #if FAILSAFE_RTH
-          f.FAILSAFE_RTH_ENABLE = 1;
-        #endif
       } else {
         // failsafe support
         f.ANGLE_MODE = 0;
         f.FAILSAFE_RTH_ENABLE = 0;
       }
+      
+      
       if ( rcOptions[BOXHORIZON] ) {
         f.ANGLE_MODE = 0;
         if (!f.HORIZON_MODE) {
@@ -979,6 +981,8 @@ void loop () {
       } else {
         f.HORIZON_MODE = 0;
       }
+      
+
     #endif
 
     if (rcOptions[BOXARM] == 0) f.OK_TO_ARM = 1;
@@ -1041,6 +1045,7 @@ void loop () {
     #endif
     
     #if GPS
+    debug[0]=f.FAILSAFE_RTH_ENABLE;
       static uint8_t GPSNavReset = 1;
       if (f.GPS_FIX && GPS_numSat >= 5 ) {
         if (rcOptions[BOXGPSHOME] || f.FAILSAFE_RTH_ENABLE ) {  // if both GPS_HOME & GPS_HOLD are checked => GPS_HOME is the priority
@@ -1056,7 +1061,7 @@ void loop () {
             #endif
             GPS_hold[ALT]  =  conf.pid[PIDALT].D8  + GPS_home[ALT]; //GPS_ALT_HOLD + GPS_home[ALT];
             nav_mode       = NAV_MODE_WP;
-            f.CLIMBOUT_FW =1 ;  
+            f.CLIMBOUT_FW =1 ;
           }
         } else {
           f.GPS_HOME_MODE = 0;
@@ -1073,6 +1078,7 @@ void loop () {
                 nav_mode = NAV_MODE_POSHOLD;
               #endif
               GPS_hold[ALT] = GPS_altitude;
+              //f.CLIMBOUT_FW = 0 ;
             }
           } else {
             f.GPS_HOLD_MODE = 0;

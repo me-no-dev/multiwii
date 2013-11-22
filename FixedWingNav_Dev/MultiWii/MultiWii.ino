@@ -6,9 +6,15 @@ This is a developer branch by PatrikE.
 Development of FixedWing RTH.
 Use with caution.
 
-Releasedate _131024
+All settings for FW_RTH is in gps.h
+
+------------------------------
+Use Gui compatible to MWii V2.3
+------------------------------
+
+Releasedate _131122
 Mostly suggested corrections from testers.
-Some additions and changed names in gps.h
+
 *******************************************
 
 
