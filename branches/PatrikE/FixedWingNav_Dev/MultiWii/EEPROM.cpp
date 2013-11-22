@@ -193,6 +193,8 @@ void LoadDefaults() {
     conf.dynThrPID = 50;
     conf.rcExpo8   =  0;
     conf.pid[PIDALT].D8   = 50;
+    conf.pid[PIDALT].P8   = 3;
+    conf.pid[PIDNAVR].P8  = 3;
   #endif
   update_constants(); // this will also write to eeprom
 }

@@ -5,6 +5,7 @@
 /****           CONFIGURABLE PARAMETERS                                                       ****/
 /*************************************************************************************************/
 //#define COPTERTEST 99  // PatrikE DevPlane
+
 /* this file consists of several sections
  * to create a working combination you must at least make your choices in section 1.
  * 1 - BASIC SETUP - you must select an option in every block.
@@ -64,7 +65,7 @@
 
   /****************************    Motor maxthrottle    *******************************/
     /* this is the maximum value for the ESCs at full power, this value can be increased up to 2000 */
-    #define MAXTHROTTLE 2000
+    #define MAXTHROTTLE 1850
 
   /****************************    Mincommand          *******************************/
     /* this is the value for the ESCs when they are not armed
