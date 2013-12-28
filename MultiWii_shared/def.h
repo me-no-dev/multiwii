@@ -1080,6 +1080,17 @@
   #define HWPWM6
 #endif
 
+#if defined(SIRIUS_MEGAv5_OSD)
+  #define ITG3200 // in fact a ITG3050
+  #define BMA280
+  #define MS561101BA
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  = -X; imu.accADC[PITCH]  =  -Y; imu.accADC[YAW]  =  Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -X; imu.gyroADC[PITCH] =  -Y; imu.gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =  Y; imu.magADC[PITCH]  =  -X; imu.magADC[YAW]  = -Z;}
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
 #if defined(MINIWII)
   #define ITG3200
   #define BMA180
@@ -1384,13 +1395,14 @@
   #undef INTERNAL_I2C_PULLUPS
   #define MINTHROTTLE 1050
   #define MAXTHROTTLE 2000
-  #define EXT_MOTOR_RANGE
+  #define EXT_MOTOR_32KHZ
   #define VBAT
   #define VBATSCALE       54
   #define VBATLEVEL_WARN1 10
   #define VBATLEVEL_WARN2 10
   #define VBATLEVEL_CRIT  10
   #define NO_VBAT         10
+  #define MOTOR_STOP
 #endif
 
 #if defined(MEGAWAP_V2_STD) 
@@ -1544,13 +1556,7 @@
   #define RF22B_Rx_packet_received_interrupt   0x02 
   #define RF22B_PACKET_SENT_INTERRUPT  04 
   #define RF22B_PWRSTATE_POWERDOWN  00    
-  
-  unsigned char ItStatus1, ItStatus2;  
-  typedef struct   
-  { 
-   unsigned char reach_1s    : 1; 
-  } FlagType; 
-  FlagType               Flag;   
+
 #endif
 
 #if defined(DESQUARED6DOFV2GO)
@@ -1586,7 +1592,7 @@
 /***************              Sensor Type definitions              ********************/
 /**************************************************************************************/
 
-#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(MPU6050) || defined(LSM330) || defined(MMA8451Q) || defined(NUNCHUCK)
+#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(BMA280) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(MPU6050) || defined(LSM330) || defined(MMA8451Q) || defined(NUNCHUCK)
   #define ACC 1
 #else
   #define ACC 0
@@ -1615,83 +1621,18 @@
   #define GPS_PROMINI
 #endif
 
-#if defined(GPS_SERIAL)  || defined(I2C_GPS) || defined(GPS_FROM_OSD) || defined(TINY_GPS)
+#if defined(GPS_SERIAL)  || defined(I2C_GPS) || defined(GPS_FROM_OSD)
   #define GPS 1
 #else
   #define GPS 0
 #endif
 
-#if defined(SRF02) || defined(SRF08) || defined(SRF10) || defined(SRC235) || defined(TINY_GPS_SONAR) || defined(I2C_GPS_SONAR)
+#if defined(SRF02) || defined(SRF08) || defined(SRF10) || defined(SRC235) || defined(I2C_GPS_SONAR)
   #define SONAR 1
 #else
   #define SONAR 0
 #endif
 
-
-#if defined(MMA7455)
-  #define ACC_1G 64
-#endif
-#if defined(MMA8451Q)
-  #define ACC_1G 512
-#endif
-#if defined(ADXL345)
-  #define ACC_1G 265
-#endif
-#if defined(BMA180)
-  #define ACC_1G 255
-#endif
-#if defined(BMA020)
-  #define ACC_1G 63
-#endif
-#if defined(NUNCHACK)
-  #define ACC_1G 200
-#endif
-#if defined(LIS3LV02)
-  #define ACC_1G 256
-#endif
-#if defined(LSM303DLx_ACC)
-  #define ACC_1G 256
-#endif
-#if defined(ADCACC)
-  #define ACC_1G 75
-#endif
-#if defined(MPU6050)
-  #if defined(FREEIMUv04)
-    #define ACC_1G 255
-  #else
-    #define ACC_1G 512
-  #endif
-#endif
-#if defined(LSM330)
-  #define ACC_1G 256
-#endif
-#if defined(NUNCHUCK)
-  #define ACC_1G 200
-#endif
-#if !defined(ACC_1G)
-  #define ACC_1G 256
-#endif
-#define ACC_25deg    (uint16_t)(ACC_1G * 0.423)
-#define ACC_VelScale (9.80665f / 10000.0f / ACC_1G)
-
-#if defined(ITG3200)
-  #define GYRO_SCALE (4 / 14.375 * PI / 180.0 / 1000000.0) //ITG3200   14.375 LSB/(deg/s) and we ignore the last 2 bits
-#endif
-#if defined(L3G4200D)
-  #define GYRO_SCALE ((4.0f * PI * 70.0f)/(1000.0f * 180.0f * 1000000.0f))
-#endif
-#if defined(MPU6050)
-  #define GYRO_SCALE (4 / 16.4 * PI / 180.0 / 1000000.0)   //MPU6050 and MPU3050   16.4 LSB/(deg/s) and we ignore the last 2 bits
-#endif
-#if defined(LSM330)
-  #define GYRO_SCALE ((4.0f * PI * 70.0f)/(1000.0f * 180.0f * 1000000.0f)) // like L3G4200D
-#endif
-#if defined(MPU3050)
-  #define GYRO_SCALE (4 / 16.4 * PI / 180.0 / 1000000.0)   //MPU6050 and MPU3050   16.4 LSB/(deg/s) and we ignore the last 2 bits
-#endif
-#if defined(WMP)
-  #define GYRO_SCALE (1.0f/200e6f)
-#endif
 
 /**************************************************************************************/
 /***************      Multitype decleration for the GUI's          ********************/

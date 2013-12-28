@@ -32,10 +32,6 @@ void GPS_calc_longitude_scaling(int32_t lat);
 static void GPS_update_crosstrack(void);
 int32_t wrap_36000(int32_t ang);
 
-#if defined(TINY_GPS)
-  #include "tinygps.h"
-#endif
-
 #if defined(INIT_MTK_GPS)
   #define MTK_SET_BINARY          PSTR("$PGCMD,16,0,0,0,0,0*6A\r\n")
   #define MTK_SET_NMEA            PSTR("$PGCMD,16,1,1,1,1,1*6B\r\n")
@@ -49,7 +45,7 @@ int32_t wrap_36000(int32_t ang);
   #define SBAS_TEST_MODE          PSTR("$PMTK319,0*25\r\n")  //Enable test use of sbas satelite in test mode (usually PRN124 is in test mode)
 #endif
 
-#if defined(GPS_SERIAL) || defined(GPS_FROM_OSD) || defined(TINY_GPS)
+#if defined(GPS_SERIAL) || defined(GPS_FROM_OSD)
 
 #if defined(GPS_LEAD_FILTER)
 // Set up gps lag
@@ -241,7 +237,7 @@ static int16_t nav_takeoff_bearing;
 #if defined(GPS_SERIAL) 
  #if defined(INIT_MTK_GPS) || defined(UBLOX)
   uint32_t init_speed[5] = {9600,19200,38400,57600,115200};
-  void SerialGpsPrint(prog_char* str) {
+  void SerialGpsPrint(const char PROGMEM * str) {
     char b;
     while(str && (b = pgm_read_byte(str++))) {
       SerialWrite(GPS_SERIAL, b); 
@@ -370,7 +366,7 @@ void GPS_NewData(void) {
       }
       if (_i2c_gps_status & I2C_GPS_STATUS_NEW_DATA) {                                //Check about new data
         if (GPS_update) { GPS_update = 0;} else { GPS_update = 1;}                    //Fancy flash on GUI :D
-        if (!GPS_pids_initialized) {
+        if (!GPS_pids_initialized && f.I2C_INIT_DONE) {
           GPS_set_pids();
           GPS_pids_initialized = 1;
         } 
@@ -469,16 +465,12 @@ void GPS_NewData(void) {
     }
   #endif     
 
-  #if defined(GPS_SERIAL) || defined(TINY_GPS) || defined(GPS_FROM_OSD)
+  #if defined(GPS_SERIAL) || defined(GPS_FROM_OSD)
     #if defined(GPS_SERIAL)
     uint8_t c = SerialAvailable(GPS_SERIAL);
     while (c--) {
     //while (SerialAvailable(GPS_SERIAL)) {
       if (GPS_newFrame(SerialRead(GPS_SERIAL))) {
-    #elif defined(TINY_GPS)
-    {
-      {
-      tinygps_query();
     #elif defined(GPS_FROM_OSD)
     {
       if(GPS_update & 2) {  // Once second bit of GPS_update is set, indicate new GPS datas is readed from OSD - all in right format.
@@ -616,7 +608,7 @@ void GPS_reset_nav(void) {
 
 //Get the relevant P I D values and set the PID controllers 
 void GPS_set_pids(void) {
-  #if defined(GPS_SERIAL)  || defined(GPS_FROM_OSD) || defined(TINY_GPS)
+  #if defined(GPS_SERIAL)  || defined(GPS_FROM_OSD)
     posholdPID_PARAM.kP   = (float)conf.pid[PIDPOS].P8/100.0;
     posholdPID_PARAM.kI   = (float)conf.pid[PIDPOS].I8/100.0;
     posholdPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
@@ -633,6 +625,7 @@ void GPS_set_pids(void) {
   #endif
 
   #if defined(I2C_GPS)
+    if (!f.I2C_INIT_DONE) return;
     i2c_rep_start(I2C_GPS_ADDRESS<<1);
       i2c_write(I2C_GPS_HOLD_P);
        i2c_write(conf.pid[PIDPOS].P8);
@@ -671,29 +664,6 @@ void GPS_set_pids(void) {
   #endif
 }
 
-#if defined (TINY_GPS)
-  int32_t GPS_coord_to_decimal(struct coord *c) {
-    #define GPS_SCALE_FACTOR 10000000L
-    uint32_t deg = 0;
-    uint8_t i;
-    deg = (uint32_t)c->deg * GPS_SCALE_FACTOR;
-  
-    uint32_t min = 0;
-    /* add up the BCD fractions */
-    uint16_t divisor = 1000;
-    for (i=0; i<NMEA_MINUTE_FRACTS; i++) {
-      uint8_t b = c->frac[i/2];
-      uint8_t n = (i%2 ? b>>4 : b&0x0F);
-      min += n*(divisor);
-      divisor /= 10;
-    }
-    min *= 1000; // <-- NEW
-    min += (uint32_t)c->min * GPS_SCALE_FACTOR;
-    /* now sum up degrees and minutes */
-    return deg + min/60;
-  }
-#endif
-
 //It was mobed here since even i2cgps code needs it
 int32_t wrap_18000(int32_t ang) {
   if (ang > 18000)  ang -= 36000;
@@ -704,7 +674,7 @@ int32_t wrap_18000(int32_t ang) {
 
 
 //OK here is the onboard GPS code
-#if defined(GPS_SERIAL) || defined(GPS_FROM_OSD) || defined(TINY_GPS)
+#if defined(GPS_SERIAL) || defined(GPS_FROM_OSD)
 
 ////////////////////////////////////////////////////////////////////////////////////
 //PID based GPS navigation functions
