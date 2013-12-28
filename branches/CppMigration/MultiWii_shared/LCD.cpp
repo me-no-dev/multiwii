@@ -1097,9 +1097,7 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
   &lcd_param_text07, &conf.pid[PITCH].D8, &__D,
   &lcd_param_text08, &conf.pid[YAW].P8, &__P,
   &lcd_param_text09, &conf.pid[YAW].I8, &__I,
-#if PID_CONTROLLER == 2
   &lcd_param_text10, &conf.pid[YAW].D8, &__D,
-#endif
 #if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
   &lcd_param_text11, &conf.pid[PIDALT].P8, &__P,
   &lcd_param_text12, &conf.pid[PIDALT].I8, &__I,
@@ -1761,7 +1759,7 @@ void output_Vmin() {
 void output_mAh() {
   #ifdef POWERMETER
     uint16_t mah = analog.intPowerMeterSum; // fallback: display consumed mAh
-    if (analog.intPowerMeterSum < conf.powerTrigger1 * PLEVELSCALE)
+    if (analog.intPowerMeterSum < (uint16_t)conf.powerTrigger1 * PLEVELSCALE)
       mah = conf.powerTrigger1 * PLEVELSCALE - analog.intPowerMeterSum; // display mah mAh
     strcpy_P(line1,PSTR(" -----mAh"));
     line1[1] = digit10000(mah);
