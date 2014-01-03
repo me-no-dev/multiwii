@@ -1,0 +1,12 @@
+##############################################################
+
+lilypado.name=MultiWiiCopter LED Ring v3
+lilypado.upload.protocol=arduino
+lilypado.upload.maximum_size=14336
+lilypado.upload.speed=115200
+lilypado.build.mcu=atmega168
+lilypado.build.f_cpu=8000000L
+lilypado.build.core=arduino
+lilypado.build.variant=standard
+
+##############################################################

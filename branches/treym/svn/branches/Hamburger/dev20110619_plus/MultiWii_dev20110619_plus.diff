@@ -1,0 +1,413 @@
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/LCD.pde /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/LCD.pde
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/LCD.pde	2011-06-19 13:41:50.000000000 +0200
++++ /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/LCD.pde	2011-06-20 14:15:24.000000000 +0200
+@@ -51,6 +51,7 @@
+   static char line1[17],line2[17];
+   uint8_t LCD=1;
+   uint8_t refreshLCD = 1;
++  uint8_t key = 0;
+ 
+   initLCD();
+   p = 0;
+@@ -60,14 +61,19 @@
+       strcpy(line1,"                ");
+       i=0; char* point = param[p].paramText; while (*point) line1[i++] = *point++;
+       uint16_t unit = *param[p].var;
+-     #if defined(POWERMETER)
+-      if (p > PARAMMOTORSTART && p < PARAMMOTOREND)
+-        // pmeter values need special treatment, too many digits to fit standard 8 bit scheme
+-        unit = pMeter[p-PARAMMOTOROFFSET] / PLEVELDIV; // [0:1000] * 1000/3 samples per second(loop time) * 60 seconds *5 minutes -> [0:10000 e4] per motor
++      #if defined(POWERMETER)
++         if (p > PARAMMOTORSTART && p < PARAMMOTOREND)
++           // pmeter values need special treatment, too many digits to fit standard 8 bit scheme
++           unit = pMeter[p-PARAMMOTOROFFSET] / PLEVELDIVSOFT; // [0:1000] * 1000/3 samples per second(loop time) * 60 seconds *5 minutes -> [0:10000 e4] per motor
+                                             // (that is full throttle for 5 minutes sampling with high sampling rate for wmp only)
+                                             // times 6 for a maximum of 6 motors equals [0:60000 e4] for the sum
+                                             // we are only interested in the big picture, so divide by 10.000
+-     #endif
++         #if (POWERMETER == hard)
++         if (p-PARAMMOTOROFFSET == 6)
++           // the sum needs special divisor for hardware sensor, fix here
++           unit = pMeter[p-PARAMMOTOROFFSET] / PLEVELDIV;
++         #endif
++      #endif
+       if (p == 12) {unit *=2;} // RC RATE can go up to 500
+       char c1 = '0'+unit/100; char c2 = '0'+unit/10-(unit/100)*10; char c3 = '0'+unit-(unit/10)*10;
+       if (param[p].decimal == 0) {line2[6] = c1;  line2[7] = c2;   line2[8] = c3;}
+@@ -92,25 +98,26 @@
+       #endif
+       refreshLCD=0;
+     }
++    key = ( Serial.available() ?  Serial.read() : 0 ); 
+     for (chan = ROLL; chan < 4; chan++) rcData[chan] = readRawRC(chan);
+     //switch config param with pitch
+-    if (rcData[PITCH] < MINCHECK && paramActive == 0 && p<= PARAMMAX) {
++    if ((key == LCD_MENU_NEXT || (rcData[PITCH] < MINCHECK && paramActive == 0)) && p<= PARAMMAX) {
+       paramActive = 1;refreshLCD=1;blinkLED(10,20,1);
+       p++;
+       if (p>PARAMMAX) p=0;
+     }
+-    if (rcData[PITCH] > MAXCHECK && paramActive == 0 && p>=0) {
++    if ((key == LCD_MENU_PREV || (rcData[PITCH] > MAXCHECK && paramActive == 0)) && p>=0) {
+       paramActive = 1;refreshLCD=1;blinkLED(10,20,1);
+       if (p==0) p=PARAMMAX; else p--;
+     }
+     if (rcData[PITCH] < MAXCHECK && rcData[PITCH] > MINCHECK)  paramActive = 0;
+     //+ or - param with low and high roll
+-    if (rcData[ROLL] < MINCHECK && valActive == 0 && *param[p].var>param[p].increment-1) {
++    if ((key == LCD_VALUE_DOWN || (rcData[ROLL] < MINCHECK && valActive == 0)) && *param[p].var>param[p].increment-1) {
+       valActive = 1;refreshLCD=1;blinkLED(10,20,1);
+       *param[p].var -= param[p].increment;  //set val -
+       if (p == 0) *param[4].var = *param[0].var; //PITCH P
+     }
+-    if (rcData[ROLL] > MAXCHECK && valActive == 0) {
++    if ((key == LCD_VALUE_UP || (rcData[ROLL] > MAXCHECK && valActive == 0))) {
+       valActive = 1;refreshLCD=1;blinkLED(10,20,1);
+       *param[p].var += param[p].increment;       //set val +
+       if (p == 0) *param[4].var = *param[0].var; //PITCH P
+@@ -118,7 +125,7 @@
+     if (rcData[ROLL] < MAXCHECK && rcData[ROLL]  > MINCHECK) valActive = 0;
+     if (rcData[YAW]  < MINCHECK && rcData[PITCH] > MAXCHECK) LCD = 0; // save and exit
+     if (rcData[YAW]  > MAXCHECK && rcData[PITCH] > MAXCHECK) LCD = 2; // exit without save: eeprom has only 100.000 write cycles
+-  }
++  } // while (LCD == 1)
+   blinkLED(20,30,1);
+   #if defined(LCD_TEXTSTAR)
+     LCDprint(0x0c); //clear screen
+@@ -133,4 +140,4 @@
+   #ifdef LCD_TELEMETRY
+     delay(1000); // keep exit message visible for one second even if (auto)telemetry continues writing in main loop
+   #endif
+-}
++}
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/MultiWii_dev20110619.pde /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/MultiWii_dev20110619.pde
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/MultiWii_dev20110619.pde	2011-06-19 13:41:50.000000000 +0200
++++ /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/MultiWii_dev20110619.pde	2011-06-20 15:42:11.000000000 +0200
+@@ -1,4 +1,8 @@
+ /*
++
+++ LCD key-navigation
+++ Powermeter hardware sensor support
++
+ MultiWiiCopter by Alexandre Dubus
+ www.multiwii.com
+ June  2011     V1.dev
+@@ -9,10 +13,17 @@
+ */
+ 
+ #include "config.h"
++
++#include "TRI60.h"
++
+ #include "def.h"
+ #include <EEPROM.h>
+ #define   VERSION  18
+ 
++#if defined(INTERNAL_I2C_PULLUPS) && defined(FREEIMUv01)
++      #error "for freeimu v0.1 from fax8/Fabio Varesano, you MUST undefine internal i2c pullups. Else you destroy board!"
++#endif
++
+ /*********** RC alias *****************/
+ #define ROLL       0
+ #define PITCH      1
+@@ -62,6 +73,8 @@
+ #ifdef LOG_VALUES
+   static uint16_t cycleTimeMax = 0;          // highest ever cycle timen 
+   static uint16_t cycleTimeMin = 65535;      // lowest ever cycle timen 
++  static uint16_t powerMax = 0;          // highest ever current 
++  static uint16_t powerAvg = 0;          // last known current 
+ #endif
+ static uint32_t pMeter[7];         //we use [0:5] for six motors,[6] for sum
+ static uint8_t pMeterV;            // dummy to satisfy the paramStruct logic in ConfigurationLoop()
+@@ -179,6 +192,11 @@
+   #ifdef LCD_TELEMETRY_AUTO
+     static uint32_t telemetryTime = 0;
+   #endif
++  #if (POWERMETER == hard)
++     static uint16_t pmeter6Raw, powerValue;         //used for current reading
++     static uint16_t pmeter6Avg = PSENSORNULL * 8;   //used for smoothing current reading
++  #endif
++
+   //PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
+   if      (rcData[THROTTLE]<1500) prop2 = 100;
+   else if (rcData[THROTTLE]<2000) prop2 = 100 - (rcData[THROTTLE]-1500)/5 * dynThrPID/100;
+@@ -196,6 +214,20 @@
+   dynP8[YAW] = P8[YAW]*prop1/100;
+   dynD8[YAW] = D8[YAW]*prop1/100;
+ 
++  #if (POWERMETER == hard)
++     pmeter6Raw =  analogRead(PSENSORPIN);
++     pmeter6Avg = (pmeter6Avg * 3 + pmeter6Raw*8)/4; // average of last 4 values; use value*8 for better accuracy
++     powerValue = abs(PSENSORNULL - pmeter6Avg/8);
++     #ifdef LOG_VALUES
++        if ( powerValue < 256) {  // only accept reasonable values. 256 is empirical
++           if (powerValue > powerMax) powerMax = powerValue;
++           powerAvg = powerValue;
++        }
++     #endif
++     pMeter[6] += (uint32_t) ( powerValue * ( cycleTime/PHARDINTDIV) );
++  #endif
++
++
+   #if defined(VBAT)
+     vbatRaw = (vbatRaw*15 + analogRead(V_BATPIN)*16)>>4; // smoothing of vbat readings  
+     vbat = vbatRaw / VBATSCALE;                  // result is Vbatt in 0.1V steps
+@@ -522,7 +554,7 @@
+   mixTable();
+   writeServos();
+   writeMotors();
+-  #if defined(POWERMETER)
++  #if defined(LOG_VALUES) || (POWERMETER == soft)
+     logMotorsPower();
+   #endif 
+-}
++}
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/Output.pde /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/Output.pde
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/Output.pde	2011-06-19 13:41:50.000000000 +0200
++++ /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/Output.pde	2011-06-20 15:31:00.000000000 +0200
+@@ -58,7 +58,7 @@
+   writeMotors();
+ }
+ 
+-#if defined(POWERMETER)
++#if defined(LOG_VALUES) || (POWERMETER == soft)
+ void logMotorsPower() {
+   uint32_t amp;
+   /* true cubic function; when divided by vbat_max=126 (12.6V) for 3 cell battery this gives maximum value of ~ 1000 */
+@@ -68,11 +68,13 @@
+     for (uint8_t i =0;i<NUMBER_MOTOR;i++) {
+ 
+       amp = amperes[(motor[i] - 1000)>>6] / vbat; // range mapped from [1000:2000] => [0:1000]; then break that up into 16 ranges; lookup amp
+-     #ifdef LOG_VALUES
+-      pMeter[i]+= amp; // sum up over time the mapped ESC input 
+-     #endif
+-      pMeter[6]+= amp; // total sum over all motors
+-    }
++      #ifdef LOG_VALUES
++         pMeter[i]+= amp; // sum up over time the mapped ESC input 
++      #endif
++      #if (POWERMETER == soft)
++         pMeter[6]+= amp; // total sum over all motors
++      #endif
++      }
+   }
+ }
+ #endif
+@@ -241,9 +243,9 @@
+     servo[1]  = constrain(1500 + YAW_DIRECTION * (axisPID[YAW] - axisPID[PITCH]), 1020, 2000); //RIGHT
+   #endif
+   #ifdef TRI
+-    motor[0] = PIDMIX(+,0,+,4/3,+0*); //REAR
+-    motor[1] = PIDMIX(-,1,-,2/3,+0*); //RIGHT
+-    motor[2] = PIDMIX(+,1,-,2/3,+0*); //LEFT
++    motor[0] = PIDMIX(+,0,+,4/6,+0*); //REAR
++    motor[1] = PIDMIX(-,1,-,1/6,+0*); //RIGHT
++    motor[2] = PIDMIX(+,1,-,1/6,+0*); //LEFT
+     servo[0] = constrain(TRI_YAW_MIDDLE + YAW_DIRECTION * axisPID[YAW], TRI_YAW_CONSTRAINT_MIN, TRI_YAW_CONSTRAINT_MAX); //REAR
+   #endif
+   #ifdef QUADP
+@@ -354,4 +356,4 @@
+       motor[i] = MINCOMMAND;
+   }
+ }
+-
++
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/Serial.pde /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/Serial.pde
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/Serial.pde	2011-06-19 13:41:50.000000000 +0200
++++ /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/Serial.pde	2011-06-20 14:20:01.000000000 +0200
+@@ -101,33 +101,46 @@
+       #endif
+         break;
+       case 'A': // button A on Textstar LCD -> angles 
+-        uint16_t unit;
+-        strcpy(line1,"DegX  ___._ ");
+-        /*            0123456789.12345*/
+-        strcpy(line2,"DegY  ___._ ");
+-        if (angle[0] < 0 ) {
+-          unit = -angle[0];
+-          line1[5] = '-';
+-        } else 
+-          unit = angle[0];
+-        //line1[5] = '0' + unit / 10000;
+-        line1[6] = '0' + unit / 1000; //- (unit/10000) * 10;
+-        line1[7] = '0' + unit / 100  - (unit/1000)  * 10;
+-        line1[8] = '0' + unit / 10   - (unit/100)   * 10;
+-        line1[10] = '0' + unit       - (unit/10)    * 10;
+-        if (angle[1] < 0 ) {
+-          unit = -angle[1];
+-          line2[5] = '-';
+-        } else 
+-          unit = angle[1];
+-        //line2[5] = '0' + unit / 10000;
+-        line2[6] = '0' + unit / 1000; //- (unit/10000) * 10;
+-        line2[7] = '0' + unit / 100  - (unit/1000)  * 10;
+-        line2[8] = '0' + unit / 10   - (unit/100)   * 10;
+-        line2[10] = '0' + unit       - (unit/10)    * 10;
+-        LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+-        LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
+-        break;      
++       uint16_t unit;
++       strcpy(line1,"Deg ___._  ___._");
++       /*            0123456789.12345*/
++       strcpy(line2,"__,__A max__,__A"); //uin16_t cycleTimeMax
++       if (angle[0] < 0 ) {
++         unit = -angle[0];
++         line1[3] = '-';
++       } else 
++         unit = angle[0];
++       //line1[5] = '0' + unit / 10000;
++       line1[4] = '0' + unit / 1000; //- (unit/10000) * 10;
++       line1[5] = '0' + unit / 100  - (unit/1000)  * 10;
++       line1[6] = '0' + unit / 10   - (unit/100)   * 10;
++       line1[8] = '0' + unit       - (unit/10)    * 10;
++       if (angle[1] < 0 ) {
++         unit = -angle[1];
++         line1[10] = '-';
++       } else 
++         unit = angle[1];
++       //line2[5] = '0' + unit / 10000;
++       line1[11] = '0' + unit / 1000; //- (unit/10000) * 10;
++       line1[12] = '0' + unit / 100  - (unit/1000)  * 10;
++       line1[13] = '0' + unit / 10   - (unit/100)   * 10;
++       line1[15] = '0' + unit       - (unit/10)    * 10;
++       #ifdef LOG_VALUES
++          unit = powerAvg * PINT2mA;
++          line2[0] = '0' + unit / 10000;
++          line2[1] = '0' + unit / 1000 - (unit/10000) * 10;
++          line2[3] = '0' + unit / 100  - (unit/1000)  * 10;
++          line2[4] = '0' + unit / 10   - (unit/100)   * 10;
++          unit = powerMax * PINT2mA;
++          line2[10] = '0' + unit / 10000;
++          line2[11] = '0' + unit / 1000 - (unit/10000) * 10;
++          line2[13] = '0' + unit / 100  - (unit/1000)  * 10;
++          line2[14] = '0' + unit / 10   - (unit/100)   * 10;
++          //line2[13] = '0' + unit        - (unit/10)    * 10;
++          LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
++       #endif
++       LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
++       break;      
+       case 'D': // button D on Textstar LCD -> sensors
+       #define GYROLIMIT 30 // threshold: for larger values replace bar with dots
+       #define ACCLIMIT 40 // threshold: for larger values replace bar with dots
+@@ -267,4 +280,4 @@
+       break;
+     }
+   }
+-}
++}
+Only in /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619: TRI60.h
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/config.h /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/config.h
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/config.h	2011-06-19 13:41:50.000000000 +0200
++++ /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/config.h	2011-06-20 15:42:11.000000000 +0200
+@@ -71,7 +71,8 @@
+ 
+ //#define FFIMUv1   //first 9DOF+baro board from Jussi, with HMC5843
+ //#define FFIMUv2   //second version of 9DOF+baro board from Jussi, with HMC5883
+-//#define FREEIMU   //first version of 9DOF board from Fabio
++//#define FREEIMUv01   //first version of 9DOF board from Fabio
++//#define FREEIMU   //later version of 9DOF board from Fabio
+ //#define PIPO      //6DOF board from erazz
+ //#define QUADRINO  //full FC board 9DOF+baro board from witespy
+ //#define ALLINONE  //full FC board or standalone 9DOF+baro board from CSG_EU
+@@ -152,6 +153,11 @@
+    Configure display as follows: 115K baud, and TTL levels for RXD and TXD, terminal mode
+    NO rx / tx line reconfiguration, use natural pins */
+ //#define LCD_TEXTSTAR
++/* keys to navigate the LCD menu (preset to TEXTSTAR key-depress codes)*/
++#define LCD_MENU_PREV 'a'
++#define LCD_MENU_NEXT 'c'
++#define LCD_VALUE_UP 'd'
++#define LCD_VALUE_DOWN 'b'
+ 
+ /* motors will not spin when the throttle command is in low position
+    this is an alternative method to stop immediately the motors */
+@@ -177,7 +183,8 @@
+ /* allows to set alarm value in GUI or via LCD */
+ /* Current first implementation method is pure software. */
+ /* soft: - (good results +-5% for plush and mystery ESCs @ 2S and 3S, not good with SuperSimple ESC */
+-/*      00. relies on your combo of battery type (Voltage, cpacity), ESC, ESC settings, motors, props */
++/*      00. relies on your combo of battery type (Voltage, cpacity), ESC, ESC settings, motors, props and multiwii cycle time */
++/*      01. set POWERMETER soft. Uses PLEVELSCALE = 50, PLEVELDIV = PLEVELDIVSOFT = 10000 */
+ /*      0. output is a value that linearily scales to power (mAh) */
+ /*      1. get voltage reading right first */
+ /*      2. start with freshly charged battery */
+@@ -188,12 +195,31 @@
+ /*      7. set alarm value in GUI or LCD */
+ /*      8. enjoy your new battery alarm - possibly repeat steps 2 .. 7 */
+ /*      9. if you want the numbers to represent your mAh value, you must change PLEVELDIV */
++/* hard: - (uses hardware sensor, after configuration gives reasonable results */
++/*      00. uses analog pin 2 to read voltage output from sensor. */
++/*      01. set POWERMETER hard. Uses PLEVELSCALE = 50 */
++/*      1. compute PLEVELDIV for your sensor (see below for insturctions) */
++/*      2. set PLEVELDIVSOFT to 10000 ( to use LOG_VALUES for individual motor comparison) */
++/*      3. attach, set PSENSORNULL and  PINT2mA */
++/*      4. configure, compile, upload, set alarm value in GUI or LCD */
++/*      3. enjoy true readings of mAh consumed */
++/* set POWERMETER to "soft" or "hard" depending on sensor you want to utilize */
+ //#define POWERMETER soft
+ /* the sum of all powermeters ranges from [0:60000 e4] theoretically. */
+ /* the alarm level from eeprom is out of [0:255], so we multipy alarm level with PLEVELSCALE and with 1e4 before comparing */
++/* PLEVELSCALE is the step size you can use to set alarm */
+ #define PLEVELSCALE 50 // if you change this value for other granularity, you must search for comments in code to change accordingly 
+ /* larger PLEVELDIV will get you smaller value for power (mAh equivalent) */
+-#define PLEVELDIV 10000 // if you lower PLEVELDIV, beware of overrun in uint32 pMeter
++#define PLEVELDIV 10000 // default for soft - if you lower PLEVELDIV, beware of overrun in uint32 pMeter
++#define PLEVELDIVSOFT PLEVELDIV // for soft always equal to PLEVELDIV; for hard set to 10000
++#define PHARDINTDIV 64 //  doNotChange - must divide the sum of analogRead()*cycleTime over cycles to keep small enough for uint32
++//#define PLEVELDIV 271837L // to convert the sum into mAh divide by this value
++/* amploc 25A sensor has 37mV/A */
++/* arduino analog resolution is 4.9mV per unit; units from [0..1023] */
++/* PLEVELDIV = 37 / 4.9  * 10e6 / PHARDINTDIV  * 3600 / 1000  = 424745L */
++/* set to analogRead() value for zero current */
++#define PSENSORNULL 510 // for I=0A my sensor gives 1/2 Vss; that is approx 2.49Volt
++#define PINT2mA 132 // one integer step on arduino analog translates to mA (example 4.9 / 37 * 1000
+ 
+ /* to monitor system values (battery level, loop time etc. with LCD enable this */
+ /* note: for now you must send single characters 'A', 'B', 'C', 'D' to request 4 different pages */
+@@ -220,4 +246,4 @@
+ 
+ /**************************************/
+ /****END OF CONFIGURABLE PARAMETERS****/
+-/**************************************/
++/**************************************/
+diff -u /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/def.h /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/def.h
+--- /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/01_Firmware/MultiWii_dev20110619/MultiWii_dev20110619/def.h	2011-06-19 13:41:50.000000000 +0200
++++ /Volumes/Vault/Users/js/Documents/RC-Heli/TriWiiCopter/my-10-dev20110619-plus/TRI60-plus/MultiWii_dev20110619/def.h	2011-06-20 18:59:44.000000000 +0200
+@@ -39,6 +39,23 @@
+   #define ITG3200_ADDRESS 0XD0
+ #endif
+ 
++#if defined(FREEIMUv01) //9DOF
++  #if !defined(ITG3200)
++    #define ITG3200
++  #endif
++  #if !defined(ADXL345)
++    #define ADXL345
++  #endif
++  #if !defined(HMC5843)
++    #define HMC5843
++  #endif
++  #define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  =  -Y; accADC[PITCH]  = X; accADC[YAW]  = Z;}
++  #define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  X; gyroADC[PITCH] = Y; gyroADC[YAW] = Z;}
++  #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  = Y; magADC[YAW]  = Z;}
++  #define ADXL345_ADDRESS 0xA6
++  #undef INTERNAL_I2C_PULLUPS
++#endif
++
+ #if defined(FREEIMU) //9DOF
+   #if !defined(ITG3200)
+     #define ITG3200
+@@ -176,6 +193,7 @@
+   #define CAM2PIN                    7   //unused just for compatibility with MEGA
+   #define ISR_UART                   ISR(USART_UDRE_vect)
+   #define V_BATPIN                   A3    // Analog PIN 3
++  #define PSENSORPIN                 A2    // Analog PIN 2
+ #endif
+ #if defined(MEGA)
+   #define LEDPIN_PINMODE             pinMode (13, OUTPUT);
+@@ -225,4 +243,4 @@
+   #define ISR_UART                   ISR(USART0_UDRE_vect)
+   #define V_BATPIN                   A3    // Analog PIN 3
+ #endif
+-
++
