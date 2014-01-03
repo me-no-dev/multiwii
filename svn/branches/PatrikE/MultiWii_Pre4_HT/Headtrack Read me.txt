@@ -1,0 +1,34 @@
+This is a PPM-injector for the MWii projekt.
+Se it as a Raw Beta.
+
+Scetch can be used with Preversions for MultiWiiConf_V2
+
+Things needed
+Arduino PRO mini
+Gyro
+ACC
+
+The PPM injector works fine
+Some more work is needed with the controls.
+Make more accurate......
+Implement MAG etc.
+GUI PID:s
+
+It's done Using only accSmooth from roll and pitch.
+Mag is probibly best but acc is easier to do.
+
+Tilt head sideways to control PAN.
+Back & Forward to control TILT.
+
+To Setup....
+Select PWM pin to send PPM sinal from.
+
+Setup your TX settings.
+
+Adjust PID settings to match headmovemoents with AXP ( In  HT-file )
+increase to give bigger throws.
+
+Adjust endpoints and center for Headtracker in Config.h
+
+
+/ PatrikE

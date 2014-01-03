@@ -1,0 +1,531 @@
+Only in /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii: ._MultiWii.pde
+Common subdirectories: /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/.svn and /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/.svn
+diff -u /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/LCD.pde /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/LCD.pde
+--- /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/LCD.pde	2011-06-25 17:11:16.000000000 +0200
++++ /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/LCD.pde	2011-06-26 13:38:44.000000000 +0200
+@@ -69,7 +69,10 @@
+    #if (NUMBER_MOTOR > 4)
+    , {"pMeter Motor 4", &pMeter[4], &__PM}, {"pMeter Motor 5", &pMeter[5], &__PM}
+    #endif
+-, {"pMeter Sum",      &pMeter[6],     &__PS}
++   #if (NUMBER_MOTOR > 6)
++   , {"pMeter Motor 6", &pMeter[6], &__PM}, {"pMeter Motor 7", &pMeter[7], &__PM}
++   #endif
++, {"pMeter Sum",      &pMeter[PMOTOR_SUM],     &__PS}
+ , {"pAlarm /50",      &powerTrigger1, &__PT} // change text to represent PLEVELSCALE value
+ #endif
+ #ifdef VBAT
+@@ -240,4 +243,130 @@
+     delay(1000); // keep exit message visible for one second even if (auto)telemetry continues writing in main loop
+   #endif
+ }
+-#endif
++#endif
++
++// -------------------- telemtry output to LCD over serial ----------------------------------
++
++#ifdef LCD_TELEMETRY
++void lcd_telemetry() {
++  // LCD_BAR(n,v) : draw a bar graph - n number of chars for width, v value in % to display
++  #ifdef LCD_TEXTSTAR
++    #define LCD_BAR(n,v) { LCDprint(0xFE);LCDprint('b');LCDprint(n);LCDprint(v); }
++  #else 
++    #define LCD_BAR(n,v) {} // add your own implementation here
++  #endif
++  //char line1[17],line2[17];
++  #ifdef POWERMETER  
++    uint16_t intPowerMeterSum;   
++  #endif
++  
++ switch (telemetry) { // output telemetry data, if one of four modes is set
++   case 'C': // button C on Textstar LCD -> cycle time
++     strcpy(line1,"Cycle    _____us"); //uin16_t cycleTime
++     /*            0123456789.12345*/
++     strcpy(line2,"[_____, _____]us"); //uin16_t cycleTimeMax
++     line1[9] = '0' + cycleTime / 10000;
++     line1[10] = '0' + cycleTime / 1000 - (cycleTime/10000) * 10;
++     line1[11] = '0' + cycleTime / 100  - (cycleTime/1000)  * 10;
++     line1[12] = '0' + cycleTime / 10   - (cycleTime/100)   * 10;
++     line1[13] = '0' + cycleTime        - (cycleTime/10)    * 10;
++   #ifdef LOG_VALUES
++     line2[1] = '0' + cycleTimeMin / 10000;
++     line2[2] = '0' + cycleTimeMin / 1000 - (cycleTimeMin/10000) * 10;
++     line2[3] = '0' + cycleTimeMin / 100  - (cycleTimeMin/1000)  * 10;
++     line2[4] = '0' + cycleTimeMin / 10   - (cycleTimeMin/100)   * 10;
++     line2[5] = '0' + cycleTimeMin        - (cycleTimeMin/10)    * 10;
++     line2[8] = '0' + cycleTimeMax / 10000;
++     line2[9] = '0' + cycleTimeMax / 1000 - (cycleTimeMax/10000) * 10;
++     line2[10] = '0' + cycleTimeMax / 100  - (cycleTimeMax/1000)  * 10;
++     line2[11] = '0' + cycleTimeMax / 10   - (cycleTimeMax/100)   * 10;
++     line2[12] = '0' + cycleTimeMax        - (cycleTimeMax/10)    * 10;
++     LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
++   #endif
++     LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
++     break;
++   case 'B': // button B on Textstar LCD -> Voltage, PowerSum and power alarm trigger value
++     strcpy(line1,"__._V   _____mAh"); //uint8_t vbat, intPowerMeterSum
++     /*            0123456789.12345*/
++     //    (line2,".......  ......."); // intPowerMeterSum, intPowerTrigger1
++   #ifdef VBAT
++     line1[0] = '0'+vbat/100; line1[1] = '0'+vbat/10-(vbat/100)*10; line1[3] = '0'+vbat-(vbat/10)*10;
++   #endif
++   #ifdef POWERMETER
++     intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
++     line1[8] = '0' + intPowerMeterSum / 10000;
++     line1[9] = '0' + intPowerMeterSum / 1000 - (intPowerMeterSum/10000) * 10;
++     line1[10] = '0' + intPowerMeterSum / 100  - (intPowerMeterSum/1000)  * 10;
++     line1[11] = '0' + intPowerMeterSum / 10   - (intPowerMeterSum/100)   * 10;
++     line1[12] = '0' + intPowerMeterSum        - (intPowerMeterSum/10)    * 10;
++     //line2[13] = '0'+powerTrigger1/100; line2[14] = '0'+powerTrigger1/10-(powerTrigger1/100)*10; line2[15] = '0'+powerTrigger1-(powerTrigger1/10)*10;
++   #endif
++     LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
++     LCDprint(0xFE);LCDprint('L');LCDprint(2); //position on line 2 of LCD
++   #ifdef VBAT
++     LCD_BAR(7, (((vbat-VBATLEVEL1_3S)*100)/VBATREF) );
++     LCDprintChar("  ");
++   #endif
++   #ifdef POWERMETER  
++     //     intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
++     //   pAlarm = (uint32_t) powerTrigger1 * (uint32_t) PLEVELSCALE * (uint32_t) PLEVELDIV; // need to cast before multiplying
++     if (powerTrigger1)
++       LCD_BAR(7, (intPowerMeterSum/powerTrigger1 *2) ); // bar graph powermeter (scale intPowerMeterSum/powerTrigger1 with *100/PLEVELSCALE)
++   #endif
++     break;
++   case 'A': // button A on Textstar LCD -> angles 
++     uint16_t unit;
++     strcpy(line1,"Deg ___._  ___._");
++     /*            0123456789.12345*/
++     strcpy(line2,"___,_A max___,_A"); //uin16_t cycleTimeMax
++     if (angle[0] < 0 ) {
++       unit = -angle[0];
++       line1[3] = '-';
++     } else 
++       unit = angle[0];
++     //line1[5] = '0' + unit / 10000;
++     line1[4] = '0' + unit / 1000; //- (unit/10000) * 10;
++     line1[5] = '0' + unit / 100  - (unit/1000)  * 10;
++     line1[6] = '0' + unit / 10   - (unit/100)   * 10;
++     line1[8] = '0' + unit       - (unit/10)    * 10;
++     if (angle[1] < 0 ) {
++       unit = -angle[1];
++       line1[10] = '-';
++     } else 
++       unit = angle[1];
++     //line1[5] = '0' + unit / 10000;
++     line1[11] = '0' + unit / 1000; //- (unit/10000) * 10;
++     line1[12] = '0' + unit / 100  - (unit/1000)  * 10;
++     line1[13] = '0' + unit / 10   - (unit/100)   * 10;
++     line1[15] = '0' + unit       - (unit/10)    * 10;
++     #ifdef LOG_VALUES
++       unit = powerAvg * PINT2mA;
++       line2[0] = '0' + unit / 10000;
++       line2[1] = '0' + unit / 1000 - (unit/10000) * 10;
++       line2[2] = '0' + unit / 100  - (unit/1000)  * 10;
++       line2[4] = '0' + unit / 10   - (unit/100)   * 10;
++       unit = powerMax * PINT2mA;
++       line2[10] = '0' + unit / 10000;
++       line2[11] = '0' + unit / 1000 - (unit/10000) * 10;
++       line2[12] = '0' + unit / 100  - (unit/1000)  * 10;
++       line2[14] = '0' + unit / 10   - (unit/100)   * 10;
++       LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
++     #endif
++     LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
++     break;    
++   case 'D': // button D on Textstar LCD -> sensors
++   #define GYROLIMIT 30 // threshold: for larger values replace bar with dots
++   #define ACCLIMIT 40 // threshold: for larger values replace bar with dots
++     LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar("G "); //refresh line 1 of LCD
++     if (abs(gyroData[0]) < GYROLIMIT) { LCD_BAR(4,(abs(gyroData[0])*100/GYROLIMIT)) } else LCDprintChar("...."); LCDprint(' ');
++     if (abs(gyroData[1]) < GYROLIMIT) { LCD_BAR(4,(abs(gyroData[1])*100/GYROLIMIT)) } else LCDprintChar("...."); LCDprint(' ');
++     if (abs(gyroData[2]) < GYROLIMIT) { LCD_BAR(4,(abs(gyroData[2])*100/GYROLIMIT)) } else LCDprintChar("....");
++     LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar("A "); //refresh line 2 of LCD
++     if (abs(accSmooth[0]) < ACCLIMIT) { LCD_BAR(4,(abs(accSmooth[0])*100/ACCLIMIT)) } else LCDprintChar("...."); LCDprint(' ');
++     if (abs(accSmooth[1]) < ACCLIMIT) { LCD_BAR(4,(abs(accSmooth[1])*100/ACCLIMIT)) } else LCDprintChar("...."); LCDprint(' ');
++     if (abs(accSmooth[2] - acc_1G) < ACCLIMIT) { LCD_BAR(4,(abs(accSmooth[2]-acc_1G)*100/ACCLIMIT)) } else LCDprintChar("....");
++     break; 
++   } // end switch (telemetry) 
++} // end function
++#endif //  LCD_TELEMETRY
++
+diff -u /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/MultiWii.pde /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/MultiWii.pde
+--- /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/MultiWii.pde	2011-06-25 17:11:16.000000000 +0200
++++ /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/MultiWii.pde	2011-06-26 13:49:21.000000000 +0200
+@@ -9,6 +9,8 @@
+ */
+ 
+ #include "config.h"
++
++
+ #include "def.h"
+ #define   VERSION  18
+ 
+@@ -67,9 +69,10 @@
+   static uint16_t powerMax = 0;          // highest ever current 
+   static uint16_t powerAvg = 0;          // last known current
+ #endif
+-static uint32_t pMeter[7];         //we use [0:5] for six motors,[6] for sum
++#define PMOTOR_SUM 8               // index into pMeter[] for sum
++static uint32_t pMeter[PMOTOR_SUM + 1];         //we use [0:7] for eight motors,one extra for sum
+ static uint8_t pMeterV;            // dummy to satisfy the paramStruct logic in ConfigurationLoop()
+-static uint32_t pAlarm;            // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[6]
++static uint32_t pAlarm;            // we scale the eeprom value from [0:255] to this value we can directly compare to the sum in pMeter[PMOTOR_SUM]
+ static uint8_t powerTrigger1 = 0;  // trigger for alarm based on power consumption
+ #if defined(POWERMETER)
+   #ifndef VBAT
+@@ -148,11 +151,14 @@
+   static uint8_t buzzerFreq;         //delay between buzzer ring
+   uint8_t axis;
+   uint8_t prop1,prop2;
+-  #ifdef LCD_TELEMETRY_AUTO
++  #ifdef LCD_TELEMETRY
+     static uint32_t telemetryTime = 0;
+   #endif
++  #ifdef LCD_TELEMETRY_AUTO
++    static uint32_t telemetryAutoTime = 0;
++  #endif
+   #if (POWERMETER == 2)
+-    static uint16_t pmeter6Raw, powerValue;         //used for current reading
++    uint16_t pmeter6Raw, powerValue;         //used for current reading
+     static uint16_t pmeter6Avg = PSENSORNULL * 8;   //used for smoothing current reading
+   #endif
+ 
+@@ -175,15 +181,15 @@
+ 
+   #if (POWERMETER == 2)
+      pmeter6Raw =  analogRead(PSENSORPIN);
+-     pmeter6Avg = (pmeter6Avg * 3 + pmeter6Raw*8)/4; // average of last 4 values; use value*8 for better accuracy
+-     powerValue = abs(PSENSORNULL - pmeter6Avg/8);
++     pmeter6Avg = (pmeter6Avg * 2 + pmeter6Raw*8 +1)/3; // average of last 3 values; use value*8 for better accuracy
++     powerValue = ( PSENSORNULL > pmeter6Avg/8 ? PSENSORNULL - pmeter6Avg/8 : pmeter6Avg/8 - PSENSORNULL); // do not use abs(), it would induce implicit cast to uint and overrun
+      #ifdef LOG_VALUES
+        if ( powerValue < 256) {  // only accept reasonable values. 256 is empirical
+          if (powerValue > powerMax) powerMax = powerValue;
+          powerAvg = powerValue;
+        }
+      #endif
+-     pMeter[6] += (uint32_t) ( powerValue * ( cycleTime/PHARDINTDIV) );
++     pMeter[PMOTOR_SUM] += (uint32_t) ( powerValue * ( cycleTime/PHARDINTDIV) );
+   #endif
+ 
+   #if defined(VBAT)
+@@ -192,13 +198,13 @@
+      
+     if ( (vbat>VBATLEVEL1_3S) 
+     #if defined(POWERMETER)
+-                         && ( (pMeter[6] < pAlarm) || (pAlarm == 0) )
++                         && ( (pMeter[PMOTOR_SUM] < pAlarm) || (pAlarm == 0) )
+     #endif
+                                                                         )
+     {                                          //VBAT ok AND powermeter ok, buzzer off
+       buzzerFreq = 0; buzzerState = 0; BUZZERPIN_OFF;
+     #if defined(POWERMETER)
+-    } else if (pMeter[6] > pAlarm) {                             // sound alarm for powermeter
++    } else if (pMeter[PMOTOR_SUM] > pAlarm) {                             // sound alarm for powermeter
+       buzzerFreq = 4;
+     #endif
+     } else if (vbat>VBATLEVEL2_3S)
+@@ -236,13 +242,19 @@
+     serialTime = micros();
+   }
+   #ifdef LCD_TELEMETRY_AUTO
+-    if ( (telemetry_auto) && (micros() > telemetryTime + LCD_TELEMETRY_AUTO) ) { // every 2 seconds
++    if ( (telemetry_auto) && (micros() > telemetryAutoTime + LCD_TELEMETRY_AUTO) ) { // every 2 seconds
+       telemetry++;
+       if ( (telemetry < 'A' ) || (telemetry > 'D' ) ) telemetry = 'A';
+-      telemetryTime = micros(); // why use micros() and not the variable currentTime ?
++      telemetryAutoTime = micros(); // why use micros() and not the variable currentTime ?
+     }
+   #endif  
+-
++  #ifdef LCD_TELEMETRY
++    if (micros() > telemetryTime +  LCD_TELEMETRY) { // 10Hz
++      if (telemetry) lcd_telemetry();
++      telemetryTime = micros();  
++    }
++  #endif  
++  
+   for(axis=0;axis<2;axis++) {
+     uint16_t tmp = abs(rcData[axis]-MIDRC);
+     uint16_t tmp2 = tmp/100;
+@@ -273,7 +285,7 @@
+   #endif
+   calibratingG = 400;
+   #if defined(POWERMETER)
+-    for(uint8_t i=0;i<7;i++) // 6 is the maximum number of possible motors, array is larger by one to append the sum
++    for(uint8_t i=0;i<=PMOTOR_SUM;i++) // 6 is the maximum number of possible motors, array is larger by one to append the sum
+       pMeter[i]=0;
+   #endif
+ }
+diff -u /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/Output.pde /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/Output.pde
+--- /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/Output.pde	2011-06-25 17:11:16.000000000 +0200
++++ /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/Output.pde	2011-06-26 13:01:37.000000000 +0200
+@@ -71,7 +71,7 @@
+          pMeter[i]+= amp; // sum up over time the mapped ESC input 
+       #endif
+       #if (POWERMETER == 1)
+-         pMeter[6]+= amp; // total sum over all motors
++         pMeter[PMOTOR_SUM]+= amp; // total sum over all motors
+       #endif
+     }
+   }
+@@ -356,4 +356,4 @@
+       motor[i] = MINCOMMAND;
+   }
+ }
+-
++
+diff -u /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/Sensors.pde /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/Sensors.pde
+--- /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/Sensors.pde	2011-06-25 17:11:16.000000000 +0200
++++ /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/Sensors.pde	2011-06-25 17:24:07.000000000 +0200
+@@ -533,7 +533,7 @@
+   delay(5);
+   i2c_writeReg(ITG3200_ADDRESS, 0x15, 0x07); //register: Sample Rate Divider  --  value: 7: 8000Hz/(7+1) = 1000Hz . more than twice the need
+   delay(5);
+-  i2c_writeReg(ITG3200_ADDRESS, 0x16, 0x18); //register: DLPF_CFG - low pass filter configuration & sample rate  --  value: 256Hz Low Pass Filter Bandwidth - Internal Sample Rate 8kHz
++  i2c_writeReg(ITG3200_ADDRESS, 0x16, 0x1D); //register: DLPF_CFG - low pass filter configuration & sample rate  --  value: 10Hz Low Pass Filter Bandwidth - Internal Sample Rate 8kHz
+   delay(5);
+   i2c_writeReg(ITG3200_ADDRESS, 0x3E, 0x03); //register: Power Management  --  value: PLL with Z Gyro reference
+   delay(100);
+@@ -679,4 +679,4 @@
+   if (BARO) Baro_init();
+   if (ACC) ACC_init();
+   if (MAG) Mag_init();
+-}
++}
+diff -u /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/Serial.pde /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/Serial.pde
+--- /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/Serial.pde	2011-06-25 17:11:16.000000000 +0200
++++ /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/Serial.pde	2011-06-26 13:01:37.000000000 +0200
+@@ -32,130 +32,6 @@
+   uint8_t i;
+ 
+   uint16_t intPowerMeterSum, intPowerTrigger1;   
+-
+-#ifdef LCD_TELEMETRY
+-  // LCD_BAR(n,v) : draw a bar graph - n number of chars for width, v value in % to display
+-  #ifdef LCD_TEXTSTAR
+-    #define LCD_BAR(n,v) { LCDprint(0xFE);LCDprint('b');LCDprint(n);LCDprint(v); }
+-  #else 
+-    #define LCD_BAR(n,v) {} // add your own implementation here
+-  #endif
+-  char line1[17],line2[17];
+-  static uint8_t telecycle = 0;
+-  
+-  if (++telecycle > TELEMETRY_CYCLES) {
+-    telecycle = 0;
+-
+-    switch (telemetry) { // output telemetry data, if one of four modes is set
+-      case 'C': // button C on Textstar LCD -> cycle time
+-        strcpy(line1,"Cycle    _____us"); //uin16_t cycleTime
+-        /*            0123456789.12345*/
+-        strcpy(line2,"[_____, _____]us"); //uin16_t cycleTimeMax
+-        line1[9] = '0' + cycleTime / 10000;
+-        line1[10] = '0' + cycleTime / 1000 - (cycleTime/10000) * 10;
+-        line1[11] = '0' + cycleTime / 100  - (cycleTime/1000)  * 10;
+-        line1[12] = '0' + cycleTime / 10   - (cycleTime/100)   * 10;
+-        line1[13] = '0' + cycleTime        - (cycleTime/10)    * 10;
+-      #ifdef LOG_VALUES
+-        line2[1] = '0' + cycleTimeMin / 10000;
+-        line2[2] = '0' + cycleTimeMin / 1000 - (cycleTimeMin/10000) * 10;
+-        line2[3] = '0' + cycleTimeMin / 100  - (cycleTimeMin/1000)  * 10;
+-        line2[4] = '0' + cycleTimeMin / 10   - (cycleTimeMin/100)   * 10;
+-        line2[5] = '0' + cycleTimeMin        - (cycleTimeMin/10)    * 10;
+-        line2[8] = '0' + cycleTimeMax / 10000;
+-        line2[9] = '0' + cycleTimeMax / 1000 - (cycleTimeMax/10000) * 10;
+-        line2[10] = '0' + cycleTimeMax / 100  - (cycleTimeMax/1000)  * 10;
+-        line2[11] = '0' + cycleTimeMax / 10   - (cycleTimeMax/100)   * 10;
+-        line2[12] = '0' + cycleTimeMax        - (cycleTimeMax/10)    * 10;
+-        LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
+-      #endif
+-        LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+-        break;
+-      case 'B': // button B on Textstar LCD -> Voltage, PowerSum and power alarm trigger value
+-        strcpy(line1,"__._V   _____mAh"); //uint8_t vbat, intPowerMeterSum
+-        /*            0123456789.12345*/
+-        //strcpy(line2,".......  ......."); // intPowerMeterSum, intPowerTrigger1
+-      #ifdef VBAT
+-        line1[0] = '0'+vbat/100; line1[1] = '0'+vbat/10-(vbat/100)*10; line1[3] = '0'+vbat-(vbat/10)*10;
+-      #endif
+-      #ifdef POWERMETER
+-        intPowerMeterSum = (pMeter[6]/PLEVELDIV);
+-        line1[8] = '0' + intPowerMeterSum / 10000;
+-        line1[9] = '0' + intPowerMeterSum / 1000 - (intPowerMeterSum/10000) * 10;
+-        line1[10] = '0' + intPowerMeterSum / 100  - (intPowerMeterSum/1000)  * 10;
+-        line1[11] = '0' + intPowerMeterSum / 10   - (intPowerMeterSum/100)   * 10;
+-        line1[12] = '0' + intPowerMeterSum        - (intPowerMeterSum/10)    * 10;
+-        //line2[13] = '0'+powerTrigger1/100; line2[14] = '0'+powerTrigger1/10-(powerTrigger1/100)*10; line2[15] = '0'+powerTrigger1-(powerTrigger1/10)*10;
+-      #endif
+-        LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+-        LCDprint(0xFE);LCDprint('L');LCDprint(2); //position on line 2 of LCD
+-      #ifdef VBAT
+-        LCD_BAR(7, (((vbat-VBATLEVEL1_3S)*100)/VBATREF) );
+-        LCDprintChar("  ");
+-      #endif
+-      #ifdef POWERMETER  
+-        //     intPowerMeterSum = (pMeter[6]/PLEVELDIV);
+-        //   pAlarm = (uint32_t) powerTrigger1 * (uint32_t) PLEVELSCALE * (uint32_t) PLEVELDIV; // need to cast before multiplying
+-        if (powerTrigger1)
+-          LCD_BAR(7, (intPowerMeterSum/powerTrigger1 *2) ); // bar graph powermeter (scale intPowerMeterSum/powerTrigger1 with *100/PLEVELSCALE)
+-      #endif
+-        break;
+-      case 'A': // button A on Textstar LCD -> angles 
+-        uint16_t unit;
+-        strcpy(line1,"Deg ___._  ___._");
+-        /*            0123456789.12345*/
+-        strcpy(line2,"__,__A max__,__A"); //uin16_t cycleTimeMax
+-        if (angle[0] < 0 ) {
+-          unit = -angle[0];
+-          line1[3] = '-';
+-        } else 
+-          unit = angle[0];
+-        //line1[5] = '0' + unit / 10000;
+-        line1[4] = '0' + unit / 1000; //- (unit/10000) * 10;
+-        line1[5] = '0' + unit / 100  - (unit/1000)  * 10;
+-        line1[6] = '0' + unit / 10   - (unit/100)   * 10;
+-        line1[8] = '0' + unit       - (unit/10)    * 10;
+-        if (angle[1] < 0 ) {
+-          unit = -angle[1];
+-          line1[10] = '-';
+-        } else 
+-          unit = angle[1];
+-        //line2[5] = '0' + unit / 10000;
+-        line1[11] = '0' + unit / 1000; //- (unit/10000) * 10;
+-        line1[12] = '0' + unit / 100  - (unit/1000)  * 10;
+-        line1[13] = '0' + unit / 10   - (unit/100)   * 10;
+-        line1[15] = '0' + unit       - (unit/10)    * 10;
+-        #ifdef LOG_VALUES
+-          unit = powerAvg * PINT2mA;
+-          line2[0] = '0' + unit / 10000;
+-          line2[1] = '0' + unit / 1000 - (unit/10000) * 10;
+-          line2[3] = '0' + unit / 100  - (unit/1000)  * 10;
+-          line2[4] = '0' + unit / 10   - (unit/100)   * 10;
+-          unit = powerMax * PINT2mA;
+-          line2[10] = '0' + unit / 10000;
+-          line2[11] = '0' + unit / 1000 - (unit/10000) * 10;
+-          line2[13] = '0' + unit / 100  - (unit/1000)  * 10;
+-          line2[14] = '0' + unit / 10   - (unit/100)   * 10;
+-          //line2[13] = '0' + unit        - (unit/10)    * 10;
+-          LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar(line2); //refresh line 2 of LCD
+-        #endif
+-        LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar(line1); //refresh line 1 of LCD
+-        break;    
+-      case 'D': // button D on Textstar LCD -> sensors
+-      #define GYROLIMIT 30 // threshold: for larger values replace bar with dots
+-      #define ACCLIMIT 40 // threshold: for larger values replace bar with dots
+-        LCDprint(0xFE);LCDprint('L');LCDprint(1);LCDprintChar("G "); //refresh line 1 of LCD
+-        if (abs(gyroData[0]) < GYROLIMIT) { LCD_BAR(4,(abs(gyroData[0])*100/GYROLIMIT)) } else LCDprintChar("...."); LCDprint(' ');
+-        if (abs(gyroData[1]) < GYROLIMIT) { LCD_BAR(4,(abs(gyroData[1])*100/GYROLIMIT)) } else LCDprintChar("...."); LCDprint(' ');
+-        if (abs(gyroData[2]) < GYROLIMIT) { LCD_BAR(4,(abs(gyroData[2])*100/GYROLIMIT)) } else LCDprintChar("....");
+-        LCDprint(0xFE);LCDprint('L');LCDprint(2);LCDprintChar("A "); //refresh line 2 of LCD
+-        if (abs(accSmooth[0]) < ACCLIMIT) { LCD_BAR(4,(abs(accSmooth[0])*100/ACCLIMIT)) } else LCDprintChar("...."); LCDprint(' ');
+-        if (abs(accSmooth[1]) < ACCLIMIT) { LCD_BAR(4,(abs(accSmooth[1])*100/ACCLIMIT)) } else LCDprintChar("...."); LCDprint(' ');
+-        if (abs(accSmooth[2] - acc_1G) < ACCLIMIT) { LCD_BAR(4,(abs(accSmooth[2]-acc_1G)*100/ACCLIMIT)) } else LCDprintChar("....");
+-        break; 
+-    } // end switch (telemetry) 
+-  } // end if (++telecycle > TELEMETRY_CYCLES)
+-#endif //  LCD_TELEMETRY
+   
+   if ((!tx_busy) && Serial.available()) {
+     switch (Serial.read()) {
+@@ -229,7 +105,7 @@
+       serialize8(dynThrPID); //88
+       for(i=0;i<6;i++) serialize8(activate[i]); //94
+       #if defined(POWERMETER)
+-        intPowerMeterSum = (pMeter[6]/PLEVELDIV);
++        intPowerMeterSum = (pMeter[PMOTOR_SUM]/PLEVELDIV);
+         intPowerTrigger1 = powerTrigger1 * PLEVELSCALE;
+       #endif    
+       serialize16(intPowerMeterSum);  
+diff -u /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/config.h /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/config.h
+--- /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/trunk/MultiWii/config.h	2011-06-25 17:11:16.000000000 +0200
++++ /Volumes/rack/RC-Heli/MultiWii/google-code/multiwii/branches/Hamburger/r181-plus/MultiWii/config.h	2011-06-26 01:12:33.000000000 +0200
+@@ -11,9 +11,9 @@
+ /* The type of multicopter */
+ //#define GIMBAL
+ //#define BI
+-//#define TRI
++#define TRI
+ //#define QUADP
+-#define QUADX
++//#define QUADX
+ //#define Y4
+ //#define Y6
+ //#define HEX6
+@@ -29,8 +29,8 @@
+ #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
+ //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
+ 
+-//#define PROMINI  //Arduino type
+-#define MEGA
++#define PROMINI  //Arduino type
++//#define MEGA
+ 
+ //enable internal I2C pull ups
+ //#define INTERNAL_I2C_PULLUPS
+@@ -70,7 +70,7 @@
+ //                   for other boards, I'm not sure, the info was gathered via rc forums, be cautious
+ 
+ //#define FFIMUv1    //first 9DOF+baro board from Jussi, with HMC5843
+-#define FFIMUv2    //second version of 9DOF+baro board from Jussi, with HMC5883
++//#define FFIMUv2    //second version of 9DOF+baro board from Jussi, with HMC5883
+ //#define FREEIMUv01 //first version of 9DOF board from Fabio
+ //#define FREEIMU    //later version of 9DOF board from Fabio
+ //#define PIPO       //9DOF board from erazz
+@@ -181,8 +181,8 @@
+ 
+ /* enable monitoring of the power consumption from battery (think of mAh) */
+ /* allows to set alarm value in GUI or via LCD */
+-/* Current first implementation method is pure software. */
+-/* soft: - (good results +-5% for plush and mystery ESCs @ 2S and 3S, not good with SuperSimple ESC */
++/* Two options: */
++/* 1 - soft: - (good results +-5% for plush and mystery ESCs @ 2S and 3S, not good with SuperSimple ESC */
+ /*      00. relies on your combo of battery type (Voltage, cpacity), ESC, ESC settings, motors, props and multiwii cycle time */
+ /*      01. set POWERMETER soft. Uses PLEVELSCALE = 50, PLEVELDIV = PLEVELDIVSOFT = 10000 */
+ /*      0. output is a value that linearily scales to power (mAh) */
+@@ -195,7 +195,7 @@
+ /*      7. set alarm value in GUI or LCD */
+ /*      8. enjoy your new battery alarm - possibly repeat steps 2 .. 7 */
+ /*      9. if you want the numbers to represent your mAh value, you must change PLEVELDIV */
+-/* hard: - (uses hardware sensor, after configuration gives reasonable results */
++/* 2 - hard: - (uses hardware sensor, after configuration gives reasonable results */
+ /*      00. uses analog pin 2 to read voltage output from sensor. */
+ /*      01. set POWERMETER hard. Uses PLEVELSCALE = 50 */
+ /*      1. compute PLEVELDIV for your sensor (see below for insturctions) */
+@@ -220,15 +220,15 @@
+ /* PLEVELDIV = 37 / 4.9  * 10e6 / PHARDINTDIV  * 3600 / 1000  = 424745L */
+ /* set to analogRead() value for zero current */
+ #define PSENSORNULL 510 // for I=0A my sensor gives 1/2 Vss; that is approx 2.49Volt
+-#define PINT2mA 132 // one integer step on arduino analog translates to mA (example 4.9 / 37 * 1000
++#define PINT2mA 13 // for telemtry display: one integer step on arduino analog translates to mA (example 4.9 / 37 * 100
+ 
+ /* to monitor system values (battery level, loop time etc. with LCD enable this */
+ /* note: for now you must send single characters 'A', 'B', 'C', 'D' to request 4 different pages */
+-/* New: the info page on the LCD does get updated automatically - for stop press same button again */
+-/* easy to use with Textstar LCD - the 4 buttons are preconfigured to send 'A', 'B', 'C', 'D' */
+-//#define LCD_TELEMETRY
+-// update interval for telemtry data - every n cycles
+-#define TELEMETRY_CYCLES 10
++/* Buttons toggle request for page on/off */
++/* The active page on the LCD does get updated automatically */
++/* Easy to use with Terminal application or Textstar LCD - the 4 buttons are preconfigured to send 'A', 'B', 'C', 'D' */
++/* The value represents the refresh interval in cpu time (micro seconds) */
++//#define LCD_TELEMETRY 100000
+ /* to enable automatic hopping between 4 telemetry pages uncomment this. */
+ /* This may be useful if your LCD has no buttons or the sending is broken */
+ /* hopping is activated and deactivated in unarmed mode with throttle=low & roll=left & pitch=forward */
+@@ -239,8 +239,8 @@
+ /* Example: 12.6V - VBATLEVEL1_3S  (for me = 126 - 102 = 24) */
+ #define VBATREF 24 
+ 
+-/* to log values like max loop time and others to come, we need extra variables */
+-/* if you do not want the additional computing time or are short on memory, then comment the following */
++/* to log values like max loop time and others to come */
++/* logging values are visible via LCD config */
+ //#define LOG_VALUES
+  
+ //****** end of advanced users settings *************
+@@ -251,4 +251,4 @@
+ 
+ /**************************************/
+ /****END OF CONFIGURABLE PARAMETERS****/
+-/**************************************/
++/**************************************/

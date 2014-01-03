@@ -1,0 +1,3 @@
+files are now located here:
+
+http://code.google.com/p/multiwii/downloads/list

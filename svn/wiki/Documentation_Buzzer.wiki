@@ -1,0 +1,50 @@
+#summary How to use the Buzzer.
+#labels Documentation,Feature
+
+= Introduction =
+
+The buzzer is used to give the pilot some feedback of the functions and errors of the MultiWii system. 
+
+= Table of contents =
+  # Hardware setup
+  # Software setup
+  # How it works
+
+= Hardware =
+You need to connect a piezo buzzer or a pilotlamp to the dedicated buzzer port of you FC.
+
+= Software =
+
+In config.h you need to alter one of the following lines:
+
+#define BUZZER
+
+#define PILOTLAMP
+
+to enable the buzzer.
+
+= How it works =
+
+There are several mandatory and optional beeping patterns to indicate the different states of the MultWii system. The patternn consist of 3 beeps followed by a pause. The length of the beeps and pauses are defined as follows:
+ * N: None (0ms)
+ * S: Short (50ms)
+ * L: Long (200ms)
+ * D: Double (2000ms)
+
+The beeps are priority driven, the first entry has the highest priority:
+ 
+ # *Failsafe find me signal:* LNN,D (repeat)
+ # *Failsafe landing active:* SLL,S  (repeat)  
+ # *GPS RTH/ PH activated without fix:* SSN,S (repeat)   
+ # *Beeper:* SSS,S (repeat)
+ # *Runtime Warning:* SSS,N (repeat)  (#define ARMEDTIMEWARNING)
+ # *Battery voltage warning level 3:* SLL,D (repeat)
+ # *Battery voltage warning level 2:* SSL,D (repeat)
+ # *Battery voltage warning level 1:* SLN,D (repeat)
+ # *RCoptions Toggle:* S   (#define RCOPTIONSBEEP)
+Additional beeps
+ * *Inflight ACC calibration activated:* SS (#define INFLIGHT_ACC_CALIBRATION)
+ * *Inflight ACC calibration deactivated:* SSS
+ * *Gyro calibration done:* SSS
+ * *ACC calibration done:* L
+ * *LCD Configuration step:* S

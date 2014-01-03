@@ -1,0 +1,1 @@
+The 8 bit device address, 0x80, assumes SDO connected to GND.  If connected to 3.3v, use 0x82.
