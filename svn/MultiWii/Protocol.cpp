@@ -13,7 +13,9 @@
 
 /************************************** MultiWii Serial Protocol *******************************************************/
 // Multiwii Serial Protocol 0 
-#define MSP_VERSION              0
+#define MSP_VERSION                0
+
+#define MSP_CUSTOM                 1  // unknow message    custom crafted message
 
 //to multiwii developpers/committers : do not add new MSP messages without a proper argumentation/agreement on the forum
 #define MSP_IDENT                100   //out message         multitype + multiwii version + protocol version + capability variable
@@ -243,6 +245,9 @@ void evaluateCommand() {
   uint32_t tmp=0; 
 
   switch(cmdMSP[CURRENTPORT]) {
+  case MSP_CUSTOM:
+      headSerialError(0); // we dot have any custom msp , tell the gui we do not use that
+      break;
    case MSP_SET_RAW_RC:
      s_struct_w((uint8_t*)&rcSerial,16);
      rcSerialCount = 50; // 1s transition 
