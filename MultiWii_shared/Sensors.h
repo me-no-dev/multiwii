@@ -104,4 +104,8 @@ uint8_t i2c_readNak();
   #define GYRO_SCALE (1.0f/200e6f)
 #endif
 
+#ifdef PCF8591
+  void pcf_getADC(void);
+#endif
+
 #endif /* SENSORS_H_ */

@@ -44,6 +44,10 @@ extern int16_t  sonarAlt;
 extern int16_t  BaroPID;
 extern int16_t  errorAltitudeI;
 
+#ifdef PCF8591
+extern pcf8591_t pcf8591;
+#endif /* PCF8591 */
+
 extern int16_t  i2c_errors_count;
 extern uint8_t alarmArray[16];
 extern global_conf_t global_conf;

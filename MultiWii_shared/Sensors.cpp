@@ -1763,7 +1763,29 @@ inline void Sonar_init() {}
 void Sonar_update() {}
 #endif
 
+// ****************************************************************************
+// I2C ADC PCF8591
+// ****************************************************************************
+#ifdef PCF8591
+#define PCF8591_ADDRESS 0x48
 
+void pcf_getADC(void) {
+  uint8_t *b = (uint8_t *)&pcf8591;
+  TWBR = ((F_CPU / 100000) - 16) / 2;    // set the I2C clock rate to 100kHz
+  /* Set auto increment bit */
+  i2c_rep_start(PCF8591_ADDRESS<<1);
+  i2c_write(0x04);
+  i2c_stop();
+  /* Read the four channels */
+  i2c_rep_start((PCF8591_ADDRESS<<1) | 1);
+  i2c_read(1); // Trigger the conversion
+  *b++ = i2c_read(1);
+  *b++ = i2c_read(1);
+  *b++ = i2c_read(1);
+  *b = i2c_read(0);
+  TWBR = ((F_CPU / 400000) - 16) / 2;    // back to 400kHz
+}
+#endif /* PCF8591 */
 
 void initSensors() {
   delay(200);
@@ -1776,5 +1798,6 @@ void initSensors() {
   if (MAG) Mag_init();
   if (ACC) ACC_init();
   if (SONAR) Sonar_init();
+//if (PCF8591) pcf_init();
   f.I2C_INIT_DONE = 1;
 }
