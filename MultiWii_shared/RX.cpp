@@ -90,17 +90,14 @@ void configureReceiver() {
     
   /*************************   Special RX Setup   ********************************/
   #endif
-  // Init PPM SUM RX
   #if defined(SERIAL_SUM_PPM)
     PPM_PIN_INTERRUPT; 
   #endif
-  // Init Sektrum Satellite RX
   #if defined (SPEKTRUM)
-    SerialOpen(SPEK_SERIAL_PORT,115200);
+    SerialOpen(RX_SERIAL_PORT,115200);
   #endif
-  // Init SBUS RX
   #if defined(SBUS)
-    SerialOpen(1,100000);
+    SerialOpen(RX_SERIAL_PORT,100000);
   #endif
 }
 
@@ -300,14 +297,17 @@ void configureReceiver() {
 #if defined(SBUS)
 void  readSBus(){
   #define SBUS_SYNCBYTE 0x0F // Not 100% sure: at the beginning of coding it was 0xF0 !!!
+  #define SBUS_ENDBYTE 0x00
   static uint16_t sbus[25]={0};
-  while(SerialAvailable(SBUS_SERIAL_PORT)){
-    int val = SerialRead(SBUS_SERIAL_PORT);
+  while(SerialAvailable(RX_SERIAL_PORT)){
+    int val = SerialRead(RX_SERIAL_PORT);
     if(sbusIndex==0 && val != SBUS_SYNCBYTE)
       continue;
     sbus[sbusIndex++] = val;
     if(sbusIndex==25){
       sbusIndex=0;
+      spekFrameFlags = 0x00;
+      if (sbus[24] != SBUS_ENDBYTE) continue; 
       rcValue[0]  = ((sbus[1]|sbus[2]<< 8) & 0x07FF)/2+SBUS_MID_OFFSET;
       rcValue[1]  = ((sbus[2]>>3|sbus[3]<<5) & 0x07FF)/2+SBUS_MID_OFFSET; 
       rcValue[2]  = ((sbus[3]>>6|sbus[4]<<2|sbus[5]<<10) & 0x07FF)/2+SBUS_MID_OFFSET; 
@@ -328,6 +328,7 @@ void  readSBus(){
       // now the two Digital-Channels
       if ((sbus[23]) & 0x0001)       rcValue[16] = 2000; else rcValue[16] = 1000;
       if ((sbus[23] >> 1) & 0x0001)  rcValue[17] = 2000; else rcValue[17] = 1000;
+      spekFrameDone = 0x01;
 
       // Failsafe: there is one Bit in the SBUS-protocol (Byte 25, Bit 4) whitch is the failsafe-indicator-bit
       #if defined(FAILSAFE)
@@ -346,29 +347,30 @@ void  readSBus(){
 #if defined(SPEKTRUM)
 void readSpektrum(void) {
   if ((!f.ARMED) && 
-     #if defined(FAILSAFE) || (SPEK_SERIAL_PORT != 0) 
+     #if defined(FAILSAFE) || (RX_SERIAL_PORT != 0) 
         (failsafeCnt > 5) &&
      #endif
-      ( SerialPeek(SPEK_SERIAL_PORT) == '$')) {
-    while (SerialAvailable(SPEK_SERIAL_PORT)) {
+      ( SerialPeek(RX_SERIAL_PORT) == '$')) {
+    while (SerialAvailable(RX_SERIAL_PORT)) {
       serialCom();
       delay (10);
     }
     return;
   } //End of: Is it the GUI?
-  while (SerialAvailable(SPEK_SERIAL_PORT) > SPEK_FRAME_SIZE) { // More than a frame?  More bytes implies we weren't called for multiple frame times.  We do not want to process 'old' frames in the buffer.
-    for (uint8_t i = 0; i < SPEK_FRAME_SIZE; i++) {SerialRead(SPEK_SERIAL_PORT);}  //Toss one full frame of bytes.
+  while (SerialAvailable(RX_SERIAL_PORT) > SPEK_FRAME_SIZE) { // More than a frame?  More bytes implies we weren't called for multiple frame times.  We do not want to process 'old' frames in the buffer.
+    for (uint8_t i = 0; i < SPEK_FRAME_SIZE; i++) {SerialRead(RX_SERIAL_PORT);}  //Toss one full frame of bytes.
   }  
   if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
-    if (SerialAvailable(SPEK_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //A complete frame? If not, we'll catch it next time we are called. 
-      SerialRead(SPEK_SERIAL_PORT); SerialRead(SPEK_SERIAL_PORT);        //Eat the header bytes 
+    if (SerialAvailable(RX_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //A complete frame? If not, we'll catch it next time we are called. 
+      SerialRead(RX_SERIAL_PORT); SerialRead(RX_SERIAL_PORT);        //Eat the header bytes 
       for (uint8_t b = 2; b < SPEK_FRAME_SIZE; b += 2) {
-        uint8_t bh = SerialRead(SPEK_SERIAL_PORT);
-        uint8_t bl = SerialRead(SPEK_SERIAL_PORT);
+        uint8_t bh = SerialRead(RX_SERIAL_PORT);
+        uint8_t bl = SerialRead(RX_SERIAL_PORT);
         uint8_t spekChannel = 0x0F & (bh >> SPEK_CHAN_SHIFT);
         if (spekChannel < RC_CHANS) rcValue[spekChannel] = 988 + ((((uint16_t)(bh & SPEK_CHAN_MASK) << 8) + bl) SPEK_DATA_SHIFT);
       }
       spekFrameFlags = 0x00;
+      spekFrameDone = 0x01;
       #if defined(FAILSAFE)
         if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // Valid frame, clear FailSafe counter
       #endif
@@ -382,8 +384,7 @@ void readSpektrum(void) {
 
 uint16_t readRawRC(uint8_t chan) {
   uint16_t data;
-  #if defined(SPEKTRUM)
-    readSpektrum();
+  #if defined(SPEKTRUM) || defined(SBUS)
     if (chan < RC_CHANS) {
       data = rcValue[rcChannel[chan]];
     } else data = 1500;
@@ -399,33 +400,33 @@ uint16_t readRawRC(uint8_t chan) {
 /**************************************************************************************/
 /***************          compute and Filter the RX data           ********************/
 /**************************************************************************************/
+#define AVERAGING_ARRAY_LENGTH 4
 void computeRC() {
-  static uint16_t rcData4Values[RC_CHANS][4], rcDataMean[RC_CHANS];
+  static uint16_t rcData4Values[RC_CHANS][AVERAGING_ARRAY_LENGTH-1];
+  uint16_t rcDataMean,rcDataTmp;
   static uint8_t rc4ValuesIndex = 0;
   uint8_t chan,a;
-  #if !defined(OPENLRSv2MULTI) // dont know if this is right here
-    #if defined(SBUS)
-      readSBus();
-    #endif
+  uint8_t failsafeGoodCondition = 1;
+
+  #if !defined(OPENLRSv2MULTI)
     rc4ValuesIndex++;
-    if (rc4ValuesIndex == 4) rc4ValuesIndex = 0;
+    if (rc4ValuesIndex == AVERAGING_ARRAY_LENGTH-1) rc4ValuesIndex = 0;
     for (chan = 0; chan < RC_CHANS; chan++) {
+      rcDataTmp = readRawRC(chan);
       #if defined(FAILSAFE)
-        uint16_t rcval = readRawRC(chan);
-        if(rcval>FAILSAFE_DETECT_TRESHOLD || chan > 3 || !f.ARMED) {        // update controls channel only if pulse is above FAILSAFE_DETECT_TRESHOLD
-          rcData4Values[chan][rc4ValuesIndex] = rcval;                      // In disarmed state allow always update for easer configuration.
-        }
-      #else
-        rcData4Values[chan][rc4ValuesIndex] = readRawRC(chan);
-      #endif
+        failsafeGoodCondition = rcDataTmp>FAILSAFE_DETECT_TRESHOLD || chan > 3 || !f.ARMED; // update controls channel only if pulse is above FAILSAFE_DETECT_TRESHOLD
+      #endif                                                                                // In disarmed state allow always update for easer configuration.
       #if defined(SPEKTRUM) || defined(SBUS) // no averaging for Spektrum & SBUS signal
-        rcData[chan] = rcData4Values[chan][rc4ValuesIndex];
+        if(failsafeGoodCondition)  rcData[chan] = rcDataTmp;
       #else
-        rcDataMean[chan] = 0;
-        for (a=0;a<4;a++) rcDataMean[chan] += rcData4Values[chan][a];
-        rcDataMean[chan]= (rcDataMean[chan]+2)>>2;
-        if ( rcDataMean[chan] < (uint16_t)rcData[chan] -3)  rcData[chan] = rcDataMean[chan]+2;
-        if ( rcDataMean[chan] > (uint16_t)rcData[chan] +3)  rcData[chan] = rcDataMean[chan]-2;
+        if(failsafeGoodCondition) {
+          rcDataMean = rcDataTmp;
+          for (a=0;a<AVERAGING_ARRAY_LENGTH-1;a++) rcDataMean += rcData4Values[chan][a];
+          rcDataMean = (rcDataMean+(AVERAGING_ARRAY_LENGTH/2))/AVERAGING_ARRAY_LENGTH;
+          if ( rcDataMean < (uint16_t)rcData[chan] -3)  rcData[chan] = rcDataMean+2;
+          if ( rcDataMean > (uint16_t)rcData[chan] +3)  rcData[chan] = rcDataMean-2;
+          rcData4Values[chan][rc4ValuesIndex] = rcDataTmp;
+        }
       #endif
       if (chan<8 && rcSerialCount > 0) { // rcData comes from MSP and overrides RX Data until rcSerialCount reaches 0
         rcSerialCount --;

@@ -71,7 +71,7 @@
        in some cases, this value must be lowered down to 900 for some specific ESCs, otherwise they failed to initiate */
     #define MINCOMMAND  1000
 
-  /**********************************    I2C speed   ************************************/
+  /**********************************  I2C speed for old WMP config (useless config for other sensors)  *************/
     #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
     //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
@@ -107,8 +107,9 @@
       //#define SIRIUS          // Sirius Navigator IMU                                             <- confirmed by Alex
       //#define SIRIUSGPS       // Sirius Navigator IMU  using external MAG on GPS board            <- confirmed by Alex
       //#define SIRIUS600       // Sirius Navigator IMU  using the WMP for the gyro
-      //#define SIRIUS_AIR      // Sirius Navigator IMU 6050 32U4 from MultiWiiCopter.com
+      //#define SIRIUS_AIR      // Sirius Navigator IMU 6050 32U4 from MultiWiiCopter.com           <- confirmed by Alex
       //#define SIRIUS_AIR_GPS  // Sirius Navigator IMU 6050 32U4 from MultiWiiCopter.com with GPS/MAG remote located
+      //#define SIRIUS_MEGAv5_OSD //  Paris_Sirius™ ITG3050,BMA280,MS5611,HMC5883,uBlox  http://www.Multiwiicopter.com <- confirmed by Alex
       //#define MINIWII         // Jussi's MiniWii Flight Controller                                <- confirmed by Alex
       //#define MICROWII        // MicroWii 10DOF with ATmega32u4, MPU6050, HMC5883L, MS561101BA from http://flyduino.net/
       //#define CITRUSv2_1      // CITRUS from qcrc.ca
@@ -160,6 +161,7 @@
       /* I2C gyroscope */
       //#define WMP
       //#define ITG3200
+      //#define MPU3050
       //#define L3G4200D
       //#define MPU6050       //combo + ACC
       //#define LSM330        //combo + ACC
@@ -170,6 +172,7 @@
       //#define ADXL345
       //#define BMA020
       //#define BMA180
+      //#define BMA280
       //#define NUNCHACK  // if you want to use the nunckuk as a standalone I2C ACC without WMP
       //#define LIS3LV02
       //#define LSM303DLx_ACC
@@ -215,13 +218,15 @@
   /********************************  PID Controller *********************************/
     /* choose one of the alternate PID control algorithms
      * 1 = evolved oldschool algorithm (similar to v2.2)
-     * 2 = new experimental algorithm from Alex Khoroshko http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671&start=10#p37387
+     * 2 = new experimental algorithm from Alex Khoroshko - unsupported - http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671&start=10#p37387
      * */
     #define PID_CONTROLLER 1
 
     /* NEW: not used anymore for servo coptertypes  <== NEEDS FIXING - MOVE TO WIKI */
     #define YAW_DIRECTION 1
     //#define YAW_DIRECTION -1 // if you want to reverse the yaw correction direction
+
+    #define ONLYARMWHENFLAT //prevent the copter from arming when the copter is tilted
 
    /********************************    ARM/DISARM    *********************************/
    /* optionally disable stick combinations to arm/disarm the motors.
@@ -230,9 +235,9 @@
     //#define ALLOW_ARM_DISARM_VIA_TX_ROLL
 
     /********************************    SERVOS      *********************************/
-    /* temporary info on which servos connect where is here
-     * http://www.multiwii.com/forum/viewtopic.php?f=8&t=3498 <== NEEDS FIXING - MOVE TO WIKI
-     * http://www.multiwii.com/forum/viewtopic.php?f=8&t=3498&start=30#p36023  <== NEEDS FIXING - MOVE TO WIKI  */
+    /* info on which servos connect where and how to setup can be found here
+     * http://www.multiwii.com/wiki/index.php?title=Config.h#Servos_configuration
+     */
 
 
     /* if you want to preset min/middle/max values for servos right after flashing, because of limited physical
@@ -305,7 +310,7 @@
   /***********************      your individual defaults     ***********************/
     /* if you want to replace the hardcoded default values with your own (e.g. from a previous save to an .mwi file),
      * you may want to avoid editing the LoadDefaults() function for every version again and again.
-     * howto: http://www.multiwii.com/forum/viewtopic.php?f=8&t=3987
+     * http://www.multiwii.com/wiki/index.php?title=Config.h#Individual_defaults
      */
     //#define MY_PRIVATE_DEFAULTS "filename.h"
 
@@ -340,7 +345,7 @@
          For PROMINI, attach sat grey to RX0.  Attach sat black to ground. */
       //#define SPEKTRUM 1024
       //#define SPEKTRUM 2048
-      //#define SPEK_SERIAL_PORT 1    // Forced to 0 on Pro Mini and single serial boards; Set to your choice of 0, 1, or 2 on any Mega based board (defaults to 1 on Mega).
+      //#define RX_SERIAL_PORT 1    // Forced to 0 on Pro Mini and single serial boards; Set to your choice of 0, 1, or 2 on any Mega based board (defaults to 1 on Mega).
       //**************************
       // Defines that allow a "Bind" of a Spektrum or Compatible Remote Receiver (aka Satellite) via Configuration GUI.
       //   Bind mode will be same as declared above, if your TX is capable.
@@ -355,10 +360,10 @@
       //#define SPEK_BIND_DATA   6
 
     /*******************************    SBUS RECIVER    ************************************/
-      /* The following line apply only for Futaba S-Bus Receiver on MEGA boards at RX1 only (Serial 1) or PROMICRO boards.
+      /* The following line apply only for Futaba S-Bus Receiver on MEGA boards or PROMICRO boards.
          You have to invert the S-Bus-Serial Signal e.g. with a Hex-Inverter like IC SN74 LS 04 */
       //#define SBUS
-      //#define SBUS_SERIAL_PORT 1
+      //#define RX_SERIAL_PORT 1
       #define SBUS_MID_OFFSET 988 //SBUS Mid-Point at 1500
 
 /*************************************************************************************************/
@@ -657,13 +662,6 @@
     // If your I2C GPS board has Sonar support enabled
     //#define I2C_GPS_SONAR
 
-    /* I2C GPS device made with an indeedent ATTiny[24]313 + GPS device and
-       optional sonar device.    https://github.com/wertarbyte/tiny-gps/ */
-    /* get GPS data from Tiny-GPS */
-    //#define TINY_GPS
-    /* get sonar data from Tiny-GPS */
-    //#define TINY_GPS_SONAR
-
     /* GPS data readed from Misio-OSD - GPS module connected to OSD, and MultiWii read GPS data from OSD - tested and working OK ! */
     //#define GPS_FROM_OSD
 
@@ -891,7 +889,7 @@
     //#define MULTIPLE_CONFIGURATION_PROFILES
 
   /*************      do no reset constants when change of flashed program is detected ***********/
-    //#define NO_FLASH_CHECK
+    #define NO_FLASH_CHECK
 
 /*************************************************************************************************/
 /*****************                                                                 ***************/
@@ -903,6 +901,20 @@
   /********   special ESC with extended range [0-2000] microseconds  ********************/
   /**************************************************************************************/
     //#define EXT_MOTOR_RANGE // using this with wii-esc requires to change MINCOMMAND to 1008 for promini and mega
+
+  /**************************************************************************************/
+  /********  brushed ESC ****************************************************************/
+  /**************************************************************************************/
+    // for 328p proc
+    //#define EXT_MOTOR_32KHZ
+    //#define EXT_MOTOR_4KHZ
+    //#define EXT_MOTOR_1KHZ
+  
+    // for 32u4 proc
+    //#define EXT_MOTOR_64KHZ
+    //#define EXT_MOTOR_32KHZ
+    //#define EXT_MOTOR_16KHZ
+    //#define EXT_MOTOR_8KHZ
 
   /**************************************************************************************/
   /***********************     motor, servo and other presets     ***********************/
@@ -1043,7 +1055,7 @@
        example: with cycle time of approx 3ms, do action every 6*3ms=18ms
        value must be [1; 65535] */
     #define LCD_TELEMETRY_FREQ 23       // to send telemetry data over serial 23 <=> 60ms <=> 16Hz (only sending interlaced, so 8Hz update rate)
-    #define LCD_TELEMETRY_AUTO_FREQ 1967// to step to next telemetry page 967 <=> 3s
+    #define LCD_TELEMETRY_AUTO_FREQ  967// to step to next telemetry page 967 <=> 3s
     #define PSENSOR_SMOOTH 16           // len of averaging vector for smoothing the PSENSOR readings; should be power of 2; set to 1 to disable
     #define VBAT_SMOOTH 16              // len of averaging vector for smoothing the VBAT readings; should be power of 2; set to 1 to disable
     #define RSSI_SMOOTH 16              // len of averaging vector for smoothing the RSSI readings; should be power of 2; set to 1 to disable

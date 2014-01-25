@@ -607,7 +607,7 @@ void setup() {
 
   for( i=0;i<8;i++) {
     motToggle[i]     = controlP5.addToggle("M"+i,false,xMot-100,yMot+15,20,15).moveTo("Motors").hide();
-    motSlider[i]     = controlP5.addSlider("motSlider"+i,1000,2000,1500,0,0,10,100).setDecimalPrecision(0).hide();
+    motSlider[i]     = controlP5.addSlider("motSlider"+i,900,2000,1500,0,0,10,100).setDecimalPrecision(0).hide();
     servoSliderH[i]  = controlP5.addSlider("ServoH"+i,1000,2000,1500,0,0,100,10).setDecimalPrecision(0).hide();
     servoSliderV[i]  = controlP5.addSlider("ServoV"+i,1000,2000,1500,0,0,10,100).setDecimalPrecision(0).hide();
   }
@@ -616,9 +616,9 @@ void setup() {
     VBat[i].setColorBackground(red_).setMin(0).setMax(20).setDirection(Controller.HORIZONTAL).setDecimalPrecision(1).setMultiplier(1).moveTo("Config").hide();
   }
   VBat[0].setCaptionLabel("VBatscale").setDecimalPrecision(0).setMin(0).setMax(200);
-  VBat[1].setCaptionLabel("Warning 1");
-  VBat[2].setCaptionLabel("Warning 2");
-  VBat[3].setCaptionLabel("Critical");
+  VBat[1].setCaptionLabel("Warning 1").setMultiplier(0.1);
+  VBat[2].setCaptionLabel("Warning 2").setMultiplier(0.1);
+  VBat[3].setCaptionLabel("Critical").setMultiplier(0.1);
   VBat[4].setCaptionLabel("Volt").setColorBackground(red_).setDecimalPrecision(2);
   VBat[5].setCaptionLabel("RSSI").setColorBackground(red_).setDecimalPrecision(0).setMin(0).setMax(1023);
    
