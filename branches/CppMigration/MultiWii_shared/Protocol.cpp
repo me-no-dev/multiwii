@@ -37,6 +37,7 @@
 #define MSP_WP                   118   //out message         get a WP, WP# is in the payload, returns (WP#, lat, lon, alt, flags) WP#0-home, WP#16-poshold
 #define MSP_BOXIDS               119   //out message         get the permanent IDs associated to BOXes
 #define MSP_SERVO_CONF           120   //out message         Servo settings
+#define MSP_PCF8591              121   //out message         ADC values
 
 #define MSP_SET_RAW_RC           200   //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201   //in message          fix, numsat, lat, lon, alt, speed
@@ -433,6 +434,11 @@ void evaluateCommand() {
    case MSP_SERVO_CONF:
      s_struct((uint8_t*)&conf.servoConf[0].min,56); // struct servo_conf_ is 7 bytes length: min:2 / max:2 / middle:2 / rate:1    ----     8 servo =>  8x7 = 56
      break;
+   #ifdef PCF8591
+   case MSP_PCF8591:
+	 s_struct((uint8_t*)&pcf8591, 4);
+	 break;
+   #endif
    case MSP_SET_SERVO_CONF:
      s_struct_w((uint8_t*)&conf.servoConf[0].min,56);
      break;

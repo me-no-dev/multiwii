@@ -160,6 +160,10 @@ int16_t  sonarAlt;
 int16_t  BaroPID = 0;
 int16_t  errorAltitudeI = 0;
 
+#ifdef PCF8591
+pcf8591_t pcf8591;
+#endif /* PCF8591 */
+
 // **************
 // gyro+acc IMU
 // **************
@@ -772,6 +776,10 @@ void loop () {
   int16_t rc;
   int32_t prop = 0;
 
+  #ifdef PCF8591
+    static uint8_t pcf_delay = 0;
+  #endif
+
   #if defined(SPEKTRUM)
     if (spekFrameFlags == 0x01) readSpektrum();
   #endif
@@ -1094,6 +1102,16 @@ void loop () {
       if (rcOptions[BOXPASSTHRU]) {f.PASSTHRU_MODE = 1;}
       else {f.PASSTHRU_MODE = 0;}
     #endif
+
+    #ifdef PCF8591
+      if (pcf_delay == 50) {
+    	  pcf_getADC();
+    	  pcf_delay = 0;
+      }
+      else {
+    	  pcf_delay++;
+      }
+    #endif /* PCF8591 */
  
   } else { // not in rc loop
     static uint8_t taskOrder=0; // never call all functions in the same loop, to avoid high delay spikes

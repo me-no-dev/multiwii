@@ -211,4 +211,13 @@ typedef struct {
 } plog_t;
 #endif
 
+#ifdef PCF8591
+typedef struct {
+  uint8_t adc0;
+  uint8_t adc1;
+  uint8_t adc2;
+  uint8_t adc3;
+} pcf8591_t;
+#endif /* PCF8591 */
+
 #endif /* TYPES_H_ */

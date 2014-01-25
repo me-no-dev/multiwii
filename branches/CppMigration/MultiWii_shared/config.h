@@ -891,6 +891,11 @@
   /*************      do no reset constants when change of flashed program is detected ***********/
     #define NO_FLASH_CHECK
 
+    /************************        PCF8591 I2C ADC         ********************/
+    /* For those boards that do not have extra ADC inputs, we can measure temperature,
+     * battery voltage and current consumption using a pcf8591 attached to the I2C bus */
+    //#define PCF8591		1
+
 /*************************************************************************************************/
 /*****************                                                                 ***************/
 /****************  SECTION  7 - TUNING & DEVELOPER                                  **************/
