@@ -7,6 +7,40 @@
 #if COPTERTEST == 1
   #define QUADP
   #define WMP
+  
+#elif COPTERTEST == 100
+
+//#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11
+
+// Roman
+  #define FLYING_WING
+  #define MINCOMMAND  1000
+  #define MPU6050
+  #define FORCE_ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  =  -X; imu.accADC[PITCH]  = -Y; imu.accADC[YAW]  = Z;}
+  #define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = Y; imu.gyroADC[PITCH] =  -X; imu.gyroADC[YAW] = -Z;}
+  #define RCAUXPIN8
+  
+  #define OVERRIDE_BUZZERPIN_PINMODE          pinMode (A2, OUTPUT); // use A2 instead of d8
+  #define OVERRIDE_BUZZERPIN_ON               PORTC |= 1<<2       ; //PORTB |= 1;
+  #define OVERRIDE_BUZZERPIN_OFF              PORTC &= ~(1<<2)    ; //PORTB &= ~1;
+
+  #define MPU6050_LPF_20HZ
+  #define GYROCALIBRATIONFAILSAFE
+  #define I2C_GPS
+
+  #define BUZZER
+  #define RCOPTIONSBEEP    
+
+  #define VBAT
+  #define VBATSCALE   127
+//  #define ALT_DEADSPAN
+  
+// Servosettings exported from GUI  
+//  #define  SERVO_MIN  {1020, 1020, 1020, 1020, 1020, 1020, 1020, 1020}
+//  #define  SERVO_MAX  {2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000}
+//  #define  SERVO_MID  {1500, 1500, 1500, 1412, 1445, 1500, 1572, 1500}
+//  #define  FORCE_SERVO_RATES  {30, 30, 100, 0, 1, 100, 100, 100}
+  
 #elif COPTERTEST == 2
   #define FLYING_WING
   #define WMP
@@ -111,45 +145,73 @@
   #define ESC_CALIB_CANNOT_FLY
 
 #elif COPTERTEST == 99
+// PatrikE Experimental
 // Settings for Fixedwing_RTH
-#define GPS_PROMINI_SERIAL
-//#define GPS_SERIAL 2
+
+//#define CRIUS_PE  // RadJet 800 
+#define MONGOOSE1_0 // EZ-Hawk
+
+//#define MPU6050
+//#define FLYDUINO_MPU      //TESTBENCH 1280 simple
+//#define CRIUS_AIO_PRO_V1  //TESTBENCH 2560 Full IMU
+
+//#define I2C_GPS
+
 #define GPS_BAUD   115200
 #define NMEA
 
 #define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11
 #define AIRPLANE
 
-#define MINTHROTTLE 1000
+#define MOTOR_STOP
 #define MAXTHROTTLE 2000
-
 #define NO_FLASH_CHECK
 
-// Make rearming in air possible/easier
-#undef ONLYARMWHENFLAT
-#define DONT_RESET_HOME_AT_ARM
+//#define USE_MSP_WP
 
-#define MAG_DECLINATION  3.6f 
-    
+#define MAG_DECLINATION  3.6f
+  
+#if defined (FLYDUINO_MPU) || defined (MPU6050)
+// Simple TestBench
+//  #define GPS_PROMINI_SERIAL
+//  #define GPS_SERIAL 3
+//  #define PPM_ON_THROTTLE
+  #define I2C_GPS
+#endif
+  
+#if defined (CRIUS_AIO_PRO_V1)
+// CRIUS_AIO_PRO_V1 TestBench
+  #define PPM_ON_THROTTLE
+  #define GPS_SERIAL 2
+#endif
+
+#if defined (CRIUS_PE)
+// RadJet 800 setup
+  #define ROLLRATE 0.7
+  #define PITCHRATE 0.8
+  #undef AIRPLANE
+  #define FLYING_WING
+  #define GPS_PROMINI_SERIAL 
 #define  SERVO_MIN  {1020, 1020, 1020, 1020, 1020, 1020, 1020, 1020}
 #define  SERVO_MAX  {2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000}
-#define  SERVO_MID  {1500, 1500, 1500, 1500, 1550, 1500, 1572, 1500}
-#define  FORCE_SERVO_RATES  {30, 30, 100, 89, 88, 100, 100, 100}
+#define  SERVO_MID  {1500, 1500, 1500, 1412, 1445, 1500, 1572, 1500}
+#define  FORCE_SERVO_RATES  {30, 30, 100, 0, 1, 100, 100, 100}
+#endif
 
-//#define FLYDUINO_MPU
-//#define CRIUS_AIO_PRO_V1
-//#define PPM_ON_THROTTLE
-  
-//#define CRIUS_SE
-
-#define MONGOOSE1_0 // W BARO Rotated 90Degrees
-  
   #if defined (MONGOOSE1_0)
-    #define PATRIKE  // Remapping for MONGOOSE1_0
+// MONGOOSE1_0 in EZ-Hawk setup
+    #define GPS_PROMINI_SERIAL
+    #define PATRIKE
     #define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] =  -X; imu.gyroADC[PITCH] = -Y; imu.gyroADC[YAW] = -Z;}
     #define FORCE_ACC_ORIENTATION(Y, X, Z)  {imu.accADC[ROLL]  =  -X; imu.accADC[PITCH]  =  Y; imu.accADC[YAW]  =  Z;}
     #define FORCE_MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =   Y; imu.magADC[PITCH]  = -X; imu.magADC[YAW]  = -Z;}
+  
+    #define  SERVO_MIN  {1020, 1020, 1020, 1020, 1020, 1020, 1020, 1020}
+    #define  SERVO_MAX  {2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000}
+    #define  SERVO_MID  {1500, 1500, 1500, 1500, 1550, 1500, 1572, 1500}
+    #define  FORCE_SERVO_RATES  {30, 30, 100, 89, 88, 100, 100, 100}
   #endif
+
 
 #elif defined(COPTERTEST)
   #error "*** this test is not yet defined"
@@ -178,10 +240,17 @@
 
 #if defined (AIRPLANE) || defined(FLYING_WING)
   #define FIXEDWING
-  #define DONT_RESET_HOME_AT_ARM
   
-  #if defined (GPS_SERIAL) || defined(GPS_PROMINI_SERIAL)
-    #include "GPS.h"
+  #if defined (GPS_SERIAL) || defined(GPS_PROMINI_SERIAL) || defined(I2C_GPS)
+      #include "GPS.h"
+ // Settings Moved from gps.h   
+      #define GPS_UPD_HZ             5   // Set loop time for NavUpdate    
+      #define PITCH_COMP           0.5f  // Compensate throttle relative angle of attack
+      #define ELEVATORCOMPENSATION 100   // Compensate elevator with % of rollAngle
+      #define CLIMBTHROTTLE        1900  // Max allowed throttle in GPS modes.
+      #define DONT_RESET_HOME_AT_ARM
+      #undef ONLYARMWHENFLAT
+      
     #if FAILSAFE_RTH
       #define FAILSAFE
     #endif
@@ -683,15 +752,25 @@
   #define SPEK_SERIAL_PORT           0
 
   /* Unavailable pins on MONGOOSE1_0 */
-  #define BUZZERPIN_PINMODE          ; // D8
+// TODO
+//  #define BUZZERPIN_PINMODE          (A1, OUTPUT);
+//  #define BUZZERPIN_ON               PORTC |= (1<<1);
+//  #define BUZZERPIN_OFF              PORTC &= ~(1<<1);  
+  #define BUZZERPIN_PINMODE          ;
   #define BUZZERPIN_ON               ;
   #define BUZZERPIN_OFF              ;
+
   #define POWERPIN_PINMODE           ; // D12
   #define POWERPIN_ON                ;
   #define POWERPIN_OFF               ;
+// TODO
+//  #define STABLEPIN_PINMODE pinMode (A0, OUTPUT);
+//  #define STABLEPIN_ON              PORTC |= (1<<0);
+//  #define STABLEPIN_OFF             PORTC &= ~(1<<0);
   #define STABLEPIN_PINMODE          ; //
   #define STABLEPIN_ON               ;
   #define STABLEPIN_OFF              ; 
+  
   #define PINMODE_LCD                ; //
   #define LCDPIN_OFF                 ;
   #define LCDPIN_ON                  ; 
@@ -1131,6 +1210,17 @@
   #define HWPWM6
 #endif
 
+#if defined(SIRIUS_MEGAv5_OSD)
+  #define ITG3200 // in fact a ITG3050
+  #define BMA280
+  #define MS561101BA
+  #define HMC5883
+  #define ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  = -X; imu.accADC[PITCH]  =  -Y; imu.accADC[YAW]  =  Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -X; imu.gyroADC[PITCH] =  -Y; imu.gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =  Y; imu.magADC[PITCH]  =  -X; imu.magADC[YAW]  = -Z;}
+  #undef INTERNAL_I2C_PULLUPS
+#endif
+
 #if defined(MINIWII)
   #define ITG3200
   #define BMA180
@@ -1208,7 +1298,7 @@
 #if defined(MONGOOSE1_0)
   #define ITG3200
   #define ADXL345
-  #define BMP085
+  #define BMP085  // PatrikE
   #define HMC5883
   #define GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -Y; imu.gyroADC[PITCH] =  X; imu.gyroADC[YAW] = -Z;}
   #define ACC_ORIENTATION(Y, X, Z)  {imu.accADC[ROLL]  =  Y; imu.accADC[PITCH]  =  X; imu.accADC[YAW]  =  Z;}
@@ -1228,7 +1318,18 @@
   #define ITG3200
   #define BMA180
   #define HMC5883
-  #define BMP085
+  #define BMP085 
+  #define ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  = -X; imu.accADC[PITCH]  = -Y; imu.accADC[YAW]  =  Z;}
+  #define GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] =  Y; imu.gyroADC[PITCH] = -X; imu.gyroADC[YAW] = -Z;}
+  #define MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =  X; imu.magADC[PITCH]  =  Y; imu.magADC[YAW]  = -Z;}
+#endif
+
+#if defined(CRIUS_PE)
+// TODO Remove
+  #define ITG3200
+  #define BMA180
+  #define HMC5883
+//  #define BMP085 
   #define ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  = -X; imu.accADC[PITCH]  = -Y; imu.accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] =  Y; imu.gyroADC[PITCH] = -X; imu.gyroADC[YAW] = -Z;}
   #define MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =  X; imu.magADC[PITCH]  =  Y; imu.magADC[YAW]  = -Z;}
@@ -1435,13 +1536,14 @@
   #undef INTERNAL_I2C_PULLUPS
   #define MINTHROTTLE 1050
   #define MAXTHROTTLE 2000
-  #define EXT_MOTOR_RANGE
+  #define EXT_MOTOR_32KHZ
   #define VBAT
   #define VBATSCALE       54
   #define VBATLEVEL_WARN1 10
   #define VBATLEVEL_WARN2 10
   #define VBATLEVEL_CRIT  10
   #define NO_VBAT         10
+  #define MOTOR_STOP
 #endif
 
 #if defined(MEGAWAP_V2_STD) 
@@ -1595,13 +1697,7 @@
   #define RF22B_Rx_packet_received_interrupt   0x02 
   #define RF22B_PACKET_SENT_INTERRUPT  04 
   #define RF22B_PWRSTATE_POWERDOWN  00    
-  
-  unsigned char ItStatus1, ItStatus2;  
-  typedef struct   
-  { 
-   unsigned char reach_1s    : 1; 
-  } FlagType; 
-  FlagType               Flag;   
+
 #endif
 
 #if defined(DESQUARED6DOFV2GO)
@@ -1637,7 +1733,7 @@
 /***************              Sensor Type definitions              ********************/
 /**************************************************************************************/
 
-#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(MPU6050) || defined(LSM330) || defined(MMA8451Q) || defined(NUNCHUCK)
+#if defined(ADXL345) || defined(BMA020) || defined(BMA180) || defined(BMA280) || defined(NUNCHACK) || defined(MMA7455) || defined(ADCACC) || defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(MPU6050) || defined(LSM330) || defined(MMA8451Q) || defined(NUNCHUCK)
   #define ACC 1
 #else
   #define ACC 0
@@ -1678,71 +1774,6 @@
   #define SONAR 0
 #endif
 
-
-#if defined(MMA7455)
-  #define ACC_1G 64
-#endif
-#if defined(MMA8451Q)
-  #define ACC_1G 512
-#endif
-#if defined(ADXL345)
-  #define ACC_1G 265
-#endif
-#if defined(BMA180)
-  #define ACC_1G 255
-#endif
-#if defined(BMA020)
-  #define ACC_1G 63
-#endif
-#if defined(NUNCHACK)
-  #define ACC_1G 200
-#endif
-#if defined(LIS3LV02)
-  #define ACC_1G 256
-#endif
-#if defined(LSM303DLx_ACC)
-  #define ACC_1G 256
-#endif
-#if defined(ADCACC)
-  #define ACC_1G 75
-#endif
-#if defined(MPU6050)
-  #if defined(FREEIMUv04)
-    #define ACC_1G 255
-  #else
-    #define ACC_1G 512
-  #endif
-#endif
-#if defined(LSM330)
-  #define ACC_1G 256
-#endif
-#if defined(NUNCHUCK)
-  #define ACC_1G 200
-#endif
-#if !defined(ACC_1G)
-  #define ACC_1G 256
-#endif
-#define ACCZ_25deg   (int16_t)(ACC_1G * 0.90631) // 0.90631 = cos(25deg) (cos(theta) of accZ comparison)
-#define ACC_VelScale (9.80665f / 10000.0f / ACC_1G)
-
-#if defined(ITG3200)
-  #define GYRO_SCALE (4 / 14.375 * PI / 180.0 / 1000000.0) //ITG3200   14.375 LSB/(deg/s) and we ignore the last 2 bits
-#endif
-#if defined(L3G4200D)
-  #define GYRO_SCALE ((4.0f * PI * 70.0f)/(1000.0f * 180.0f * 1000000.0f))
-#endif
-#if defined(MPU6050)
-  #define GYRO_SCALE (4 / 16.4 * PI / 180.0 / 1000000.0)   //MPU6050 and MPU3050   16.4 LSB/(deg/s) and we ignore the last 2 bits
-#endif
-#if defined(LSM330)
-  #define GYRO_SCALE ((4.0f * PI * 70.0f)/(1000.0f * 180.0f * 1000000.0f)) // like L3G4200D
-#endif
-#if defined(MPU3050)
-  #define GYRO_SCALE (4 / 16.4 * PI / 180.0 / 1000000.0)   //MPU6050 and MPU3050   16.4 LSB/(deg/s) and we ignore the last 2 bits
-#endif
-#if defined(WMP)
-  #define GYRO_SCALE (1.0f/200e6f)
-#endif
 
 /**************************************************************************************/
 /***************      Multitype decleration for the GUI's          ********************/
@@ -1788,7 +1819,7 @@
 #elif defined(HEX6H)
   #define MULTITYPE 18
 #elif defined(SINGLECOPTER)
-  #define MULTITYPE 20
+  #define MULTITYPE 21
   #define SERVO_RATES      {30,30,100,0,1,0,1,100}
 #elif defined(DUALCOPTER)
   #define MULTITYPE 20

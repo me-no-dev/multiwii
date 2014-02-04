@@ -1,7 +1,7 @@
 /*
 MultiWiiCopter by Alexandre Dubus
 www.multiwii.com
-March  2013     V2.2
+November  2013     V2.3
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -271,7 +271,7 @@ int16_t lookupThrottleRC[11];// lookup table for expo & mid THROTTLE
 #endif
 
 #if defined(OPENLRSv2MULTI)
-  static uint8_t pot_P,pot_I; // OpenLRS onboard potentiometers for P and I trim or other usages
+  uint8_t pot_P,pot_I; // OpenLRS onboard potentiometers for P and I trim or other usages
 #endif
 
 
@@ -298,7 +298,7 @@ conf_t conf;
 // **********************
 // GPS common variables
 // **********************
-  int16_t  GPS_angle[2] = { 0, 0};                      // the angles that must be applied for GPS correction
+  int16_t  GPS_angle[3] = { 0, 0, 0};                      // the angles that must be applied for GPS correction
   int32_t  GPS_coord[2];
   int32_t  GPS_home[3];
   int32_t  GPS_hold[3];
@@ -311,9 +311,6 @@ conf_t conf;
   uint16_t GPS_ground_course = 0;                       //                   - unit: degree*10
   uint8_t  GPS_Present = 0;                             // Checksum from Gps serial
   uint8_t  GPS_Enable  = 0;
-  // FixedWing Gps 
-  int16_t  GPS_FwTarget = 0;                             // Gps correction for Fixed wing
-  int16_t  GPS_AltErr = 0;                              // Gps correction for Fixed wing
   // The desired bank towards North (Positive) or South (Negative) : latitude
   // The desired bank towards East (Positive) or West (Negative)   : longitude
   int16_t  nav[2];
@@ -325,7 +322,7 @@ conf_t conf;
  
 #if BARO
   int32_t baroPressure;
-  int32_t baroTemperature;
+  int16_t baroTemperature;
   int32_t baroPressureSum;
 #endif
 
@@ -335,13 +332,27 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
   uint8_t axis,prop1,prop2;
 
   // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value
-  prop2 = 128; // prop2 was 100, is 128 now
+ /*
+ //Original dynThrPID code
+ prop2 = 128; // prop2 was 100, is 128 now
   if (rcData[THROTTLE]>1500) { // breakpoint is fix: 1500
     if (rcData[THROTTLE]<2000) {
       prop2 -=  ((uint16_t)conf.dynThrPID*(rcData[THROTTLE]-1500)>>9); //  /512 instead of /500
     } else {
       prop2 -=  conf.dynThrPID;
     }
+  }
+  */
+  /*
+  Test for navigation
+  Use dynThrPID also when navigating.
+  */
+  prop2 = 128; // prop2 was 100, is 128 now   
+  uint16_t pidthro;
+  if(nav_mode >0 ) {pidthro =rcCommand[THROTTLE];}else{ pidthro=rcData[THROTTLE]; }
+  if (pidthro>1500) { // breakpoint is fix: 1500
+    if (pidthro<2000) { prop2 -=  ((uint16_t)conf.dynThrPID*(pidthro-1500)>>9);
+    } else { prop2 -=  conf.dynThrPID;}
   }
 
   for(axis=0;axis<3;axis++) {
@@ -398,8 +409,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     #endif
     powerValue = ( conf.psensornull > p ? conf.psensornull - p : p - conf.psensornull); // do not use abs(), it would induce implicit cast to uint and overrun
     analog.amperage = powerValue * conf.pint2ma;
-    if ( powerValue > 307) powerValue = 307;  // only accept reasonable values. 307 is empirical
-    pMeter[PMOTOR_SUM] += ((currentTime-lastRead) * (uint32_t)(powerValue*conf.pint2ma))/100000; // [10 mA * msec]
+    pMeter[PMOTOR_SUM] += ((currentTime-lastRead) * (uint32_t)((uint32_t)powerValue*conf.pint2ma))/100000; // [10 mA * msec]
     lastRead = currentTime;
     break;
   }
@@ -485,7 +495,17 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
       f.ACC_CALIBRATED = 1;
     }
   }
-
+  
+  /************************************************/
+  // For OSD  !! TEST !! Without sensors
+  if (!BARO) alt.EstAlt = (GPS_altitude - GPS_home[ALT])*100;
+  if (!MAG) { att.heading = GPS_ground_course;
+    #if defined(I2C_GPS)
+      att.heading/=10;
+    #endif
+  }
+  /************************************************/
+  
   #if !(defined(SPEKTRUM) && defined(PROMINI))  //Only one serial port on ProMini.  Skip serial com if Spektrum Sat in use. Note: Spek code will auto-call serialCom if GUI data detected on serial0.
     #if defined(GPS_PROMINI)
       if(GPS_Enable == 0) {serialCom();}
@@ -525,9 +545,11 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
       if(f.GPS_FIX && GPS_numSat >= 5) {
         if(++blcnt > 2*GPS_numSat) blcnt = 0;
         GPSLEDTime = currentTime + 150000;
-        if(blcnt >= 10 && ((blcnt%2) == 0)) {STABLEPIN_ON;} else {STABLEPIN_OFF;}
+        //if(blcnt >= 10 && ((blcnt%2) == 0)) {STABLEPIN_ON;} else {STABLEPIN_OFF;}
+        if(blcnt >= 10 && ((blcnt%2) == 0)) {STABLEPIN_ON;} else {if(!f.ARMED)STABLEPIN_OFF;}
       }else{
-        if((GPS_update == 1) && !f.GPS_FIX) {STABLEPIN_ON;} else {STABLEPIN_OFF;}
+        //if((GPS_update == 1) && !f.GPS_FIX) {STABLEPIN_ON;} else {STABLEPIN_OFF;}
+        if((GPS_update == 1) && !f.GPS_FIX) {STABLEPIN_ON;} else {if(!f.ARMED)STABLEPIN_OFF;}
         blcnt = 0;
       }
     }
@@ -769,9 +791,8 @@ void loop () {
   int16_t deltaSum;
   int16_t AngleRateTmp, RateError;
 #endif
-  static uint32_t rcTime  = 0;
+  static uint16_t rcTime  = 0;
   static int16_t initialThrottleHold;
-  static uint32_t timestamp_fixated = 0;
   int16_t rc;
   int32_t prop = 0;
 
@@ -783,7 +804,7 @@ void loop () {
     Read_OpenLRS_RC();
   #endif 
 
-  if (currentTime > rcTime ) { // 50Hz
+  if ((int16_t)(currentTime-rcTime) >0 ) { // 50Hz
     rcTime = currentTime + 20000;
     computeRC();
     // Failsafe routine - added by MIS
@@ -791,7 +812,7 @@ void loop () {
       if ( failsafeCnt > (5*FAILSAFE_DELAY) && f.ARMED) {                  // Stabilize, and set Throttle to specified level
         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
         rcData[THROTTLE] = conf.failsafe_throttle;
-        if (failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
+        if ((failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY)) && !f.FAILSAFE_RTH_ENABLE) {          // Turn OFF motors after specified Time (in 0.1sec)
           go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
           f.OK_TO_ARM = 0; // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
         }
@@ -970,8 +991,6 @@ void loop () {
         f.ANGLE_MODE = 0;
         f.FAILSAFE_RTH_ENABLE = 0;
       }
-      
-      
       if ( rcOptions[BOXHORIZON] ) {
         f.ANGLE_MODE = 0;
         if (!f.HORIZON_MODE) {
@@ -981,8 +1000,6 @@ void loop () {
       } else {
         f.HORIZON_MODE = 0;
       }
-      
-
     #endif
 
     if (rcOptions[BOXARM] == 0) f.OK_TO_ARM = 1;
@@ -1045,7 +1062,6 @@ void loop () {
     #endif
     
     #if GPS
-    debug[0]=f.FAILSAFE_RTH_ENABLE;
       static uint8_t GPSNavReset = 1;
       if (f.GPS_FIX && GPS_numSat >= 5 ) {
         if (rcOptions[BOXGPSHOME] || f.FAILSAFE_RTH_ENABLE ) {  // if both GPS_HOME & GPS_HOLD are checked => GPS_HOME is the priority
@@ -1059,7 +1075,7 @@ void loop () {
               GPS_set_next_wp(&GPS_home[LAT],&GPS_home[LON]);
               nav_mode    = NAV_MODE_WP;
             #endif
-            GPS_hold[ALT]  =  conf.pid[PIDALT].D8  + GPS_home[ALT]; //GPS_ALT_HOLD + GPS_home[ALT];
+            GPS_hold[ALT] = GPS_altitude;
             nav_mode       = NAV_MODE_WP;
             f.CLIMBOUT_FW =1 ;
           }
@@ -1078,7 +1094,7 @@ void loop () {
                 nav_mode = NAV_MODE_POSHOLD;
               #endif
               GPS_hold[ALT] = GPS_altitude;
-              //f.CLIMBOUT_FW = 0 ;
+              f.CLIMBOUT_FW = 0 ;
             }
           } else {
             f.GPS_HOLD_MODE = 0;
@@ -1086,6 +1102,7 @@ void loop () {
             if (GPSNavReset == 0 ) {
               GPSNavReset = 1;
               GPS_reset_nav();
+              //f.CLIMBOUT_FW = 0 ;
             }
           }
         }
@@ -1099,7 +1116,7 @@ void loop () {
     #endif
     
     #if defined(FIXEDWING) || defined(HELICOPTER)
-      if (rcOptions[BOXPASSTHRU]) {f.PASSTHRU_MODE = 1;}
+      if (rcOptions[BOXPASSTHRU] && !f.FAILSAFE_RTH_ENABLE ) {f.PASSTHRU_MODE = 1;}
       else {f.PASSTHRU_MODE = 0;}
     #endif
  
@@ -1110,22 +1127,22 @@ void loop () {
       case 0:
         taskOrder++;
         #if MAG
-          if (Mag_getADC()) break; // max 350 µs (HMC5883) // only break when we actually did something
+          if (Mag_getADC() != 0 ) break; // 320 µs
         #endif
       case 1:
         taskOrder++;
         #if BARO
-          if (Baro_update() != 0 ) break;
+          if (Baro_update() != 0 ) break; // for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
         #endif
       case 2:
         taskOrder++;
         #if BARO
-          if (getEstimatedAltitude() !=0) break;
+          if (getEstimatedAltitude() !=0) break; // 280 us
         #endif    
       case 3:
         taskOrder++;
         #if GPS
-          if(GPS_Enable) GPS_NewData();
+          if(GPS_Enable) GPS_NewData();  // I2C GPS: 160 us with no new data / 1250us! with new data 
           break;
         #endif
       case 4:
@@ -1230,7 +1247,9 @@ void loop () {
     } else {
       GPS_angle[ROLL]  = 0;
       GPS_angle[PITCH] = 0;
+      GPS_angle[YAW]   = 0;
     }
+
   #endif
 
   //**** PITCH & ROLL & YAW PID ****
@@ -1246,33 +1265,33 @@ void loop () {
 
     ITerm = (errorGyroI[axis]>>7)*conf.pid[axis].I8>>6;                        // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
 
-    PTerm = (int32_t)rc*conf.pid[axis].P8>>6;
-
+    PTerm = mul(rc,conf.pid[axis].P8)>>6;
+    
     if (f.ANGLE_MODE || f.HORIZON_MODE) { // axis relying on ACC
       // 50 degrees max inclination
       errorAngle         = constrain(rc + GPS_angle[axis],-500,+500) - att.angle[axis] + conf.angleTrim[axis]; //16 bits is ok here
       errorAngleI[axis]  = constrain(errorAngleI[axis]+errorAngle,-10000,+10000);                                                // WindUp     //16 bits is ok here
 
-      PTermACC           = ((int32_t)errorAngle*conf.pid[PIDLEVEL].P8)>>7; // 32 bits is needed for calculation: errorAngle*P8 could exceed 32768   16 bits is ok for result
-      
+      PTermACC           = mul(errorAngle,conf.pid[PIDLEVEL].P8)>>7; // 32 bits is needed for calculation: errorAngle*P8 could exceed 32768   16 bits is ok for result
+
       int16_t limit      = conf.pid[PIDLEVEL].D8*5;
       PTermACC           = constrain(PTermACC,-limit,+limit);
 
-      ITermACC           = ((int32_t)errorAngleI[axis]*conf.pid[PIDLEVEL].I8)>>12;   // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
+      ITermACC           = mul(errorAngleI[axis],conf.pid[PIDLEVEL].I8)>>12;   // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
 
       ITerm              = ITermACC + ((ITerm-ITermACC)*prop>>9);
       PTerm              = PTermACC + ((PTerm-PTermACC)*prop>>9);
     }
 
-    PTerm -= ((int32_t)imu.gyroData[axis]*dynP8[axis])>>6; // 32 bits is needed for calculation   
-    
+    PTerm -= mul(imu.gyroData[axis],dynP8[axis])>>6; // 32 bits is needed for calculation   
+
     delta          = imu.gyroData[axis] - lastGyro[axis];  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
     lastGyro[axis] = imu.gyroData[axis];
     DTerm          = delta1[axis]+delta2[axis]+delta;
     delta2[axis]   = delta1[axis];
     delta1[axis]   = delta;
  
-    DTerm = ((int32_t)DTerm*dynD8[axis])>>5;        // 32 bits is needed for calculation
+    DTerm = mul(DTerm,dynD8[axis])>>5;        // 32 bits is needed for calculation
 
     axisPID[axis] =  PTerm + ITerm - DTerm;
   }
@@ -1281,14 +1300,14 @@ void loop () {
   #define GYRO_P_MAX 300
   #define GYRO_I_MAX 250
 
-  rc = (int32_t)rcCommand[YAW] * (2*conf.yawRate + 30)  >> 5;
+  rc = mul(rcCommand[YAW] , (2*conf.yawRate + 30))  >> 5;
 
   error = rc - imu.gyroData[YAW];
-  errorGyroI_YAW  += (int32_t)error*conf.pid[YAW].I8;
+  errorGyroI_YAW  += mul(error,conf.pid[YAW].I8);
   errorGyroI_YAW  = constrain(errorGyroI_YAW, 2-((int32_t)1<<28), -2+((int32_t)1<<28));
   if (abs(rc) > 50) errorGyroI_YAW = 0;
   
-  PTerm = (int32_t)error*conf.pid[YAW].P8>>6;
+  PTerm = mul(error,conf.pid[YAW].P8)>>6;
   #ifndef COPTER_WITH_SERVO
     int16_t limit = GYRO_P_MAX-conf.pid[YAW].D8;
     PTerm = constrain(PTerm,-limit,+limit);

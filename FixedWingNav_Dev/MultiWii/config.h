@@ -4,7 +4,6 @@
 /*************************************************************************************************/
 /****           CONFIGURABLE PARAMETERS                                                       ****/
 /*************************************************************************************************/
-//#define COPTERTEST 99  // PatrikE DevPlane
 
 /* this file consists of several sections
  * to create a working combination you must at least make your choices in section 1.
@@ -42,7 +41,7 @@
     //#define Y6
     //#define HEX6
     //#define HEX6X
-    //#define HEX6H  // New Model
+    //#define HEX6H
     //#define OCTOX8
     //#define OCTOFLATP
     //#define OCTOFLATX
@@ -72,7 +71,7 @@
        in some cases, this value must be lowered down to 900 for some specific ESCs, otherwise they failed to initiate */
     #define MINCOMMAND  1000
 
-  /**********************************    I2C speed   ************************************/
+  /**********************************  I2C speed for old WMP config (useless config for other sensors)  *************/
     #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
     //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
@@ -108,8 +107,9 @@
       //#define SIRIUS          // Sirius Navigator IMU                                             <- confirmed by Alex
       //#define SIRIUSGPS       // Sirius Navigator IMU  using external MAG on GPS board            <- confirmed by Alex
       //#define SIRIUS600       // Sirius Navigator IMU  using the WMP for the gyro
-      //#define SIRIUS_AIR      // Sirius Navigator IMU 6050 32U4 from MultiWiiCopter.com
+      //#define SIRIUS_AIR      // Sirius Navigator IMU 6050 32U4 from MultiWiiCopter.com           <- confirmed by Alex
       //#define SIRIUS_AIR_GPS  // Sirius Navigator IMU 6050 32U4 from MultiWiiCopter.com with GPS/MAG remote located
+      //#define SIRIUS_MEGAv5_OSD //  Paris_Sirius™ ITG3050,BMA280,MS5611,HMC5883,uBlox  http://www.Multiwiicopter.com <- confirmed by Alex
       //#define MINIWII         // Jussi's MiniWii Flight Controller                                <- confirmed by Alex
       //#define MICROWII        // MicroWii 10DOF with ATmega32u4, MPU6050, HMC5883L, MS561101BA from http://flyduino.net/
       //#define CITRUSv2_1      // CITRUS from qcrc.ca
@@ -161,6 +161,7 @@
       /* I2C gyroscope */
       //#define WMP
       //#define ITG3200
+      //#define MPU3050
       //#define L3G4200D
       //#define MPU6050       //combo + ACC
       //#define LSM330        //combo + ACC
@@ -171,6 +172,7 @@
       //#define ADXL345
       //#define BMA020
       //#define BMA180
+      //#define BMA280
       //#define NUNCHACK  // if you want to use the nunckuk as a standalone I2C ACC without WMP
       //#define LIS3LV02
       //#define LSM303DLx_ACC
@@ -254,6 +256,11 @@
     // trigger interval can be changed via (*GUI*) or via AUX channel
     //#define CAMTRIG
     #define CAM_TIME_HIGH 1000   // the duration of HIGH state servo expressed in ms
+
+  /***********************          Flying Wing                    ***********************/
+    // Throw Per Axis on servos
+	#define ROLLRATE 0.5
+	#define PITCHRATE 0.5
 
   /***********************          Airplane                       ***********************/
     //#define USE_THROTTLESERVO // For use of standard 50Hz servo on throttle.
@@ -626,6 +633,8 @@
   /***********************                  GPS                **************************/
   /**************************************************************************************/
 
+//#define GPS_SIMULATOR
+
     /* GPS using a SERIAL port
        if enabled, define here the Arduino Serial port number and the UART speed
        note: only the RX PIN is used in case of NMEA mode, the GPS is not configured by multiwii
@@ -887,7 +896,7 @@
     //#define MULTIPLE_CONFIGURATION_PROFILES
 
   /*************      do no reset constants when change of flashed program is detected ***********/
-    //#define NO_FLASH_CHECK
+    #define NO_FLASH_CHECK
 
 /*************************************************************************************************/
 /*****************                                                                 ***************/
@@ -899,6 +908,14 @@
   /********   special ESC with extended range [0-2000] microseconds  ********************/
   /**************************************************************************************/
     //#define EXT_MOTOR_RANGE // using this with wii-esc requires to change MINCOMMAND to 1008 for promini and mega
+
+  /**************************************************************************************/
+  /********  brushed ESC ****************************************************************/
+  /**************************************************************************************/
+    // for 328p proc
+    //#define EXT_MOTOR_32KHZ
+    //#define EXT_MOTOR_4KHZ
+    //#define EXT_MOTOR_1KHZ
 
   /**************************************************************************************/
   /***********************     motor, servo and other presets     ***********************/
