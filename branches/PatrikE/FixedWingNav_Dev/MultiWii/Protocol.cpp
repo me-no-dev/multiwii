@@ -9,6 +9,7 @@
 #include "MultiWii.h"
 #include "Serial.h"
 #include "Protocol.h"
+#include "RX.h"
 
 /************************************** MultiWii Serial Protocol *******************************************************/
 // Multiwii Serial Protocol 0 
@@ -650,7 +651,11 @@ void evaluateOtherData(uint8_t sr) {
     }
   #endif // SUPPRESS_OTHER_SERIAL_COMMANDS
 }
-
+void SerialWrite16(uint8_t port, int16_t val)
+{
+  CURRENTPORT=port;
+  serialize16(val);UartSendData(port);
+}
 #ifdef DEBUGMSG
 void debugmsg_append_str(const char *str) {
   while(*str) {

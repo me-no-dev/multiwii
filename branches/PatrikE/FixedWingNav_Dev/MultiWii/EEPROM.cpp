@@ -192,9 +192,9 @@ void LoadDefaults() {
   #ifdef FIXEDWING
     conf.dynThrPID = 50;
     conf.rcExpo8   =  0;
-    conf.pid[PIDALT].D8   = 50;
-    conf.pid[PIDALT].P8   = 3;
-    conf.pid[PIDNAVR].P8  = 3;
+    conf.pid[PIDALT].P8   = 30;conf.pid[PIDALT].I8  = 20;conf.pid[PIDALT].D8   = 45;
+	conf.pid[PIDPOSR].D8  = 50; // RTH Alt
+    conf.pid[PIDNAVR].P8  = 30;conf.pid[PIDNAVR].I8  = 20;conf.pid[PIDNAVR].D8  = 45;
   #endif
   update_constants(); // this will also write to eeprom
 }

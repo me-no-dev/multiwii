@@ -1,7 +1,7 @@
 #ifndef MULTIWII_H_
 #define MULTIWII_H_
 
-#define  VERSION  221
+#define  VERSION  230
 
 #include "types.h"
 
@@ -70,7 +70,7 @@ extern int16_t angle[2];
 
 #if BARO
   extern int32_t baroPressure;
-  extern int32_t baroTemperature;
+  extern int16_t baroTemperature; // temp in 0.01 deg
   extern int32_t baroPressureSum;
 #endif
 
@@ -120,7 +120,7 @@ extern int16_t lookupThrottleRC[11];
   // **********************
   // GPS common variables
   // **********************
-  extern int16_t  GPS_angle[2];                      // the angles that must be applied for GPS correction
+  extern int16_t  GPS_angle[3];                      // the angles that must be applied for GPS correction
   extern int32_t  GPS_coord[2];
   extern int32_t  GPS_home[3];
   extern int32_t  GPS_hold[3];
@@ -136,7 +136,8 @@ extern int16_t lookupThrottleRC[11];
 // FixedWing Gps 
   extern int16_t  GPS_FwTarget;                             // Gps correction for Fixed wing
   extern int16_t  GPS_AltErr;                              // Gps correction for Fixed wing
-   
+  extern int16_t  NAV_Thro;
+  
   #define LAT  0
   #define LON  1
   #define ALT  2
@@ -176,6 +177,10 @@ extern int16_t lookupThrottleRC[11];
 
   extern volatile uint8_t  spekFrameFlags;
   extern volatile uint32_t spekTimeLast;
+
+  #if defined(OPENLRSv2MULTI)
+    extern uint8_t pot_P,pot_I; // OpenLRS onboard potentiometers for P and I trim or other usages
+  #endif
 
   // **********************
   //Automatic ACC Offset Calibration
