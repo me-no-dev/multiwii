@@ -11,7 +11,7 @@
 
 #if defined(FIXEDWING)
   float NaverrorI,AlterrorI;
-  static int16_t lastAltDiff,lastNavDiff;
+  static int16_t lastAltDiff,lastNavDiff,SpeedBoost;
   static int16_t AltHist[GPS_UPD_HZ]; // shift register
   static int16_t NavDif[GPS_UPD_HZ];  // shift register
 #endif
@@ -393,9 +393,11 @@ void GPS_NewData(void) {
         *varptr++ = i2c_readAck();
         *varptr   = i2c_readAck();
         
-// Overflow From I2C gps FIX PatrikE Downsized in I2C code
+// Overflow From I2C gps  PatrikE Downsized in I2C Pacthed code 
 ////////////////////////////////////////////////////////////////////////////////////
-//        GPS_directionToHome = GPS_directionToHome / 100;  // 1deg =1000 in the reg, downsize 
+	#if !defined(I2CPATCH)
+        GPS_directionToHome = GPS_directionToHome / 100;  // 1deg =1000 in the reg, downsize 
+    #endif
 ////////////////////////////////////////////////////////////////////////////////////
         
         GPS_directionToHome += 180; // fix (see http://www.multiwii.com/forum/viewtopic.php?f=8&t=2892)        
@@ -403,10 +405,14 @@ void GPS_NewData(void) {
         
         varptr = (uint8_t *)&GPS_distanceToHome;
         *varptr++ = i2c_readAck();
-        *varptr   = i2c_readNak();        
-	#if !defined(FIXEDWING)  // Patch to stop overflow at 655 meter
+        *varptr   = i2c_readNak();
+		
+// Overflow From I2C gps  PatrikE Downsized in I2C Pacthed code 
+////////////////////////////////////////////////////////////////////////////////////       
+	#if !defined(I2CPATCH) // Patch to stop overflow at 655 meter
 	  GPS_distanceToHome = GPS_distanceToHome / 100;      //register is in CM, we need in meter. max= 655 meters with this way
-        #endif
+    #endif
+////////////////////////////////////////////////////////////////////////////////////  
         
         i2c_rep_start(I2C_GPS_ADDRESS<<1);
         i2c_write(I2C_GPS_LOCATION);                //Start read from here 2x2 bytes distance and direction
@@ -596,15 +602,13 @@ void GPS_reset_home_position(void) {
     #if defined(I2C_GPS)
       //set current position as home
       GPS_I2C_command(I2C_GPS_COMMAND_SET_WP,0);  //WP0 is the home position
-      GPS_home[ALT] = GPS_altitude;  //Set ground altitude
     #else
       GPS_home[LAT] = GPS_coord[LAT];
       GPS_home[LON] = GPS_coord[LON];
-      GPS_home[ALT] = GPS_altitude;  //Set ground altitude
       GPS_calc_longitude_scaling(GPS_coord[LAT]);  //need an initial value for distance and bearing calc
     #endif
     nav_takeoff_bearing = att.heading;             //save takeoff heading
-    //Set ground altitude
+    GPS_home[ALT] = GPS_altitude;  //Set ground altitude
     f.GPS_FIX_HOME = 1;
   }
 }
@@ -628,7 +632,7 @@ void GPS_reset_nav(void) {
   #if defined(FIXEDWING)
     NaverrorI=0;
     AlterrorI=0;
-    lastAltDiff=0;lastNavDiff=0;
+    lastAltDiff=0;lastNavDiff=0;;SpeedBoost=0;
     for(uint8_t i=0;i <GPS_UPD_HZ;i++){ AltHist[i] = 0; NavDif[i] =0;};
   #endif
 }
@@ -1625,10 +1629,13 @@ TODO include I & D for Elevator
 // Limit outputs
       GPS_angle[PITCH] = constrain(altDiff/10,-GPS_MAXCLIMB*10,GPS_MAXDIVE*10) + ALT_deltaSum;
       GPS_angle[ROLL]  = constrain(navDiff/10,-GPS_MAXCORR*10, GPS_MAXCORR*10) + NAV_deltaSum;
-      GPS_angle[YAW]   = constrain(navDiff/10,-GPS_MAXCORR*10, GPS_MAXCORR*10) + NAV_deltaSum;
+      //GPS_angle[YAW]   = constrain(navDiff/10,-GPS_MAXCORR*10, GPS_MAXCORR*10) + NAV_deltaSum;
 
 // Prevent stall with Disarmed motor   TEST
-//     if(motor[0]<conf.minthrottle)GPS_angle[PITCH]=constrain(GPS_angle[PITCH],-GPS_MAXCLIMB, GPS_MAXCLIMB*10);
+     if(motor[0] < conf.minthrottle){
+       f.CLIMBOUT_FW = 0;
+       GPS_angle[PITCH]=constrain(GPS_angle[PITCH],0, GPS_MAXDIVE*10);
+     }
 
 // Compensate elevator compared with rollAngle
       GPS_angle[PITCH]-= ( abs(att.angle[ROLL]) * (ELEVATORCOMPENSATION /10)) /10; 
@@ -1644,7 +1651,6 @@ TODO include I & D for Elevator
 // Force the Plane moving forward in headwind
 #define GPS_MINSPEED  500  // 500= ~18km/h
 #define I_TERM        0.1f
-static int16_t SpeedBoost =0;
 int16_t groundSpeed = GPS_speed;
 
 int spDiff=(GPS_MINSPEED -groundSpeed)*I_TERM;

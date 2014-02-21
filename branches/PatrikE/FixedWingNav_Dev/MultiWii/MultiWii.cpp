@@ -265,9 +265,10 @@ uint8_t rcSerialCount = 0;   // a counter to select legacy RX when there is no m
 int16_t lookupPitchRollRC[5];// lookup table for expo & RC rate PITCH+ROLL
 int16_t lookupThrottleRC[11];// lookup table for expo & mid THROTTLE
 
-#if defined(SPEKTRUM)
+#if defined(SPEKTRUM) || defined(SBUS)
   volatile uint8_t  spekFrameFlags;
   volatile uint32_t spekTimeLast;
+  uint8_t  spekFrameDone;
 #endif
 
 #if defined(OPENLRSv2MULTI)
@@ -799,12 +800,21 @@ void loop () {
   #if defined(SPEKTRUM)
     if (spekFrameFlags == 0x01) readSpektrum();
   #endif
-  
+
+  #if defined(SBUS)
+    if (spekFrameFlags == 0x01) readSBus();
+  #endif
+
   #if defined(OPENLRSv2MULTI) 
     Read_OpenLRS_RC();
   #endif 
 
+  #if defined(SPEKTRUM) || defined(SBUS)
+  if ((spekFrameDone == 0x01) || ((int16_t)(currentTime-rcTime) >0 )) { 
+    spekFrameDone = 0x00;
+  #else
   if ((int16_t)(currentTime-rcTime) >0 ) { // 50Hz
+  #endif
     rcTime = currentTime + 20000;
     computeRC();
     // Failsafe routine - added by MIS
@@ -1212,7 +1222,6 @@ void loop () {
         AltHold = alt.EstAlt;
         isAltHoldChanged = 0;
       }
-      rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
     }
   #endif
 
@@ -1225,18 +1234,11 @@ void loop () {
   #if GPS
     if ( (f.GPS_HOME_MODE || f.GPS_HOLD_MODE) && f.GPS_FIX_HOME ) {
       #if !defined(FIXEDWING) 
-        float sin_yaw_y = sin(att.heading*0.0174532925f);
-        float cos_yaw_x = cos(att.heading*0.0174532925f);
-        #if defined(NAV_SLEW_RATE)     
-          nav_rated[LON]   += constrain(wrap_18000(nav[LON]-nav_rated[LON]),-NAV_SLEW_RATE,NAV_SLEW_RATE);
-          nav_rated[LAT]   += constrain(wrap_18000(nav[LAT]-nav_rated[LAT]),-NAV_SLEW_RATE,NAV_SLEW_RATE);
-          GPS_angle[ROLL]   = (nav_rated[LON]*cos_yaw_x - nav_rated[LAT]*sin_yaw_y) /10;
-          GPS_angle[PITCH]  = (nav_rated[LON]*sin_yaw_y + nav_rated[LAT]*cos_yaw_x) /10;
-        #else 
-          GPS_angle[ROLL]   = (nav[LON]*cos_yaw_x - nav[LAT]*sin_yaw_y) /10;
-          GPS_angle[PITCH]  = (nav[LON]*sin_yaw_y + nav[LAT]*cos_yaw_x) /10;
-        #endif
-   
+      float sin_yaw_y = sin(att.heading*0.0174532925f);
+      float cos_yaw_x = cos(att.heading*0.0174532925f);
+        GPS_angle[ROLL]   = (nav[LON]*cos_yaw_x - nav[LAT]*sin_yaw_y) /10;
+        GPS_angle[PITCH]  = (nav[LON]*sin_yaw_y + nav[LAT]*cos_yaw_x) /10;
+
 /***************** Start of FixedWing Nav *****************/
       #else   // Navigation with Planes
 // Navigation with Planes Separated from MWii Tab for Devlopment. 

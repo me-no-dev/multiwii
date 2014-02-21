@@ -10,10 +10,9 @@
   
 #elif COPTERTEST == 100
 
-//#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11
 
 // Roman
-  #define FLYING_WING
+ #define FLYING_WING
   #define MINCOMMAND  1000
   #define MPU6050
   #define FORCE_ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  =  -X; imu.accADC[PITCH]  = -Y; imu.accADC[YAW]  = Z;}
@@ -26,20 +25,17 @@
 
   #define MPU6050_LPF_20HZ
   #define GYROCALIBRATIONFAILSAFE
+  
   #define I2C_GPS
+  #define I2CPATCH   // Use Patched I2C GPS for FixedWing and OSD
 
   #define BUZZER
   #define RCOPTIONSBEEP    
 
   #define VBAT
   #define VBATSCALE   127
-//  #define ALT_DEADSPAN
-  
-// Servosettings exported from GUI  
-//  #define  SERVO_MIN  {1020, 1020, 1020, 1020, 1020, 1020, 1020, 1020}
-//  #define  SERVO_MAX  {2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000}
-//  #define  SERVO_MID  {1500, 1500, 1500, 1412, 1445, 1500, 1572, 1500}
-//  #define  FORCE_SERVO_RATES  {30, 30, 100, 0, 1, 100, 100, 100}
+  #define ALT_DEADSPAN
+  #define MOTOR_STOP
   
 #elif COPTERTEST == 2
   #define FLYING_WING
@@ -149,11 +145,12 @@
 // Settings for Fixedwing_RTH
 
 //#define CRIUS_PE  // RadJet 800 
-#define MONGOOSE1_0 // EZ-Hawk
+//#define MONGOOSE1_0 // EZ-Hawk
 
 //#define MPU6050
-//#define FLYDUINO_MPU      //TESTBENCH 1280 simple
+#define FLYDUINO_MPU      //TESTBENCH 1280 simple
 //#define CRIUS_AIO_PRO_V1  //TESTBENCH 2560 Full IMU
+
 
 //#define I2C_GPS
 
@@ -174,9 +171,10 @@
 #if defined (FLYDUINO_MPU) || defined (MPU6050)
 // Simple TestBench
 //  #define GPS_PROMINI_SERIAL
+  #define GPS_SERIAL 2
 //  #define GPS_SERIAL 3
 //  #define PPM_ON_THROTTLE
-  #define I2C_GPS
+//  #define I2C_GPS
 #endif
   
 #if defined (CRIUS_AIO_PRO_V1)
@@ -200,6 +198,7 @@
 
   #if defined (MONGOOSE1_0)
 // MONGOOSE1_0 in EZ-Hawk setup
+//    #define FLAPPERONS    AUX4
     #define GPS_PROMINI_SERIAL
     #define PATRIKE
     #define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] =  -X; imu.gyroADC[PITCH] = -Y; imu.gyroADC[YAW] = -Z;}
@@ -245,9 +244,8 @@
       #include "GPS.h"
  // Settings Moved from gps.h   
       #define GPS_UPD_HZ             5   // Set loop time for NavUpdate    
-      #define PITCH_COMP           0.5f  // Compensate throttle relative angle of attack
-      #define ELEVATORCOMPENSATION 100   // Compensate elevator with % of rollAngle
-      #define CLIMBTHROTTLE        1900  // Max allowed throttle in GPS modes.
+      #define PITCH_COMP             0.5f  // Compensate throttle relative angle of attack
+      #define ELEVATORCOMPENSATION   100   // Compensate elevator with % of rollAngle
       #define DONT_RESET_HOME_AT_ARM
       #undef ONLYARMWHENFLAT
       
@@ -422,7 +420,7 @@
     #define STABLEPIN_OFF              ;
   #endif 
   #define PPM_PIN_INTERRUPT          attachInterrupt(0, rxInt, RISING); //PIN 0
-  #define SPEK_SERIAL_PORT           0
+  #define RX_SERIAL_PORT             0
   //RX PIN assignment inside the port //for PORTD
   #define THROTTLEPIN                2
   #define ROLLPIN                    4
@@ -549,8 +547,8 @@
   #define STABLEPIN_ON               ;
   #define STABLEPIN_OFF              ;
   #define PPM_PIN_INTERRUPT          DDRE &= ~(1 << 6);PORTE |= (1 << 6); EICRB |= (1 << ISC61)|(1 << ISC60); EIMSK |= (1 << INT6);
-  #if !defined(SPEK_SERIAL_PORT)
-    #define SPEK_SERIAL_PORT         1
+  #if !defined(RX_SERIAL_PORT)
+    #define RX_SERIAL_PORT           1
   #endif
   #define USB_CDC_TX                 3
   #define USB_CDC_RX                 2
@@ -689,8 +687,8 @@
   #else
     #define PPM_PIN_INTERRUPT        attachInterrupt(4, rxInt, RISING);  //PIN 19, also used for Spektrum satellite option
   #endif
-  #if !defined(SPEK_SERIAL_PORT)
-    #define SPEK_SERIAL_PORT         1
+  #if !defined(RX_SERIAL_PORT)
+    #define RX_SERIAL_PORT           1
   #endif
   //RX PIN assignment inside the port //for PORTK
   #define THROTTLEPIN                0  //PIN 62 =  PIN A8
@@ -711,18 +709,19 @@
   #define RX_PC_INTERRUPT            PCINT2_vect
   #define RX_PCINT_PIN_PORT          PINK
   
-  #define SERVO_1_PINMODE            pinMode(34,OUTPUT);pinMode(44,OUTPUT); // TILT_PITCH - WING left
+  #define SERVO_1_PINMODE            pinMode(34,OUTPUT);pinMode(44,OUTPUT); // TILT_PITCH
   #define SERVO_1_PIN_HIGH           PORTC |= 1<<3;PORTL |= 1<<5;
   #define SERVO_1_PIN_LOW            PORTC &= ~(1<<3);PORTL &= ~(1<<5);
-  #define SERVO_2_PINMODE            pinMode(35,OUTPUT);pinMode(45,OUTPUT); // TILT_ROLL  - WING right
+  #define SERVO_2_PINMODE            pinMode(35,OUTPUT);pinMode(45,OUTPUT); // TILT_ROLL
   #define SERVO_2_PIN_HIGH           PORTC |= 1<<2;PORTL |= 1<<4;
   #define SERVO_2_PIN_LOW            PORTC &= ~(1<<2);PORTL &= ~(1<<4);
   #define SERVO_3_PINMODE            pinMode(33,OUTPUT); pinMode(46,OUTPUT); // CAM TRIG  - alt TILT_PITCH
   #define SERVO_3_PIN_HIGH           PORTC |= 1<<4;PORTL |= 1<<3;
   #define SERVO_3_PIN_LOW            PORTC &= ~(1<<4);PORTL &= ~(1<<3);
-  #define SERVO_4_PINMODE            pinMode (37, OUTPUT);                   // new       - alt TILT_ROLL
-  #define SERVO_4_PIN_HIGH           PORTC |= 1<<0;
-  #define SERVO_4_PIN_LOW            PORTC &= ~(1<<0);
+  #define SERVO_4_PINMODE            pinMode (37, OUTPUT);pinMode(7,OUTPUT); // new       - alt TILT_ROLL
+  #define SERVO_4_PIN_HIGH           PORTC |= 1<<0; PORTH |= 1<<4;
+  #define SERVO_4_PIN_LOW            PORTC &= ~(1<<0);PORTH &= ~(1<<4);
+
   #define SERVO_5_PINMODE            pinMode(6,OUTPUT);                      // BI LEFT
   #define SERVO_5_PIN_HIGH           PORTH |= 1<<3;
   #define SERVO_5_PIN_LOW            PORTH &= ~(1<<3);
@@ -749,7 +748,7 @@
   #define LEDPIN_OFF                 PORTD &= ~(1<<4);  
   #define LEDPIN_ON                  PORTD |= (1<<4);     
   #define SPEK_BAUD_SET              UCSR0A  = (1<<U2X0); UBRR0H = ((F_CPU  / 4 / 115200 -1) / 2) >> 8; UBRR0L = ((F_CPU  / 4 / 115200 -1) / 2);
-  #define SPEK_SERIAL_PORT           0
+  #define RX_SERIAL_PORT             0
 
   /* Unavailable pins on MONGOOSE1_0 */
 // TODO
@@ -1298,7 +1297,7 @@
 #if defined(MONGOOSE1_0)
   #define ITG3200
   #define ADXL345
-  #define BMP085  // PatrikE
+  #define BMP085
   #define HMC5883
   #define GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -Y; imu.gyroADC[PITCH] =  X; imu.gyroADC[YAW] = -Z;}
   #define ACC_ORIENTATION(Y, X, Z)  {imu.accADC[ROLL]  =  Y; imu.accADC[PITCH]  =  X; imu.accADC[YAW]  =  Z;}
