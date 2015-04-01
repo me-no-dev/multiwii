@@ -65,7 +65,7 @@ Fourth page:
   * latitude
   * longitude
 
-* Remarks*
+= Remarks =
 My performance measurement have not shown any negative impact neither to the loop time nor to the functionality. The telemetry routine uses an own scheduler and runs within the annexCode time frame of 650us, which is not exceeded.
 
 Nevertheless, the code is still under development. That means it has not been fully tested. Every use is on your own risk. (But I have been using the previous software since more than one year without issues.)
