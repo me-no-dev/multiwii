@@ -1,4 +1,4 @@
-#Frsky Telemetry Implementation.
+#summary Frsky Telemetry Implementation
 
 = Introduction =
 
