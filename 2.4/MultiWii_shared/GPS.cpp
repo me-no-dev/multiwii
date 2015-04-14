@@ -1486,6 +1486,59 @@ bool GPS_newFrame(uint8_t data) {
 }
 #endif //MTK
 
+
+
+/**************************************************************************************/
+/***********************       VENUS                         **************************/
+/**************************************************************************************/
+#if defined(VENUS)
+/* Uses Venus6 or Venus8 binary mode communication. Most of the Venus routines are in
+ * the Venus.h/cpp files.
+*/
+//#if defined(VENUS)
+#include "Venus.h"
+//#endif
+
+void GPS_SerialInit(void) {
+	GPSModuleInit();
+	GPSConfigureDefaults();					// configure defaults (airborne, binary mode, etc), some options set in config.h
+}
+
+bool GPS_newFrame(uint8_t c) {
+  short result;
+  if ((result=VenusProcessInput(c))==VENUS_OK || result==VENUS_CLIPPED) {
+    if(venus_ctx.id==VENUS_GPS_LOCATION) {
+        f.GPS_FIX                   = venus_ctx.location.fixmode >=2;
+        GPS_coord[LAT]              = venus_ctx.location.latitude;         // With 1.9 now we have real 10e7 precision
+        GPS_coord[LON]              = venus_ctx.location.longitude;
+        GPS_altitude                = venus_ctx.location.sealevel_alt /100;    // altitude in meter
+        GPS_numSat                  = venus_ctx.location.sv_count;
+
+        // note: the following vars are currently not used in nav code -- avoid retrieving it to save time
+        // also, Venus8 doesnt provide these in a way that we can easily calculate without taking cpu cycles
+        //GPS_speed                   = venus_ctx.location.ground_speed;     // in m/s * 100 == in cm/s
+        //GPS_ground_course           = venus_ctx.location.ground_course/100;  //in degrees
+        return true;
+    }
+  }
+  return false;
+}
+#endif //VENUS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #endif //GPS SERIAL
 
 

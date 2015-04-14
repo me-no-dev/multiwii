@@ -1013,7 +1013,7 @@
   #define MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =  X; imu.magADC[PITCH]  =  Y; imu.magADC[YAW]  = -Z;}
 #endif
 
-#if defined(QUADRINO_ZOOM)
+#if defined(QUADRINO_ZOOM) || defined(QUADRINO_BASIC)
   #define ITG3200
   #define BMA180
   #define BMP085
@@ -1026,17 +1026,22 @@
   #define STABLEPIN_OFF PORTC &= ~(1<<2);
 #endif
 
-#if defined(QUADRINO_ZOOM_MS)
-  #define ITG3200
-  #define BMA180
-  #define MS561101BA
-  #define HMC5883
+#if defined(QUADRINO_NANO)
+  #define MPU6050
+  //#define MS561101BA
+  //#define AK8975
   #define ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  = -X; imu.accADC[PITCH]  = -Y; imu.accADC[YAW]  =  Z;}
   #define GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] =  Y; imu.gyroADC[PITCH] = -X; imu.gyroADC[YAW] = -Z;}
-  #define MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =  X; imu.magADC[PITCH]  =  Y; imu.magADC[YAW]  = -Z;}
+  #define MAG_ORIENTATION(Y, X, Z)  {imu.magADC[ROLL]  =  X; imu.magADC[PITCH]  =  Y; imu.magADC[YAW]  =  Z;}
+
+  #define MPU6050_ADDRESS  0x68
+  #define HMC5883_ADDRESS  0x1E
+  #define MS561101BA_ADDRESS  0x76
+
   #define STABLEPIN_PINMODE pinMode (A2, OUTPUT);
   #define STABLEPIN_ON PORTC |= (1<<2);
   #define STABLEPIN_OFF PORTC &= ~(1<<2);
+  #define GPS_PWR_EN { pinMode(36, OUTPUT); digitalWrite(36, 0); delay(50); digitalWrite(36, 1); }
 #endif
 
 #if defined(ALLINONE)
@@ -1991,8 +1996,8 @@
   #error "for your protection: A32U4_4_HW_PWM_SERVOS was not tested with your coptertype"
 #endif
 
-#if GPS && !defined(NMEA) && !defined(UBLOX) && !defined(MTK_BINARY16) && !defined(MTK_BINARY19) && !defined(INIT_MTK_GPS) && !defined(I2C_GPS)
-  #error "when using GPS you must specify the protocol NMEA, UBLOX..."
+#if GPS && !defined(NMEA) && !defined(UBLOX) && !defined(MTK_BINARY16) && !defined(MTK_BINARY19) && !defined(INIT_MTK_GPS) && !defined(I2C_GPS) && !defined(VENUS)
+  #error "when using GPS you must specify the protocol NMEA, UBLOX, VENUS..."
 #endif
 
 #if defined(NUNCHUK) || \
