@@ -1027,7 +1027,7 @@
 #endif
 
 #if defined(QUADRINO_NANO)
-  #define MPU6050
+  //#define MPU6050
   //#define MS561101BA
   //#define AK8975
   #define ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  = -X; imu.accADC[PITCH]  = -Y; imu.accADC[YAW]  =  Z;}

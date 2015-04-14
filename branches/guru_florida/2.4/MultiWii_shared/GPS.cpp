@@ -1509,7 +1509,6 @@ bool GPS_newFrame(uint8_t data) {
 //#endif
 
 void GPS_SerialInit(void) {
-	GPSModuleInit();
 	GPSConfigureDefaults();					// configure defaults (airborne, binary mode, etc), some options set in config.h
 }
 

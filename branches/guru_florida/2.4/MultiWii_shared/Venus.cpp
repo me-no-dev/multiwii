@@ -405,14 +405,15 @@ void VenusPowerCycle()
 {
   // enable the 3V3B regulator thus enabling the GPS
   pinMode(VenusPowerPin, OUTPUT); 
-  digitalWrite(VenusPowerPin, 0); 
-  delay(50); 
+  digitalWrite(VenusPowerPin, 0);
+  delay(50);
   digitalWrite(VenusPowerPin, 1);  
 }
 #else
 #define VenusPowerCycle() {}  // no GPS_PWR_EN connected
 #endif
 
+#if 0
 void short_beep()
 {
   digitalWrite(32, 1); 
@@ -428,6 +429,10 @@ void long_beep()
   digitalWrite(32, 0);  
   delay(300); 
 }
+#else
+void short_beep() {}
+void long_beep() {}
+#endif
 
 void VenusError(short code)
 {
@@ -551,6 +556,7 @@ bool GPSConfigureDefaults()
 #ifdef VENUS_DEBUG
   Serial.println("$GPREM,SUCCESS");
 #endif
+  return true;
 }
 
 #endif  // ifdef VENUS
