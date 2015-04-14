@@ -1495,6 +1495,15 @@ bool GPS_newFrame(uint8_t data) {
 /* Uses Venus6 or Venus8 binary mode communication. Most of the Venus routines are in
  * the Venus.h/cpp files.
 */
+
+#ifndef VENUS_OUTPUT_MODE
+#define VENUS_OUTPUT_MODE VENUS_OUTPUT_BINARY
+#endif
+
+#ifndef VENUS_UPDATE_RATE
+#define VENUS_UPDATE_RATE 20
+#endif
+
 //#if defined(VENUS)
 #include "Venus.h"
 //#endif
@@ -1524,20 +1533,6 @@ bool GPS_newFrame(uint8_t c) {
   return false;
 }
 #endif //VENUS
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #endif //GPS SERIAL
 

@@ -670,7 +670,10 @@ At this moment you can use this function only with WinGUI 2.3 release. MultiWiiC
 
     // avoid using 115200 baud because with 16MHz arduino the 115200 baudrate have more than 2% speed error (57600 have 0.8% error)
     #define GPS_BAUD   115200       // GPS_BAUD will override SERIALx_COM_SPEED for the selected port
-    #define VENUS_OUTPUT_MODE VENUS_OUTPUT_BINARY
+
+	// The Venus GPS chip will send location updates at this rate (in Hz)
+	// Venus6 supports 1, 5, 10, 20, 40
+	// Venus8 supports Venus6 rates plus 50
     #define VENUS_UPDATE_RATE  40
 
    /* GPS protocol 
