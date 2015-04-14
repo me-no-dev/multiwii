@@ -29,6 +29,10 @@ March  2015     V2.4
 
 #include <avr/pgmspace.h>
 
+#if GPS && defined(VENUS)
+#include "Venus.h"
+#endif
+
 /*********** RC alias *****************/
 
 const char pidnames[] PROGMEM =
@@ -689,6 +693,12 @@ void setup() {
 
   #if GPS
     recallGPSconf();                              //Load GPS configuration parameteres
+    #ifdef VENUS
+      // this must happen before sensors are initialized as the power-cycle that
+      // may occur while searching for the Venus GPS may reset the I2C sensors as well
+      // if you power the I2C sensors from the same 3.3v regulator.
+	  GPSModuleInit();
+    #endif
   #endif
 
   configureReceiver();
