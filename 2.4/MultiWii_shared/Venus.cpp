@@ -57,15 +57,11 @@ void VenusWriteImmediate()
   VenusDebugWriteMsg("OUT");
 }
 
-#if 1
 void VenusWriteNull()
 {
-  venus_ctx.id=VENUS_NACK;
-  venus_ctx.length=1;
-  venus_ctx.body[0]=0;
-  VenusWriteImmediate(); 
+  VENUS_SERIAL_WRITE(0x0D);
+  VENUS_SERIAL_WRITE(0x0A);
 }
-#endif
 
 //inline void VenusWriteImmediate(byte msgid, byte a) { venus_ctx.length=1; venus_ctx.id=msgid; venus_ctx.body[0]=a; VenusWriteImmediate(); }
 //inline void VenusWriteImmediate(byte msgid, byte a, byte b) { venus_ctx.length=1; venus_ctx.id=msgid; venus_ctx.body[0]=a; venus_ctx.body[1]=b; VenusWriteImmediate(); }
@@ -104,7 +100,7 @@ void VenusFixLocationEndianess()
 short VenusProcessInput(int c)
 {
   static byte state=0;
-  static char n=0;
+  static unsigned char n=0;
   static int cr=0;
   
   switch(state) {
@@ -118,7 +114,7 @@ short VenusProcessInput(int c)
       break;
     case 5: // read bytes of the payload
       if(n<VENUS_MAX_PAYLOAD)
-        venus_ctx.body[n]=c;
+        venus_ctx.body[n]=(char)c;
       n++;
       cr ^= c;  // adjust checksum
       if(n>=venus_ctx.length) state++;
@@ -350,7 +346,7 @@ uint32_t VenusGetBaudRate(byte n)
 {
   switch(n) {
     case -1: return GPS_BAUD;  // the default speed
-    case 0: return 4800;
+    //case 0: return 4800;
     case 1: return 9600;
 //    case 2: return 19200;  // dont bother using these
 //    case 3: return 28800;
@@ -408,31 +404,37 @@ void VenusPowerCycle()
   digitalWrite(VenusPowerPin, 0);
   delay(50);
   digitalWrite(VenusPowerPin, 1);  
+  delay(500);	// lets try a seconds pause
 }
 #else
 #define VenusPowerCycle() {}  // no GPS_PWR_EN connected
 #endif
 
+
 #if 0
+#define VENUS_LED_ON LED2PIN_ON
+#define VENUS_LED_OFF LED2PIN_OFF
+#else
+#define VENUS_LED_ON digitalWrite(32, 1);
+#define VENUS_LED_OFF digitalWrite(32, 0);
+#endif
+
 void short_beep()
 {
-  digitalWrite(32, 1); 
+  VENUS_LED_ON
   delay(75); 
-  digitalWrite(32, 0);  
+  VENUS_LED_OFF
   delay(300); 
 }
 
 void long_beep()
 {
-  digitalWrite(32, 1); 
+  VENUS_LED_ON;
   delay(200); 
-  digitalWrite(32, 0);  
+  VENUS_LED_OFF;
   delay(300); 
 }
-#else
-void short_beep() {}
-void long_beep() {}
-#endif
+
 
 void VenusError(short code)
 {
@@ -473,8 +475,16 @@ bool VenusScan(unsigned long desiredBaud, byte desiredMessageFormat)
 #endif
       
       VENUS_SERIAL_OPEN(baud);
-      //VenusWriteNull();
       
+      // a few null messages to clear the air
+      VENUS_LED_ON
+	  delay(10);
+      for(int i=0; i<5; i++) {
+      	VenusWriteNull();
+      	delay(25);
+      }
+      VENUS_LED_OFF
+
       venus_ctx.id=VENUS_QUERY_GPS_UPDATE_RATE;
       venus_ctx.length=0;
       if((result=VenusQuery(VENUS_DEFAULT_TIMEOUT)) == VENUS_OK) {
@@ -497,9 +507,6 @@ bool VenusScan(unsigned long desiredBaud, byte desiredMessageFormat)
         i = VenusGetBaudRateOrdinal(VENUS_MAX_BAUDRATE);
         attempts--;
     }
-
-    VenusPowerCycle();
-    delay(4000);  // wait for GPS to recover
   }
   VenusError(STARTUP_NORESPONSE);
   return false;

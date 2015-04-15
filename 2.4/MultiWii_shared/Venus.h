@@ -18,7 +18,7 @@ typedef unsigned char byte;
 
 // the default update rate
 #ifndef VENUS_UPDATE_RATE
-#define VENUS_UPDATE_RATE  5
+#define VENUS_UPDATE_RATE  20
 #endif
 
 // enable to get a lot of output in NMEA format (uses GPREM for remark)
