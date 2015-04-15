@@ -693,7 +693,7 @@ void setup() {
 
   #if GPS
     recallGPSconf();                              //Load GPS configuration parameteres
-    #ifdef VENUS
+    #if defined(VENUS)
       // this must happen before sensors are initialized as the power-cycle that
       // may occur while searching for the Venus GPS may reset the I2C sensors as well
       // if you power the I2C sensors from the same 3.3v regulator.

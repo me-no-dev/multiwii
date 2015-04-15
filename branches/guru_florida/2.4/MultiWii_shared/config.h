@@ -669,7 +669,7 @@ At this moment you can use this function only with WinGUI 2.3 release. MultiWiiC
                                    // note: Now a GPS can share MSP on the same port. The only constrain is to not use it simultaneously, and use the same port speed.
 
     // avoid using 115200 baud because with 16MHz arduino the 115200 baudrate have more than 2% speed error (57600 have 0.8% error)
-    #define GPS_BAUD   115200       // GPS_BAUD will override SERIALx_COM_SPEED for the selected port
+    #define GPS_BAUD   57600       // GPS_BAUD will override SERIALx_COM_SPEED for the selected port
 
 	// The Venus GPS chip will send location updates at this rate (in Hz)
 	// Venus6 supports 1, 5, 10, 20, 40
