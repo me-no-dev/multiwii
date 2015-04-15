@@ -411,9 +411,10 @@ void VenusPowerCycle()
 #endif
 
 
-#if 0
-#define VENUS_LED_ON LED2PIN_ON
-#define VENUS_LED_OFF LED2PIN_OFF
+#if 1
+#if 1 // defined(LED2PIN_ON)	// means we are compiling in MultiWii and have an LED2
+#define VENUS_LED_ON LED1PIN_ON
+#define VENUS_LED_OFF LED1PIN_OFF
 #else
 #define VENUS_LED_ON digitalWrite(32, 1);
 #define VENUS_LED_OFF digitalWrite(32, 0);
@@ -434,7 +435,10 @@ void long_beep()
   VENUS_LED_OFF;
   delay(300); 
 }
-
+#else
+inline void short_beep() {}
+inline void long_beep() {}
+#endif
 
 void VenusError(short code)
 {
@@ -477,17 +481,17 @@ bool VenusScan(unsigned long desiredBaud, byte desiredMessageFormat)
       VENUS_SERIAL_OPEN(baud);
       
       // a few null messages to clear the air
-      VENUS_LED_ON
-	  delay(10);
+      //VENUS_LED_ON
+	  delay(6);
       for(int i=0; i<5; i++) {
       	VenusWriteNull();
-      	delay(25);
+      	delay(6);
       }
-      VENUS_LED_OFF
+      //VENUS_LED_OFF
 
       venus_ctx.id=VENUS_QUERY_GPS_UPDATE_RATE;
       venus_ctx.length=0;
-      if((result=VenusQuery(VENUS_DEFAULT_TIMEOUT)) == VENUS_OK) {
+      if((result=VenusQuery(VENUS_FAST_TIMEOUT)) == VENUS_OK) {
         VenusSetOutput(VENUS_OUTPUT_NONE, false);
   
         if(baud != desiredBaud) {
@@ -506,6 +510,7 @@ bool VenusScan(unsigned long desiredBaud, byte desiredMessageFormat)
     if(--i <0) {
         i = VenusGetBaudRateOrdinal(VENUS_MAX_BAUDRATE);
         attempts--;
+        VenusPowerCycle();
     }
   }
   VenusError(STARTUP_NORESPONSE);

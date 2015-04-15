@@ -649,6 +649,16 @@ void setup() {
   BUZZERPIN_PINMODE;
   STABLEPIN_PINMODE;
   POWERPIN_OFF;
+
+#if defined(VENUS)
+  // this must happen before sensors are initialized as the power-cycle that
+  // may occur while searching for the Venus GPS may reset the I2C sensors as well
+  // if you power the I2C sensors from the same 3.3v regulator.
+  // also, this should not be moved further down as the long startup may interfere
+  // with other ISRs that get installed.
+  GPSModuleInit();
+#endif
+
   initOutput();
   readGlobalSet();
   #ifndef NO_FLASH_CHECK
@@ -693,12 +703,6 @@ void setup() {
 
   #if GPS
     recallGPSconf();                              //Load GPS configuration parameteres
-    #if defined(VENUS)
-      // this must happen before sensors are initialized as the power-cycle that
-      // may occur while searching for the Venus GPS may reset the I2C sensors as well
-      // if you power the I2C sensors from the same 3.3v regulator.
-	  GPSModuleInit();
-    #endif
   #endif
 
   configureReceiver();
