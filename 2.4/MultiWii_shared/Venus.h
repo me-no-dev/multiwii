@@ -28,6 +28,7 @@ typedef unsigned char byte;
 // relevant on startup during configuration and no sync waits are performed during normal
 // gps loop.
 #define VENUS_DEFAULT_TIMEOUT    3000
+#define VENUS_FAST_TIMEOUT    500			// when checking baud rate and certain actions expected to return fast
 
 // the maximum number of bytes that can be received in one message (size of the receive buffer)
 #define VENUS_MAX_PAYLOAD        60

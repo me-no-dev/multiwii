@@ -1038,6 +1038,8 @@
   #define HMC5883_ADDRESS  0x1E
   #define MS561101BA_ADDRESS  0x76
 
+  #define LED1PIN_ON   PORTB |= (1<<7);
+  #define LED1PIN_OFF  PORTB &= ~(1<<7);
   #define LED2PIN_ON   PORTC |= (1<<7);
   #define LED2PIN_OFF  PORTC &= ~(1<<7);
   #define STABLEPIN_PINMODE pinMode (A2, OUTPUT);
